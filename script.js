@@ -557,6 +557,8 @@ function runPPDTTestStage() {
                 document.getElementById('advance-btn').addEventListener('click', () => { appState.currentItem++; runPPDTTestStage(); });
             }
             break;
+        // FIND THIS SECTION in script.js (inside runPPDTTestStage, case 'narration'):
+
         case 'narration':
             duration = 60;
             beginPPDTNarration(duration, timerDisplay); 
@@ -1110,3 +1112,4 @@ window.addEventListener('beforeunload', (e) => {
         return message;
     }
 });
+
