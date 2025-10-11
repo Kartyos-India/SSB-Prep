@@ -509,23 +509,16 @@ function runPPDTTestStage() {
     screen.innerHTML = '';
     const stage = appState.stages[appState.currentItem];
     
-    // --- FIX: Use correct, existing template IDs from HTML ---
-    const templateId = {
-        'picture': 'ppdt-picture-stage-template', // This one has the prefix in HTML
-        'story': 'ppdt-story-stage-template',    // This one has the prefix in HTML
-        'narration': 'narration-stage-template', // This one does NOT have the prefix in HTML
-    }[stage];
-    // NOTE: Based on the HTML you provided, the IDs are mixed. Let's fix the JS to match the HTML strictly.
-    const correctTemplateId = stage === 'narration' ? 'narration-stage-template' : `ppdt-${stage}-stage-template`;
+    // --- FIX: Logic to correctly map PPDT stages to HTML templates ---
+    // The HTML you provided has: 'ppdt-picture-stage-template', 'ppdt-story-stage-template', and 'narration-stage-template'
+    const templateId = stage === 'narration' ? 'narration-stage-template' : `ppdt-${stage}-stage-template`;
     // --- End FIX ---
     
-    const template = getTemplateContent(correctTemplateId);
+    const template = getTemplateContent(templateId);
     
     // CRITICAL FIX: Check for null template before appending
     if (!template) {
-         screen.innerHTML = `<div class="text-center mt-20"><p class="text-red-500 font-semibold">Error: Test stage template (${correctTemplateId}) not found in HTML.</p></div>`;
-         // We do not abortTest() here because we need to clear the current screen before aborting.
-         // Let's rely on the natural flow of the calling function to handle the error screen.
+         screen.innerHTML = `<div class="text-center mt-20"><p class="text-red-500 font-semibold">Error: Test stage template (${templateId}) not found in HTML. Check HTML structure.</p></div>`;
          return; 
     }
     
@@ -1125,4 +1118,3 @@ window.addEventListener('beforeunload', (e) => {
         return message;
     }
 });
-
