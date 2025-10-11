@@ -16,6 +16,10 @@ const mainContent = document.getElementById('main-content');
 const topNav = document.getElementById('top-nav');
 const headerRight = document.getElementById('header-right');
 
+// --- Test State Flags ---
+let isTestActive = false; // NEW FLAG: Tracks if a test is currently running
+let ppdtMediaStream = null; // Reference to the PPDT media stream
+
 // --- Helper Functions (from shared.js) ---
 
 /**
@@ -91,7 +95,6 @@ function renderLoginScreen() {
             </button>
         </div>`;
     
-    // FIX 1: Prevent default action to stop the pop-up from immediately closing
     document.getElementById('google-signin-btn').addEventListener('click', (e) => {
         e.preventDefault(); 
         const provider = new GoogleAuthProvider();
@@ -160,7 +163,7 @@ function renderHomeScreen() {
             </div>
             <div class="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto pt-8">
                 <a href="#" data-screen="ppdt-settings-screen" class="choice-card p-8 rounded-xl flex-1 flex flex-col justify-center items-center text-center no-underline">
-                    <h3 class="text-3xl font-bold text-white">SCREENING TEST</h3>
+                    <h3 class="3xl font-bold text-white">SCREENING TEST</h3>
                     <p class="text-gray-400 mt-2">Practice the Picture Perception & Discussion Test (PPDT).</p>
                 </a>
                 <a href="#" data-screen="psychology-screen" class="choice-card p-8 rounded-xl flex-1 flex flex-col justify-center items-center text-center no-underline">
@@ -194,6 +197,30 @@ function renderHomeScreen() {
 let appState = {};
 let timerInterval;
 
+/**
+ * Aborts the current test, cleans up resources, and returns to the appropriate menu.
+ */
+function abortTest() {
+    isTestActive = false; // Disable warning
+    clearInterval(timerInterval); // Stop any running timer
+    
+    // Attempt to stop media stream if active (for PPDT)
+    if (ppdtMediaStream) {
+        ppdtMediaStream.getTracks().forEach(track => track.stop());
+        ppdtMediaStream = null;
+    }
+
+    // Determine the correct menu to return to
+    if (appState.testType === 'PPDT') {
+        renderPPDTSettingsScreen();
+    } else if (['TAT', 'WAT', 'SRT'].includes(appState.testType)) {
+        renderPsychologyScreen();
+    } else {
+        renderHomeScreen();
+    }
+}
+
+
 // --- Helper Functions (used by all tests) ---
 function formatTime(s) {
     return `${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`;
@@ -204,7 +231,7 @@ function startTimer(duration, displayElement, onComplete) {
     let timeLeft = duration;
     displayElement.textContent = formatTime(timeLeft);
 
-    // Timer should run unless explicitly set to 'false' (Free Practice)
+    // Timer should run unless explicitly set to 'false' (PPDT Free Practice)
     const isTimed = appState.timed === 'true' || appState.testType === 'WAT' || appState.testType === 'SRT'; 
 
     if (isTimed) {
@@ -219,12 +246,26 @@ function startTimer(duration, displayElement, onComplete) {
     }
 }
 
+// Function to inject the Abort button into the current test stage
+function addAbortButtonToStage(screen) {
+    const stageHeader = screen.querySelector('.flex.justify-between.items-center');
+    const h2 = stageHeader ? stageHeader.querySelector('h2') : null;
+    
+    if (h2) {
+        const abortBtn = document.createElement('button');
+        abortBtn.className = 'back-btn py-1 px-3 rounded-lg text-sm ml-4 inline-block';
+        abortBtn.textContent = 'Abort Test';
+        abortBtn.addEventListener('click', abortTest);
+        h2.appendChild(abortBtn); 
+    }
+}
+
 
 // =========================================================================
 // --- SCREENING TEST (PPDT) LOGIC (from screening.js) ---
 // =========================================================================
 
-let ppdtMediaRecorder, ppdtRecordedChunks = [], ppdtMediaStream, ppdtVideoUrl = null, ppdtCurrentImageUrl = '';
+let ppdtMediaRecorder, ppdtRecordedChunks = [], ppdtVideoUrl = null, ppdtCurrentImageUrl = '';
 
 
 function setupPPDTVideoControls(reviewVideo) {
@@ -252,6 +293,7 @@ function setupPPDTVideoControls(reviewVideo) {
 }
 
 function showPPDTReview() {
+    isTestActive = false; // Test stage is over, review is safe.
     showScreen('review-screen');
     
     const reviewScreen = document.getElementById('review-screen');
@@ -276,11 +318,10 @@ function showPPDTReview() {
         if(controls) controls.innerHTML = `<p class="text-center text-red-400">No video recorded or recording failed.</p>`;
     }
 
-    // FIX 3: Make restart logic robust, clearing video object URL
     document.getElementById('restart-btn').addEventListener('click', () => {
         if (ppdtVideoUrl) URL.revokeObjectURL(ppdtVideoUrl);
         ppdtVideoUrl = null;
-        ppdtRecordedChunks = []; // Clear recorded data
+        ppdtRecordedChunks = []; 
         renderPPDTSettingsScreen();
     });
 }
@@ -310,7 +351,10 @@ async function beginPPDTNarration(duration, timerDisplay) {
             };
 
             ppdtMediaRecorder.onstop = () => {
-                ppdtMediaStream.getTracks().forEach(track => track.stop());
+                // Ensure all tracks are stopped ONLY AFTER the mediaRecorder is finished
+                if (ppdtMediaStream) {
+                    ppdtMediaStream.getTracks().forEach(track => track.stop());
+                }
                 showPPDTReview();
             };
             
@@ -329,7 +373,8 @@ async function beginPPDTNarration(duration, timerDisplay) {
                     if (ppdtMediaRecorder && ppdtMediaRecorder.state === 'recording') {
                         ppdtMediaRecorder.stop();
                     } else {
-                         ppdtMediaStream.getTracks().forEach(track => track.stop());
+                         // Fallback for immediate stop if recording state is missed
+                         if (ppdtMediaStream) ppdtMediaStream.getTracks().forEach(track => track.stop());
                          showPPDTReview(); 
                     }
                 });
@@ -383,6 +428,8 @@ function runPPDTTestStage() {
     const template = getTemplateContent(templateId);
     screen.appendChild(template);
     
+    addAbortButtonToStage(screen); // Add Abort Button
+    
     const timerDisplay = screen.querySelector('#timer-display');
     let duration;
 
@@ -424,6 +471,7 @@ function runPPDTTestStage() {
 }
 
 function initializePPDTTest(config) {
+    isTestActive = true; // Set flag to true when test starts
     appState = {
         ...config,
         userId,
@@ -451,7 +499,6 @@ function renderPPDTSettingsScreen() {
     
     settingsScreen.querySelectorAll('[data-test-type="PPDT"]').forEach(btn => {
         btn.addEventListener('click', () => {
-            // PPDT tests are always untimed/free practice unless data-timed="true" is present
             const config = { 
                 ...btn.dataset, 
                 timed: btn.dataset.timed || 'false' 
@@ -491,11 +538,12 @@ function renderPsychologyScreen() {
 
 
 async function initializePsyTest(config) {
+    isTestActive = true; // Set flag to true when test starts
     appState = {
         ...config,
         userId,
         currentItem: 0,
-        // Ensure 'timed' property is present for the general startTimer function, even if hardcoded
+        // Psychology tests are always timed=true (timers visible or not)
         timed: 'true' 
     };
     testResponses = [];
@@ -585,6 +633,8 @@ function runPsyTestStage() {
     const template = getTemplateContent(templateId);
     screen.appendChild(template);
     
+    addAbortButtonToStage(screen); // Add Abort Button
+
     const progressCounter = screen.querySelector('#test-progress-counter');
     if (progressCounter) {
         const current = appState.testType === 'TAT' ? appState.currentPicIndex + 1 : appState.currentItem + 1;
@@ -626,7 +676,6 @@ function setupPsyStageContent(config) {
     }
 }
 
-// FIX 2: Correct finishPsyTest logic to ONLY handle WAT/SRT. TAT progression is self-contained.
 function finishPsyTest() {
     if (appState.testType === 'WAT' || appState.testType === 'SRT') {
         const input = document.getElementById(`${appState.testType.toLowerCase()}-input`);
@@ -682,6 +731,7 @@ async function generateAndLoadTATImage(onLoadCallback) {
 }
 
 function showPsyReview() {
+    isTestActive = false; // Test is complete and review screen is safe.
     showScreen('review-screen');
     const reviewContainer = document.getElementById('review-screen');
     reviewContainer.innerHTML = '';
@@ -914,5 +964,20 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // 3. Start Authentication Listener
         onAuthStateChanged(auth, handleAuthState);
+    }
+});
+
+// NEW FEATURE: Add beforeunload listener at the very end of the file execution
+window.addEventListener('beforeunload', (e) => {
+    if (isTestActive) {
+        // Standard text for browser pop-up
+        const message = 'You are currently in a test. Your progress (including unsaved WAT/SRT responses) will be lost if you leave or refresh.';
+        
+        // This is necessary for some older browsers
+        e.preventDefault();
+        
+        // This is necessary for modern browsers to show the confirmation pop-up
+        e.returnValue = message;
+        return message;
     }
 });
