@@ -90,7 +90,10 @@ function renderLoginScreen() {
                 Sign in with Google
             </button>
         </div>`;
-    document.getElementById('google-signin-btn').addEventListener('click', () => {
+    
+    // FIX 1: Prevent default action to stop the pop-up from immediately closing
+    document.getElementById('google-signin-btn').addEventListener('click', (e) => {
+        e.preventDefault(); 
         const provider = new GoogleAuthProvider();
         signInWithPopup(auth, provider).catch(error => console.error(error));
     });
@@ -113,7 +116,7 @@ function handleAuthState(user) {
         }
         if (topNav) topNav.classList.remove('hidden');
 
-        // Check the current screen and redirect to home if no screen is visible
+        // Render home screen if no other screen is active
         if (document.getElementById('login-screen').classList.contains('hidden') && 
             document.getElementById('home-screen').classList.contains('hidden')) {
             renderHomeScreen();
@@ -153,7 +156,7 @@ function renderHomeScreen() {
         link.addEventListener('click', (e) => {
             e.preventDefault();
             const targetScreen = link.dataset.screen;
-            // For settings/psychology, we need to initialize them first
+            
             if (targetScreen === 'ppdt-settings-screen') {
                 renderPPDTSettingsScreen();
             } else if (targetScreen === 'psychology-screen') {
@@ -253,7 +256,13 @@ function showPPDTReview() {
         if(controls) controls.innerHTML = `<p class="text-center text-red-400">No video recorded or recording failed.</p>`;
     }
 
-    document.getElementById('restart-btn').addEventListener('click', renderPPDTSettingsScreen);
+    // FIX 3: Make restart logic robust, clearing video object URL
+    document.getElementById('restart-btn').addEventListener('click', () => {
+        if (ppdtVideoUrl) URL.revokeObjectURL(ppdtVideoUrl);
+        ppdtVideoUrl = null;
+        ppdtRecordedChunks = []; // Clear recorded data
+        renderPPDTSettingsScreen();
+    });
 }
 
 async function beginPPDTNarration(duration, timerDisplay) {
@@ -295,8 +304,13 @@ async function beginPPDTNarration(duration, timerDisplay) {
             } else {
                 webcamStatus.innerHTML = "Recording... <button id='manual-stop' class='back-btn py-1 px-3 rounded-lg ml-3'>Stop Practice</button>";
                 document.getElementById('manual-stop').addEventListener('click', () => {
-                    ppdtMediaStream.getTracks().forEach(track => track.stop());
-                    showPPDTReview(); 
+                    // Need to stop the recording process gracefully for the onstop event to fire.
+                    if (ppdtMediaRecorder && ppdtMediaRecorder.state === 'recording') {
+                        ppdtMediaRecorder.stop();
+                    } else {
+                         ppdtMediaStream.getTracks().forEach(track => track.stop());
+                         showPPDTReview(); 
+                    }
                 });
             }
         }, 1500);
@@ -549,7 +563,8 @@ function runPsyTestStage() {
         });
     } else {
         setupPsyStageContent(stageConfig);
-        startTimer(stageConfig.duration, timerDisplay, stageConfig.onComplete);
+        // TAT/SRT/WAT timer starts. WAT/SRT use finishPsyTest, TAT uses its dedicated onComplete.
+        startTimer(stageConfig.duration, timerDisplay, stageConfig.onComplete); 
     }
 }
 
@@ -576,25 +591,27 @@ function setupPsyStageContent(config) {
     }
 }
 
+// FIX 2: Correct finishPsyTest logic to ONLY handle WAT/SRT. TAT progression is self-contained.
 function finishPsyTest() {
+    // This function is only designed to handle WAT/SRT progression and response capture.
     if (appState.testType === 'WAT' || appState.testType === 'SRT') {
         const input = document.getElementById(`${appState.testType.toLowerCase()}-input`);
         testResponses.push({
             prompt: testData[appState.currentItem],
             response: input.value
         });
-    }
-
-    if (appState.testType !== 'TAT') {
+        
         appState.currentItem++;
-    }
 
-    if (appState.testType !== 'TAT' && appState.currentItem < appState.totalItems) {
-         runPsyTestStage();
-    } else {
-        clearInterval(timerInterval);
-        showPsyReview();
-    }
+        if (appState.currentItem < appState.totalItems) {
+             runPsyTestStage(); // Continue to the next WAT/SRT item
+        } else {
+            // WAT/SRT complete
+            clearInterval(timerInterval);
+            showPsyReview();
+        }
+    } 
+    // TAT does nothing here; its stages advance via their own onComplete callback.
 }
 
 async function generateAndLoadTATImage(onLoadCallback) {
@@ -842,7 +859,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             link.addEventListener('click', (e) => {
                 e.preventDefault();
                 const targetScreen = link.dataset.screen;
-                if (!userId) return; // Must be logged in to navigate
+                if (!userId) {
+                    // If not logged in, prompt for login
+                    renderLoginScreen();
+                    showScreen('login-screen');
+                    return; 
+                }
                 
                 if (targetScreen === 'ppdt-settings-screen') {
                     renderPPDTSettingsScreen();
