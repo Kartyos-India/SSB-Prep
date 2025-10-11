@@ -45,7 +45,7 @@ async function queryStabilityAIImage(data, apiKey) {
         cfg_scale: 7,
         // FIX: Using the allowed landscape dimension (3:2 ratio)
         height: 768,   
-        width: 1152,  
+        width: 1344,  
         samples: 1,
         steps: 30, 
         sampler: "K_DPM_2_ANCESTRAL", 
@@ -142,3 +142,4 @@ export default async function handler(request, response) {
     return response.status(500).json({ error: `An internal server error occurred: ${error.message}` });
   }
 }
+
