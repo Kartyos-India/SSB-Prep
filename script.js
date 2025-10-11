@@ -309,6 +309,9 @@ function renderHomeScreen() {
 }
 
 
+// --- Unified Test State and Timers ---
+let timerInterval;
+
 // --- Helper Functions (used by all tests) ---
 function formatTime(s) {
     return `${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`;
@@ -342,29 +345,40 @@ function startTimer(duration, displayElement, onComplete) {
 let ppdtMediaRecorder, ppdtRecordedChunks = [], ppdtVideoUrl = null, ppdtCurrentImageUrl = '';
 
 
+/**
+ * FIX: Enhanced PPDT Review Controls to handle audio/video state cleanly.
+ */
 function setupPPDTVideoControls(reviewVideo) {
     const audioBtn = document.getElementById('review-audio-btn');
     const mutedBtn = document.getElementById('review-muted-btn');
     const bothBtn = document.getElementById('review-both-btn');
-    
-    reviewVideo.muted = false;
-    reviewVideo.removeAttribute('style'); 
+    const container = reviewVideo.closest('.bg-black.bg-opacity-20.p-6'); // Find the review panel
 
-    audioBtn.addEventListener('click', () => {
-        reviewVideo.muted = false;
-        reviewVideo.style.height = '0'; 
-    });
-    
-    mutedBtn.addEventListener('click', () => {
-        reviewVideo.muted = true;
-        reviewVideo.style.height = 'auto'; 
-    });
-    
-    bothBtn.addEventListener('click', () => {
-        reviewVideo.muted = false;
-        reviewVideo.style.height = 'auto'; 
-    });
+    // Initial state: Full Video
+    reviewVideo.muted = false;
+    reviewVideo.classList.remove('hidden');
+    if (container) container.classList.remove('audio-only');
+
+    // Helper to toggle visibility and muting
+    const setPlaybackMode = (muted, visible) => {
+        reviewVideo.muted = muted;
+        if (visible) {
+            reviewVideo.classList.remove('hidden');
+            if (container) container.classList.remove('audio-only');
+        } else {
+            reviewVideo.classList.add('hidden');
+            if (container) container.classList.add('audio-only');
+        }
+        
+        // Ensure playback continues when mode changes
+        reviewVideo.play();
+    };
+
+    audioBtn.addEventListener('click', () => setPlaybackMode(false, false));
+    mutedBtn.addEventListener('click', () => setPlaybackMode(true, true));
+    bothBtn.addEventListener('click', () => setPlaybackMode(false, true));
 }
+
 
 function showPPDTReview() {
     isTestActive = false; // Test stage is over, review is safe.
@@ -389,7 +403,7 @@ function showPPDTReview() {
         const blob = new Blob(ppdtRecordedChunks, { type: 'video/webm' });
         ppdtVideoUrl = URL.createObjectURL(blob);
         if(reviewVideo) reviewVideo.src = ppdtVideoUrl;
-        setupPPDTVideoControls(reviewVideo);
+        setupPPDTVideoControls(reviewVideo); // Setup controls after source is set
     } else {
         if(reviewVideo) reviewVideo.src = '';
         const controls = document.getElementById('review-controls');
