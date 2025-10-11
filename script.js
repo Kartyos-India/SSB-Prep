@@ -15,7 +15,7 @@ const authLoader = document.getElementById('auth-loader');
 const mainContent = document.getElementById('main-content');
 const topNav = document.getElementById('top-nav');
 const headerRight = document.getElementById('header-right');
-const arenaContainer = document.querySelector('.arena-container'); // Get the main container
+const arenaContainer = document.querySelector('.arena-container'); 
 
 // --- Test State Flags ---
 let isTestActive = false; // Tracks if a test is currently running
@@ -148,11 +148,11 @@ function renderLoginScreen() {
     
     loginScreen.innerHTML = `
         <div class="text-center mb-10">
-            <h2 class="text-4xl md:text-5xl font-bold text-white">WELCOME, CANDIDATE</h2>
-            <p class="text-gray-400 mt-2">Sign in to track your progress.</p>
+            <h2 class="text-4xl md:text-5xl font-bold text-gray-700">WELCOME, CANDIDATE</h2>
+            <p class="text-gray-500 mt-2">Sign in to track your progress.</p>
         </div>
         <div class="max-w-xs mx-auto space-y-4">
-            <button id="google-signin-btn" class="w-full glow-btn font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-3">
+            <button id="google-signin-btn" class="w-full primary-btn font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-3">
                 <svg class="w-6 h-6" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8c-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4C12.955 4 4 12.955 4 24s8.955 20 20 20s20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"></path><path fill="#FF3D00" d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4C16.318 4 9.656 8.337 6.306 14.691z"></path><path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238C29.211 35.091 26.715 36 24 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z"></path><path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303c-.792 2.237-2.231 4.166-4.087 5.571l6.19 5.238C42.012 36.49 44 30.823 44 24c0-1.341-.138-2.65-.389-3.917z"></path></svg>
                 Sign in with Google
             </button>
@@ -175,12 +175,19 @@ function handleAuthState(user) {
         userId = user.uid; // Set global userId
         if (headerRight) {
             headerRight.innerHTML = `
-                <span class="text-gray-400">${user.displayName || user.email}</span>
-                <button id="logout-btn" class="back-btn py-1 px-3 rounded-lg">Logout</button>
+                <span class="text-gray-200">${user.displayName || user.email}</span>
+                <button id="logout-btn" class="back-btn py-1 px-3 rounded-lg bg-white text-gray-700">Logout</button>
             `;
             document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
         }
-        if (topNav) topNav.classList.remove('hidden');
+        if (topNav) {
+            // Ensure nav is visible for PC and handled by JS for mobile (< sm)
+             if (window.innerWidth >= 640) {
+                 topNav.classList.remove('hidden');
+             } else {
+                 topNav.classList.add('hidden');
+             }
+        }
 
         // Render home screen if no other screen is active
         if (document.getElementById('login-screen').classList.contains('hidden') && 
@@ -193,7 +200,11 @@ function handleAuthState(user) {
         exitFullscreenProgrammatically(); 
         setupFullscreenListener(false); // Remove listener
 
-        if (headerRight) headerRight.innerHTML = '';
+        if (headerRight) headerRight.innerHTML = `
+            <button id="mobile-menu-btn" class="sm:hidden p-2 rounded-lg bg-blue-700 text-white">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+            </button>
+        `;
         if (topNav) topNav.classList.add('hidden');
         renderLoginScreen();
         showScreen('login-screen');
@@ -211,17 +222,13 @@ function addGoBackButton(screenElement, targetScreenFunction) {
     const header = screenElement.querySelector('.text-center');
     if (header) {
         const backButton = document.createElement('button');
-        backButton.className = 'back-btn py-1 px-3 rounded-lg absolute top-4 left-4 font-bold';
+        backButton.className = 'back-btn py-1 px-3 rounded-lg absolute top-4 left-4 font-bold bg-gray-200 text-gray-700';
         backButton.textContent = '← Back';
         backButton.addEventListener('click', targetScreenFunction);
         header.style.position = 'relative'; // Ensure header can position the button
         header.prepend(backButton);
     }
 }
-
-// --- Unified Test State and Timers ---
-let appState = {};
-let timerInterval;
 
 /**
  * Aborts the current test, cleans up resources, and returns to the appropriate menu.
@@ -261,7 +268,7 @@ function addAbortButtonToStage(screen) {
     
     if (h2) {
         const abortBtn = document.createElement('button');
-        abortBtn.className = 'back-btn py-1 px-3 rounded-lg text-sm ml-4 inline-block';
+        abortBtn.className = 'back-btn py-1 px-3 rounded-lg text-sm ml-4 inline-block primary-btn';
         abortBtn.textContent = 'Abort Test';
         abortBtn.addEventListener('click', abortTest);
         h2.appendChild(abortBtn); 
@@ -274,17 +281,17 @@ function renderHomeScreen() {
     homeScreen.innerHTML = `
         <div class="space-y-8">
             <div class="text-center">
-                <h2 class="text-4xl md:text-5xl font-bold text-white">CHOOSE YOUR TRAINING MODULE</h2>
-                <p class="text-gray-400 mt-2 max-w-2xl mx-auto">Select a module to begin your assessment and training.</p>
+                <h2 class="text-4xl md:text-5xl font-bold text-gray-700">CHOOSE YOUR TRAINING MODULE</h2>
+                <p class="text-gray-500 mt-2 max-w-2xl mx-auto">Select a module to begin your assessment and training.</p>
             </div>
             <div class="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto pt-8">
                 <a href="#" data-screen="ppdt-settings-screen" class="choice-card p-8 rounded-xl flex-1 flex flex-col justify-center items-center text-center no-underline">
-                    <h3 class="3xl font-bold text-white">SCREENING TEST</h3>
-                    <p class="text-gray-400 mt-2">Practice the Picture Perception & Discussion Test (PPDT).</p>
+                    <h3 class="text-3xl font-bold text-gray-700">SCREENING TEST</h3>
+                    <p class="text-gray-500 mt-2">Practice the Picture Perception & Discussion Test (PPDT).</p>
                 </a>
                 <a href="#" data-screen="psychology-screen" class="choice-card p-8 rounded-xl flex-1 flex flex-col justify-center items-center text-center no-underline">
-                    <h3 class="3xl font-bold text-white">PSYCHOLOGY TESTS</h3>
-                    <p class="text-gray-400 mt-2">Hone your skills in TAT, WAT, and SRT with AI feedback.</p>
+                    <h3 class="text-3xl font-bold text-gray-700">PSYCHOLOGY TESTS</h3>
+                    <p class="text-gray-500 mt-2">Hone your skills in TAT, WAT, and SRT with AI feedback.</p>
                 </a>
             </div>
         </div>`;
@@ -302,12 +309,17 @@ function renderHomeScreen() {
             } else if (targetScreen === 'past-tests-screen') {
                 showPastTests();
             }
+            // Close the mobile menu after selection
+            if (topNav && window.innerWidth < 640) topNav.classList.add('hidden');
         });
     });
     
     showScreen('home-screen');
 }
 
+
+// --- Unified Test State and Timers ---
+let timerInterval;
 
 // --- Helper Functions (used by all tests) ---
 function formatTime(s) {
@@ -450,7 +462,7 @@ async function beginPPDTNarration(duration, timerDisplay) {
                     }
                 });
             } else {
-                webcamStatus.innerHTML = "Recording... <button id='manual-stop' class='back-btn py-1 px-3 rounded-lg ml-3'>Stop Practice</button>";
+                webcamStatus.innerHTML = "Recording... <button id='manual-stop' class='back-btn py-1 px-3 rounded-lg ml-3 primary-btn'>Stop Practice</button>";
                 document.getElementById('manual-stop').addEventListener('click', () => {
                     if (ppdtMediaRecorder && ppdtMediaRecorder.state === 'recording') {
                         ppdtMediaRecorder.stop();
@@ -510,15 +522,15 @@ function runPPDTTestStage() {
     const stage = appState.stages[appState.currentItem];
     
     // --- FIX: Logic to correctly map PPDT stages to HTML templates ---
-    // The HTML you provided has: 'ppdt-picture-stage-template', 'ppdt-story-stage-template', and 'narration-stage-template'
-    const templateId = stage === 'narration' ? 'narration-stage-template' : `ppdt-${stage}-stage-template`;
+    // Use the exact IDs from the provided HTML: ppdt-picture-stage-template, ppdt-story-stage-template, narration-stage-template
+    const correctTemplateId = stage === 'narration' ? 'narration-stage-template' : `ppdt-${stage}-stage-template`;
     // --- End FIX ---
     
-    const template = getTemplateContent(templateId);
+    const template = getTemplateContent(correctTemplateId);
     
     // CRITICAL FIX: Check for null template before appending
     if (!template) {
-         screen.innerHTML = `<div class="text-center mt-20"><p class="text-red-500 font-semibold">Error: Test stage template (${templateId}) not found in HTML. Check HTML structure.</p></div>`;
+         screen.innerHTML = `<div class="text-center mt-20"><p class="text-red-500 font-semibold">Error: Test stage template (${correctTemplateId}) not found in HTML.</p></div>`;
          return; 
     }
     
@@ -544,7 +556,7 @@ function runPPDTTestStage() {
                     startTimer(duration, timerDisplay, () => { appState.currentItem++; runPPDTTestStage(); });
                 } else {
                     const imageContainer = document.getElementById('image-container');
-                    imageContainer.innerHTML += `<div class="absolute bottom-6 right-6"><button id="advance-btn" class="glow-btn font-bold py-2 px-6 rounded-lg">Proceed to Story</button></div>`;
+                    imageContainer.innerHTML += `<div class="absolute bottom-6 right-6"><button id="advance-btn" class="primary-btn font-bold py-2 px-6 rounded-lg">Proceed to Story</button></div>`;
                     document.getElementById('advance-btn').addEventListener('click', () => { appState.currentItem++; runPPDTTestStage(); });
                 }
             });
@@ -554,8 +566,8 @@ function runPPDTTestStage() {
             if (appState.timed === 'true') {
                 startTimer(duration, timerDisplay, () => { appState.currentItem++; runPPDTTestStage(); });
             } else {
-                const storyContainer = screen.querySelector('.bg-black.bg-opacity-20.p-8');
-                storyContainer.innerHTML += `<div class="mt-8"><button id="advance-btn" class="glow-btn font-bold py-3 px-8 rounded-lg">Finished Writing (Proceed to Narration)</button></div>`;
+                const storyContainer = screen.querySelector('.bg-gray-100.p-8');
+                storyContainer.innerHTML += `<div class="mt-8"><button id="advance-btn" class="primary-btn font-bold py-3 px-8 rounded-lg">Finished Writing (Proceed to Narration)</button></div>`;
                 document.getElementById('advance-btn').addEventListener('click', () => { appState.currentItem++; runPPDTTestStage(); });
             }
             break;
@@ -612,7 +624,7 @@ function renderPPDTSettingsScreen() {
         });
     } else {
         // Fallback and error message if template is missing
-         settingsScreen.innerHTML = `<div class="text-center mt-20"><p class="text-red-500 font-semibold">Error: PPDT Settings Template Missing. Check HTML structure.</p><button class="glow-btn mt-4" onclick="renderHomeScreen()">Go Home</button></div>`;
+         settingsScreen.innerHTML = `<div class="text-center mt-20"><p class="text-red-500 font-semibold">Error: PPDT Settings Template Missing. Check HTML structure.</p><button class="primary-btn mt-4" onclick="renderHomeScreen()">Go Home</button></div>`;
     }
     // --- End FIX ---
     
@@ -703,7 +715,7 @@ async function initializePsyTest(config) {
         }
         runPsyTestStage();
     } catch (error) {
-        screen.innerHTML = `<div class="text-center mt-20"><p class="text-red-500 text-lg font-semibold">Failed to Prepare Test</p><p class="text-gray-400 mt-2">${error.message}</p><button id="psy-back-btn" class="glow-btn font-bold py-2 px-6 rounded-lg mt-8">Go Back</button></div>`;
+        screen.innerHTML = `<div class="text-center mt-20"><p class="text-red-500 text-lg font-semibold">Failed to Prepare Test</p><p class="text-gray-400 mt-2">${error.message}</p><button id="psy-back-btn" class="primary-btn font-bold py-2 px-6 rounded-lg mt-8">Go Back</button></div>`;
         document.getElementById('psy-back-btn').addEventListener('click', renderPsychologyScreen);
     }
 }
@@ -776,7 +788,7 @@ function runPsyTestStage() {
             startTimer(stageConfig.duration, timerDisplay, stageConfig.onComplete);
         });
     } else {
-        setupPsyStageContent(stageConfig);
+        setupPsyTestStageContent(stageConfig);
         startTimer(stageConfig.duration, timerDisplay, stageConfig.onComplete); 
     }
 }
@@ -1011,10 +1023,10 @@ async function showPastTests() {
             testEl.className = 'choice-card p-4 flex justify-between items-center cursor-pointer';
             testEl.innerHTML = `
                 <div>
-                    <h4 class="text-xl font-bold text-white">${test.testType}</h4>
-                    <p class="text-sm text-gray-400">${d.toLocaleString()}</p>
+                    <h4 class="text-xl font-bold text-gray-700">${test.testType}</h4>
+                    <p class="text-sm text-gray-500">${d.toLocaleString()}</p>
                 </div>
-                <button class="glow-btn text-sm py-2 px-4 rounded-lg">View Report</button>
+                <button class="primary-btn text-sm py-2 px-4 rounded-lg">View Report</button>
             `;
             testEl.addEventListener('click', () => viewPastTest(doc.id));
             pastTestsList.appendChild(testEl);
@@ -1045,9 +1057,9 @@ async function viewPastTest(testId) {
             
             const list = document.getElementById('review-list');
             list.innerHTML = test.responses.map((item, index) => `
-                <div class="p-4 bg-gray-900 rounded-lg border border-gray-700">
-                    <p class="text-gray-400 font-semibold">${index + 1}. ${item.prompt}</p>
-                    <p class="text-white mt-2 pl-4 border-l-2 border-blue-500">${item.response || 'No response.'}</p>
+                <div class="p-4 bg-white rounded-lg border border-gray-300">
+                    <p class="text-gray-500 font-semibold">${index + 1}. ${item.prompt}</p>
+                    <p class="text-gray-800 mt-2 pl-4 border-l-2 border-blue-500">${item.response || 'No response.'}</p>
                 </div>
             `).join('');
 
@@ -1096,10 +1108,20 @@ document.addEventListener('DOMContentLoaded', async () => {
                 } else if (targetScreen === 'home-screen') {
                     renderHomeScreen();
                 }
+                // Close the mobile menu after selection
+                if (topNav && window.innerWidth < 640) topNav.classList.add('hidden');
             });
         });
 
-        // 3. Start Authentication Listener
+        // 3. Setup Mobile Menu Toggle
+        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+        if (mobileMenuBtn) {
+            mobileMenuBtn.addEventListener('click', () => {
+                topNav.classList.toggle('hidden');
+            });
+        }
+        
+        // 4. Start Authentication Listener
         onAuthStateChanged(auth, handleAuthState);
     }
 });
