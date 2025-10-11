@@ -309,6 +309,9 @@ function renderHomeScreen() {
 }
 
 
+// --- Unified Test State and Timers ---
+let timerInterval;
+
 // --- Helper Functions (used by all tests) ---
 function formatTime(s) {
     return `${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`;
@@ -580,25 +583,31 @@ function renderPPDTSettingsScreen() {
 
     const settingsScreen = document.getElementById('ppdt-settings-screen');
     const template = getTemplateContent('ppdt-settings-screen-template');
+
+    // --- FIX: Safely render template content ---
     if (template) {
         settingsScreen.innerHTML = ''; 
         settingsScreen.appendChild(template);
-    }
     
-    // Add Back Button
-    addGoBackButton(settingsScreen, renderHomeScreen);
+        // Add Back Button (Executed ONLY if template content exists)
+        addGoBackButton(settingsScreen, renderHomeScreen);
 
-    showScreen('ppdt-settings-screen');
-    
-    settingsScreen.querySelectorAll('[data-test-type="PPDT"]').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const config = { 
-                ...btn.dataset, 
-                timed: btn.dataset.timed || 'false' 
-            };
-            initializePPDTTest(config);
+        settingsScreen.querySelectorAll('[data-test-type="PPDT"]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const config = { 
+                    ...btn.dataset, 
+                    timed: btn.dataset.timed || 'false' 
+                };
+                initializePPDTTest(config);
+            });
         });
-    });
+    } else {
+        // Fallback and error message if template is missing
+         settingsScreen.innerHTML = `<div class="text-center mt-20"><p class="text-red-500 font-semibold">Error: PPDT Settings Template Missing. Check HTML structure.</p><button class="glow-btn mt-4" onclick="renderHomeScreen()">Go Home</button></div>`;
+    }
+    // --- End FIX ---
+    
+    showScreen('ppdt-settings-screen');
 }
 
 
@@ -1100,4 +1109,3 @@ window.addEventListener('beforeunload', (e) => {
         return message;
     }
 });
-
