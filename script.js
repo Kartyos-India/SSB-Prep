@@ -39,7 +39,22 @@ function enterFullscreen() {
 }
 
 /**
- * Event handler that aborts the test if the user exits fullscreen.
+ * Programmatically exits fullscreen mode.
+ */
+function exitFullscreenProgrammatically() {
+    if (document.exitFullscreen) {
+        document.exitFullscreen();
+    } else if (document.mozCancelFullScreen) { 
+        document.mozCancelFullScreen();
+    } else if (document.webkitExitFullscreen) { 
+        document.webkitExitFullscreen();
+    } else if (document.msExitFullscreen) {
+        document.msExitFullscreen();
+    }
+}
+
+/**
+ * Event handler that aborts the test if the user exits fullscreen manually.
  */
 function handleFullscreenChange() {
     // Check if the document is NOT in fullscreen mode AND the test is active
@@ -174,6 +189,10 @@ function handleAuthState(user) {
         }
         
     } else {
+        // FIX: Ensure fullscreen is canceled when logging out
+        exitFullscreenProgrammatically(); 
+        setupFullscreenListener(false); // Remove listener
+
         if (headerRight) headerRight.innerHTML = '';
         if (topNav) topNav.classList.add('hidden');
         renderLoginScreen();
@@ -217,18 +236,9 @@ function abortTest() {
         ppdtMediaStream = null;
     }
 
-    // Exit Fullscreen if active
-    if (document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement) {
-        if (document.exitFullscreen) {
-            document.exitFullscreen();
-        } else if (document.mozCancelFullScreen) { 
-            document.mozCancelFullScreen();
-        } else if (document.webkitExitFullscreen) { 
-            document.webkitExitFullscreen();
-        } else if (document.msExitFullscreen) {
-            document.msExitFullscreen();
-        }
-    }
+    // Exit Fullscreen mode
+    exitFullscreenProgrammatically();
+    setupFullscreenListener(false); // Remove listener
     
     // Show navigation bar again
     if (topNav) topNav.classList.remove('hidden');
@@ -243,7 +253,6 @@ function abortTest() {
         renderHomeScreen();
     }
 }
-
 
 // Function to inject the Abort button into the current test stage
 function addAbortButtonToStage(screen) {
@@ -299,10 +308,6 @@ function renderHomeScreen() {
     showScreen('home-screen');
 }
 
-
-// --- Unified Test State and Timers ---
-appState = {};
-timerInterval;
 
 // --- Helper Functions (used by all tests) ---
 function formatTime(s) {
@@ -365,6 +370,7 @@ function showPPDTReview() {
     isTestActive = false; // Test stage is over, review is safe.
     if (topNav) topNav.classList.remove('hidden'); // Show navbar on review screen
     setupFullscreenListener(false); // Remove fullscreen listener
+    exitFullscreenProgrammatically(); // Exit fullscreen on test completion
     
     showScreen('review-screen');
     
@@ -566,6 +572,7 @@ function renderPPDTSettingsScreen() {
     isTestActive = false;
     if (topNav) topNav.classList.remove('hidden'); // Show navbar
     setupFullscreenListener(false); // Remove listener
+    exitFullscreenProgrammatically(); // Exit fullscreen on menu return
 
     const settingsScreen = document.getElementById('ppdt-settings-screen');
     const template = getTemplateContent('ppdt-settings-screen-template');
@@ -833,6 +840,7 @@ function showPsyReview() {
     isTestActive = false; // Test is complete and review screen is safe.
     if (topNav) topNav.classList.remove('hidden'); // Show navbar on review screen
     setupFullscreenListener(false); // Remove fullscreen listener
+    exitFullscreenProgrammatically(); // Exit fullscreen on test completion
 
     showScreen('review-screen');
     const reviewContainer = document.getElementById('review-screen');
@@ -1088,4 +1096,3 @@ window.addEventListener('beforeunload', (e) => {
         return message;
     }
 });
-
