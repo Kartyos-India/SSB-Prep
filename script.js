@@ -309,6 +309,9 @@ function renderHomeScreen() {
 }
 
 
+// --- Unified Test State and Timers ---
+let timerInterval;
+
 // --- Helper Functions (used by all tests) ---
 function formatTime(s) {
     return `${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`;
@@ -508,8 +511,27 @@ function runPPDTTestStage() {
     const screen = document.getElementById('test-screen');
     screen.innerHTML = '';
     const stage = appState.stages[appState.currentItem];
-    const templateId = `ppdt-${stage}-stage-template`;
-    const template = getTemplateContent(templateId);
+    
+    // --- FIX: Use correct, existing template IDs from HTML ---
+    const templateId = {
+        'picture': 'ppdt-picture-stage-template', // This one has the prefix in HTML
+        'story': 'ppdt-story-stage-template',    // This one has the prefix in HTML
+        'narration': 'narration-stage-template', // This one does NOT have the prefix in HTML
+    }[stage];
+    // NOTE: Based on the HTML you provided, the IDs are mixed. Let's fix the JS to match the HTML strictly.
+    const correctTemplateId = stage === 'narration' ? 'narration-stage-template' : `ppdt-${stage}-stage-template`;
+    // --- End FIX ---
+    
+    const template = getTemplateContent(correctTemplateId);
+    
+    // CRITICAL FIX: Check for null template before appending
+    if (!template) {
+         screen.innerHTML = `<div class="text-center mt-20"><p class="text-red-500 font-semibold">Error: Test stage template (${correctTemplateId}) not found in HTML.</p></div>`;
+         // We do not abortTest() here because we need to clear the current screen before aborting.
+         // Let's rely on the natural flow of the calling function to handle the error screen.
+         return; 
+    }
+    
     screen.appendChild(template);
     
     addAbortButtonToStage(screen); // Add Abort Button
@@ -769,7 +791,7 @@ function runPsyTestStage() {
     }
 }
 
-function setupPsyStageContent(config) {
+function setupPsyTestStageContent(config) {
     switch(appState.testType) {
         case 'TAT':
             if (config.isBlank) {
@@ -1106,4 +1128,3 @@ window.addEventListener('beforeunload', (e) => {
         return message;
     }
 });
-
