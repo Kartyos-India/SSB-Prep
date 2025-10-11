@@ -308,6 +308,10 @@ function renderHomeScreen() {
     showScreen('home-screen');
 }
 
+
+// --- Unified Test State and Timers ---
+let timerInterval;
+
 // --- Helper Functions (used by all tests) ---
 function formatTime(s) {
     return `${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`;
@@ -341,29 +345,22 @@ function startTimer(duration, displayElement, onComplete) {
 let ppdtMediaRecorder, ppdtRecordedChunks = [], ppdtVideoUrl = null, ppdtCurrentImageUrl = '';
 
 
-/**
- * FIX: Enhanced PPDT Review Controls to handle audio/video state cleanly.
- */
 function setupPPDTVideoControls(reviewVideo) {
     const audioBtn = document.getElementById('review-audio-btn');
     const mutedBtn = document.getElementById('review-muted-btn');
     const bothBtn = document.getElementById('review-both-btn');
-    const container = reviewVideo.closest('.bg-black.bg-opacity-20.p-6'); // Find the review panel
-
-    // Initial state: Full Video
+    
     reviewVideo.muted = false;
-    reviewVideo.classList.remove('hidden');
-    if (container) container.classList.remove('audio-only');
+    reviewVideo.removeAttribute('style'); 
 
     // Helper to toggle visibility and muting
     const setPlaybackMode = (muted, visible) => {
         reviewVideo.muted = muted;
         if (visible) {
             reviewVideo.classList.remove('hidden');
-            if (container) container.classList.remove('audio-only');
         } else {
+            // Use CSS to hide video feed but keep audio playing
             reviewVideo.classList.add('hidden');
-            if (container) container.classList.add('audio-only');
         }
         
         // Ensure playback continues when mode changes
@@ -374,7 +371,6 @@ function setupPPDTVideoControls(reviewVideo) {
     mutedBtn.addEventListener('click', () => setPlaybackMode(true, true));
     bothBtn.addEventListener('click', () => setPlaybackMode(false, true));
 }
-
 
 function showPPDTReview() {
     isTestActive = false; // Test stage is over, review is safe.
@@ -439,6 +435,7 @@ async function beginPPDTNarration(duration, timerDisplay) {
             };
 
             ppdtMediaRecorder.onstop = () => {
+                // Ensure all tracks are stopped ONLY AFTER the mediaRecorder is finished
                 if (ppdtMediaStream) {
                     ppdtMediaStream.getTracks().forEach(track => track.stop());
                     ppdtMediaStream = null;
@@ -461,6 +458,7 @@ async function beginPPDTNarration(duration, timerDisplay) {
                     if (ppdtMediaRecorder && ppdtMediaRecorder.state === 'recording') {
                         ppdtMediaRecorder.stop();
                     } else {
+                         // Fallback for immediate stop if recording state is missed
                          if (ppdtMediaStream) ppdtMediaStream.getTracks().forEach(track => track.stop());
                          ppdtMediaStream = null;
                          showPPDTReview(); 
@@ -472,7 +470,6 @@ async function beginPPDTNarration(duration, timerDisplay) {
     } catch (err) {
         console.error("Webcam/Mic access error:", err);
         webcamStatus.textContent = "Could not access webcam or microphone. Please check browser permissions and refresh.";
-        // CRITICAL FIX: If media access fails, abort the test to return to a stable menu.
         abortTest(); 
     }
 }
@@ -553,8 +550,6 @@ function runPPDTTestStage() {
                 document.getElementById('advance-btn').addEventListener('click', () => { appState.currentItem++; runPPDTTestStage(); });
             }
             break;
-        // FIND THIS SECTION in script.js (inside runPPDTTestStage, case 'narration'):
-
         case 'narration':
             duration = 60;
             beginPPDTNarration(duration, timerDisplay); 
@@ -674,7 +669,7 @@ async function initializePsyTest(config) {
             }
             const data = await response.json();
             
-            // --- AI Response Robustness Fix ---
+            // --- AI Response Robustness Check ---
             if (appState.testType === 'WAT') {
                 if (!Array.isArray(data) || typeof data[0] !== 'string' || data.length < 5) {
                     throw new Error("AI returned malformed or non-word data. (Expected a list of words, got SRT prompt or invalid JSON.)");
@@ -684,7 +679,7 @@ async function initializePsyTest(config) {
                     throw new Error("AI returned malformed data for SRT. (Expected a list of situations.)");
                 }
             }
-            // --- End AI Response Robustness Fix ---
+            // --- End AI Response Robustness Check ---
 
             testData = data; 
             appState.totalItems = testData.length;
@@ -1108,6 +1103,3 @@ window.addEventListener('beforeunload', (e) => {
         return message;
     }
 });
-
-
-
