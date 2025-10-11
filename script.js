@@ -15,10 +15,58 @@ const authLoader = document.getElementById('auth-loader');
 const mainContent = document.getElementById('main-content');
 const topNav = document.getElementById('top-nav');
 const headerRight = document.getElementById('header-right');
+const arenaContainer = document.querySelector('.arena-container'); // Get the main container
 
 // --- Test State Flags ---
 let isTestActive = false; // Tracks if a test is currently running
 let ppdtMediaStream = null; // Reference to the PPDT media stream
+
+// --- Fullscreen Utility Functions ---
+
+/**
+ * Attempts to enter fullscreen mode for the document body.
+ */
+function enterFullscreen() {
+    if (document.documentElement.requestFullscreen) {
+        document.documentElement.requestFullscreen();
+    } else if (document.documentElement.mozRequestFullScreen) { // Firefox
+        document.documentElement.mozRequestFullScreen();
+    } else if (document.documentElement.webkitRequestFullscreen) { // Chrome, Safari and Opera
+        document.documentElement.webkitRequestFullscreen();
+    } else if (document.documentElement.msRequestFullscreen) { // IE/Edge
+        document.documentElement.msRequestFullscreen();
+    }
+}
+
+/**
+ * Event handler that aborts the test if the user exits fullscreen.
+ */
+function handleFullscreenChange() {
+    // Check if the document is NOT in fullscreen mode AND the test is active
+    if (isTestActive && !document.fullscreenElement && !document.webkitFullscreenElement && !document.mozFullScreenElement && !document.msFullscreenElement) {
+        alert("Warning: Exiting full screen mode has aborted the test. Please use the 'Abort Test' button if you wish to exit without losing data.");
+        abortTest(); 
+    }
+}
+
+/**
+ * Sets up and removes the fullscreen change listener.
+ */
+function setupFullscreenListener(shouldAdd) {
+    // Ensure cleanup happens first
+    document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
+    document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
+
+    if (shouldAdd) {
+        document.addEventListener('fullscreenchange', handleFullscreenChange);
+        document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+        document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+        document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+    }
+}
+
 
 // --- Helper Functions (from shared.js) ---
 
@@ -152,6 +200,10 @@ function addGoBackButton(screenElement, targetScreenFunction) {
     }
 }
 
+// --- Unified Test State and Timers ---
+let appState = {};
+let timerInterval;
+
 /**
  * Aborts the current test, cleans up resources, and returns to the appropriate menu.
  */
@@ -165,6 +217,23 @@ function abortTest() {
         ppdtMediaStream = null;
     }
 
+    // Exit Fullscreen if active
+    if (document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement) {
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        } else if (document.mozCancelFullScreen) { 
+            document.mozCancelFullScreen();
+        } else if (document.webkitExitFullscreen) { 
+            document.webkitExitFullscreen();
+        } else if (document.msExitFullscreen) {
+            document.msExitFullscreen();
+        }
+    }
+    
+    // Show navigation bar again
+    if (topNav) topNav.classList.remove('hidden');
+
+
     // Determine the correct menu to return to
     if (appState.testType === 'PPDT') {
         renderPPDTSettingsScreen();
@@ -174,6 +243,7 @@ function abortTest() {
         renderHomeScreen();
     }
 }
+
 
 // Function to inject the Abort button into the current test stage
 function addAbortButtonToStage(screen) {
@@ -293,6 +363,9 @@ function setupPPDTVideoControls(reviewVideo) {
 
 function showPPDTReview() {
     isTestActive = false; // Test stage is over, review is safe.
+    if (topNav) topNav.classList.remove('hidden'); // Show navbar on review screen
+    setupFullscreenListener(false); // Remove fullscreen listener
+    
     showScreen('review-screen');
     
     const reviewScreen = document.getElementById('review-screen');
@@ -353,6 +426,7 @@ async function beginPPDTNarration(duration, timerDisplay) {
                 // Ensure all tracks are stopped ONLY AFTER the mediaRecorder is finished
                 if (ppdtMediaStream) {
                     ppdtMediaStream.getTracks().forEach(track => track.stop());
+                    ppdtMediaStream = null;
                 }
                 showPPDTReview();
             };
@@ -374,6 +448,7 @@ async function beginPPDTNarration(duration, timerDisplay) {
                     } else {
                          // Fallback for immediate stop if recording state is missed
                          if (ppdtMediaStream) ppdtMediaStream.getTracks().forEach(track => track.stop());
+                         ppdtMediaStream = null;
                          showPPDTReview(); 
                     }
                 });
@@ -471,6 +546,10 @@ function runPPDTTestStage() {
 
 function initializePPDTTest(config) {
     isTestActive = true; // Set flag to true when test starts
+    if (topNav) topNav.classList.add('hidden'); // Hide navbar during test
+    setupFullscreenListener(true); // Add fullscreen listener
+    enterFullscreen(); // Request fullscreen
+
     appState = {
         ...config,
         userId,
@@ -484,6 +563,10 @@ function initializePPDTTest(config) {
 }
 
 function renderPPDTSettingsScreen() {
+    isTestActive = false;
+    if (topNav) topNav.classList.remove('hidden'); // Show navbar
+    setupFullscreenListener(false); // Remove listener
+
     const settingsScreen = document.getElementById('ppdt-settings-screen');
     const template = getTemplateContent('ppdt-settings-screen-template');
     if (template) {
@@ -538,11 +621,15 @@ function renderPsychologyScreen() {
 
 async function initializePsyTest(config) {
     isTestActive = true; // Set flag to true when test starts
+    if (topNav) topNav.classList.add('hidden'); // Hide navbar during test
+    setupFullscreenListener(true); // Add fullscreen listener
+    enterFullscreen(); // Request fullscreen
+
     appState = {
         ...config,
         userId,
         currentItem: 0,
-        // Psychology tests are always timed=true (timers visible or not)
+        // Psychology tests are always timed=true
         timed: 'true' 
     };
     testResponses = [];
@@ -570,12 +657,10 @@ async function initializePsyTest(config) {
             
             // --- AI Response Robustness Fix ---
             if (appState.testType === 'WAT') {
-                // Ensure data is an array of strings (the words)
                 if (!Array.isArray(data) || typeof data[0] !== 'string' || data.length < 5) {
                     throw new Error("AI returned malformed or non-word data. (Expected a list of words, got SRT prompt or invalid JSON.)");
                 }
             } else if (appState.testType === 'SRT') {
-                 // Ensure data is an array of strings (the situations)
                  if (!Array.isArray(data) || typeof data[0] !== 'string' || data.length < 5) {
                     throw new Error("AI returned malformed data for SRT. (Expected a list of situations.)");
                 }
@@ -746,6 +831,9 @@ async function generateAndLoadTATImage(onLoadCallback) {
 
 function showPsyReview() {
     isTestActive = false; // Test is complete and review screen is safe.
+    if (topNav) topNav.classList.remove('hidden'); // Show navbar on review screen
+    setupFullscreenListener(false); // Remove fullscreen listener
+
     showScreen('review-screen');
     const reviewContainer = document.getElementById('review-screen');
     reviewContainer.innerHTML = '';
@@ -762,7 +850,6 @@ function showPsyReview() {
         document.getElementById('review-title').textContent = `${appState.testType} Review`;
         const list = document.getElementById('review-list');
         
-        // --- Review Screen Robustness Fix ---
         if (testResponses.length === 0) {
             list.innerHTML = `<p class="text-center text-lg text-red-400">No responses were recorded for this test.</p>`;
         } else {
@@ -773,7 +860,6 @@ function showPsyReview() {
                 </div>
             `).join('');
         }
-        // --- End Review Screen Robustness Fix ---
     }
 
     document.getElementById('restart-btn').addEventListener('click', renderPsychologyScreen);
