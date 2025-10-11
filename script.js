@@ -301,8 +301,8 @@ function renderHomeScreen() {
 
 
 // --- Unified Test State and Timers ---
-let appState = {};
-let timerInterval;
+appState = {};
+timerInterval;
 
 // --- Helper Functions (used by all tests) ---
 function formatTime(s) {
@@ -1088,3 +1088,4 @@ window.addEventListener('beforeunload', (e) => {
         return message;
     }
 });
+
