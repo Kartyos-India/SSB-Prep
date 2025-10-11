@@ -443,7 +443,6 @@ async function beginPPDTNarration(duration, timerDisplay) {
             };
 
             ppdtMediaRecorder.onstop = () => {
-                // Ensure all tracks are stopped ONLY AFTER the mediaRecorder is finished
                 if (ppdtMediaStream) {
                     ppdtMediaStream.getTracks().forEach(track => track.stop());
                     ppdtMediaStream = null;
@@ -466,7 +465,6 @@ async function beginPPDTNarration(duration, timerDisplay) {
                     if (ppdtMediaRecorder && ppdtMediaRecorder.state === 'recording') {
                         ppdtMediaRecorder.stop();
                     } else {
-                         // Fallback for immediate stop if recording state is missed
                          if (ppdtMediaStream) ppdtMediaStream.getTracks().forEach(track => track.stop());
                          ppdtMediaStream = null;
                          showPPDTReview(); 
@@ -478,6 +476,8 @@ async function beginPPDTNarration(duration, timerDisplay) {
     } catch (err) {
         console.error("Webcam/Mic access error:", err);
         webcamStatus.textContent = "Could not access webcam or microphone. Please check browser permissions and refresh.";
+        // CRITICAL FIX: If media access fails, abort the test to return to a stable menu.
+        abortTest(); 
     }
 }
 
@@ -1112,4 +1112,5 @@ window.addEventListener('beforeunload', (e) => {
         return message;
     }
 });
+
 
