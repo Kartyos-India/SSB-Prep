@@ -308,10 +308,6 @@ function renderHomeScreen() {
     showScreen('home-screen');
 }
 
-
-// --- Unified Test State and Timers ---
-let timerInterval;
-
 // --- Helper Functions (used by all tests) ---
 function formatTime(s) {
     return `${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`;
@@ -1112,5 +1108,6 @@ window.addEventListener('beforeunload', (e) => {
         return message;
     }
 });
+
 
 
