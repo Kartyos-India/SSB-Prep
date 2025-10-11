@@ -4,199 +4,210 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SSB Psychology Platform</title>
+    <!-- Load Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     
     <style>
         /* --- Consolidated styles.css content --- */
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #0a0a0f;
-            background-image: url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"%3E%3Cg fill="%231a1a2e" fill-opacity="0.4"%3E%3Crect x="0" y="0" width="100" height="1"/%3E%3Crect x="0" y="0" width="1" height="100"/%3E%3C/g%3E%3C/svg%3E');
-            color: #e5e7eb;
+        :root {
+            --primary-blue: #1E3A8A; /* Darker Blue */
+            --accent-blue: #3B82F6; /* Brighter Blue */
+            --background-dark: #0f172a;
+            --card-light: #F8F9FA; /* Light card background */
+            --text-dark: #1F2937;
         }
 
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--primary-blue);
+            color: var(--text-dark);
+            background-image: url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"%3E%3Cg fill="%23254C91" fill-opacity="0.4"%3E%3Crect x="0" y="0" width="100" height="1"/%3E%3Crect x="0" y="0" width="1" height="100"/%3E%3C/g%3E%3C/svg%3E');
+        }
+        
         .arena-container {
-            background: #10121a;
-            border: 1px solid #2a2f4c;
+            background: var(--card-light);
             border-radius: 1.5rem;
-            box-shadow: 0 0 40px rgba(78, 115, 248, 0.2), inset 0 0 15px rgba(26, 26, 46, 0.8);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
             padding: 2rem;
             position: relative;
-            /* Ensure container scales correctly on narrow screens */
             max-width: 100%;
-            margin-left: 0.5rem; 
-            margin-right: 0.5rem; 
         }
 
         h1, h2, h3 {
             font-family: 'Orbitron', sans-serif;
-            text-shadow: 0 0 8px rgba(78, 115, 248, 0.5);
+            color: var(--primary-blue);
         }
-
-        .glow-btn {
-            background: linear-gradient(45deg, #4e73f8, #6d28d9);
-            border: none;
+        
+        /* New aesthetic button style */
+        .primary-btn {
+            background-color: var(--accent-blue);
             color: white;
-            transition: all 0.3s ease;
-            box-shadow: 0 0 15px rgba(78, 115, 248, 0.4);
-            position: relative; 
-            overflow: hidden; 
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 10px rgba(59, 130, 246, 0.5);
+            border: none;
         }
 
-        .glow-btn:hover:not(:disabled) {
-            transform: translateY(-3px);
-            box-shadow: 0 0 25px rgba(78, 115, 248, 0.7);
+        .primary-btn:hover:not(:disabled) {
+            background-color: #2563EB;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(59, 130, 246, 0.7);
         }
 
-        .glow-btn:disabled {
-            background: #374151;
+        .primary-btn:disabled {
+            background-color: #9CA3AF;
             cursor: not-allowed;
             box-shadow: none;
         }
-
+        
         .choice-card {
-            border: 2px solid #2a2f4c;
-            background: rgba(26, 26, 46, 0.5);
-            transition: all 0.3s ease;
-            text-decoration: none;
+            border: 1px solid #D1D5DB;
+            background: white;
+            transition: all 0.2s ease;
+            color: var(--text-dark);
+            border-radius: 0.75rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         }
 
         .choice-card:hover {
-             border-color: #4e73f8;
-             background: rgba(78, 115, 248, 0.1);
-        }
-
-        .loader {
-            width: 100%; height: 8px; background-color: #1a1a2e; border-radius: 9999px; overflow: hidden; position: relative;
-        }
-
-        .loader::after {
-            content: ''; 
-            position: absolute; 
-            top: 0; 
-            left: 0; 
-            height: 100%; 
-            width: 20%;
-            background: #4e73f8; 
-            box-shadow: 0 0 10px #4e73f8;
-            border-radius: 9999px; 
-            animation: loading-animation 2s infinite linear;
-        }
-
-        @keyframes loading-animation {
-            0% { transform: translateX(-100%); } 
-            100% { transform: translateX(500%); }
-        }
-
-        .nav-link {
-            padding: 0.5rem 1rem;
-            border-radius: 0.5rem;
-            transition: background-color 0.2s;
-            cursor: pointer;
-            text-decoration: none;
-            color: #e5e7eb;
-        }
-
-        .nav-link:hover, .nav-link.active {
-            background-color: rgba(78, 115, 248, 0.2);
+             border-color: var(--accent-blue);
+             box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
         }
 
         .back-btn {
-            background: rgba(42, 47, 76, 0.5);
-            border: 1px solid #2a2f4c;
+            background: #E5E7EB;
+            border: 1px solid #D1D5DB;
+            color: var(--text-dark);
+        }
+        
+        /* Specific header style to match image */
+        #header-bar {
+            background-color: var(--primary-blue);
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 1rem 1rem 0 0;
+            margin: -2rem -2rem 2rem -2rem; /* Pull into container's padding */
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
-        .arena-container::before, .arena-container::after {
-            content: '';
+        /* Mobile Dropdown Menu Styles */
+        #top-nav {
+            display: none; 
             position: absolute;
-            height: 2px;
-            width: 30%;
-            background: linear-gradient(90deg, transparent, #4e73f8, transparent);
-            animation: pulse-glow 4s infinite ease-in-out;
+            top: 100%; 
+            left: 0;
+            right: 0;
+            background: var(--accent-blue);
+            z-index: 20;
+            padding: 0.5rem 0;
+            border-bottom-left-radius: 1.5rem;
+            border-bottom-right-radius: 1.5rem;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+            flex-direction: column;
+            gap: 0;
         }
-        .arena-container::before { top: 0; left: 50%; transform: translateX(-50%); }
-        .arena-container::after { bottom: 0; left: 50%; transform: translateX(-50%); }
-
-        @keyframes pulse-glow {
-            0%, 100% { opacity: 0.5; }
-            50% { opacity: 1; }
+        
+        .nav-link {
+            padding: 0.75rem 1.5rem;
+            color: white; 
+            text-align: left;
+            transition: background-color 0.1s;
+        }
+        
+        .nav-link:hover, .nav-link.active {
+            background-color: #2563EB; /* Darker shade of blue on hover/active */
+            border-radius: 0;
+        }
+        
+        /* Show the links horizontally on PC/Desktop */
+        @media (min-width: 640px) { /* sm breakpoint */
+            #top-nav {
+                display: flex !important;
+                position: static;
+                margin: 0;
+                padding: 0;
+                background: transparent; /* Top Nav should blend with card light background */
+                box-shadow: none;
+                flex-direction: row;
+                gap: 1rem;
+                justify-content: flex-start;
+            }
+            #top-nav .nav-link {
+                color: var(--text-dark); /* Links should be dark text on light card background */
+                padding: 0.5rem 1rem;
+                background: transparent;
+            }
+            #top-nav .nav-link:hover, #top-nav .nav-link.active {
+                background-color: #E5E7EB;
+                color: var(--accent-blue);
+            }
+            #mobile-menu-btn {
+                display: none !important;
+            }
         }
 
-        .glow-btn::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 300%;
-            height: 300%;
-            background: rgba(255, 255, 255, 0.1);
-            transform: translate(-50%, -50%) rotate(45deg);
-            transition: all 0.5s ease;
-        }
-
-        .glow-btn:hover::before {
-            width: 0;
-            height: 0;
-        }
-
-        .video-feed { transform: scaleX(-1); }
-
-        .radio-glow:checked + label {
-            border-color: #4e73f8;
-            box-shadow: 0 0 15px rgba(78, 115, 248, 0.5);
-            background-color: #4e73f8;
-            color: #fff;
-        }
-
+        /* Custom Styles for Icons/Images */
         .ppdt-image { filter: grayscale(100%) contrast(1.1); }
+        #feedback-content h3 { color: var(--primary-blue); }
 
-        #feedback-content h3 { font-size: 1.25rem; font-weight: bold; color: #4e73f8; margin-top: 1rem; }
-        #feedback-content ul { list-style-type: disc; margin-left: 1.5rem; }
-        #feedback-content p { color: #d1d5db; }
-
-        .auth-form input {
-            background-color: #1a1a2e;
-            border: 1px solid #2a2f4c;
+        .loader {
+            width: 100%; height: 8px; background-color: #E5E7EB; border-radius: 9999px; overflow: hidden; position: relative;
         }
-        /* --- End of Consolidated styles.css content --- */
+        .loader::after {
+            background: var(--accent-blue);
+            box-shadow: 0 0 10px var(--accent-blue);
+        }
     </style>
     
+    <!-- Required Firebase Scripts (MUST be external) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
         import { getFirestore, collection, addDoc, query, getDocs, doc, getDoc, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
         
-        // Pass the external Firebase modules to the main script.js for use
         window.FirebaseModules = { 
             initializeApp, getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut,
             getFirestore, collection, addDoc, query, getDocs, doc, getDoc, orderBy
         };
     </script>
 </head>
-<body class="text-gray-200 flex items-center justify-center min-h-screen p-4 md:p-8">
+<body class="text-gray-700 flex items-center justify-center min-h-screen p-4 md:p-8">
 
     <div class="arena-container w-full max-w-6xl">
-        <header class="flex items-center justify-between pb-6 border-b border-gray-800 flex-wrap">
+        
+        <!-- NEW HEADER STRUCTURE -->
+        <header id="header-bar" class="flex-wrap mb-4">
             <div id="header-left" class="flex items-center gap-3">
-                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#4e73f8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
                 <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-white tracking-tight sm:tracking-widest">SSB PSYCHOLOGY PLATFORM</h1>
             </div>
-            <div id="header-right" class="flex items-center gap-4 text-sm mt-2 sm:mt-0"></div>
+            
+            <div class="flex items-center gap-4 text-sm mt-2 sm:mt-0 ml-auto">
+                <div id="header-right" class="flex items-center gap-4 text-sm text-white"></div>
+                <!-- Mobile Menu Button - Hidden on screens >= sm -->
+                <button id="mobile-menu-btn" class="sm:hidden p-2 rounded-lg bg-blue-700 text-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+                </button>
+            </div>
         </header>
-
-        <nav id="top-nav" class="hidden justify-center gap-2 sm:gap-4 my-6 flex-wrap">
-     <a href="#" data-screen="home-screen" class="nav-link active text-sm px-2 sm:px-4">Home</a>
-     <a href="#" data-screen="ppdt-settings-screen" class="nav-link text-sm px-2 sm:px-4">Screening Test</a>
-     <a href="#" data-screen="psychology-screen" class="nav-link text-sm px-2 sm:px-4">Psychology Tests</a>
-     <a href="#" data-screen="past-tests-screen" class="nav-link text-sm px-2 sm:px-4">My Performance</a>
-</nav>
         
-        <main id="main-content">
+        <!-- Navigation Links - Stacked for mobile, Row for PC -->
+        <nav id="top-nav" class="my-3 flex justify-center sm:justify-start gap-1">
+             <a href="#" data-screen="home-screen" class="nav-link active">Home</a>
+             <a href="#" data-screen="ppdt-settings-screen" class="nav-link">Screening Test</a>
+             <a href="#" data-screen="psychology-screen" class="nav-link">Psychology Tests</a>
+             <a href="#" data-screen="past-tests-screen" class="nav-link">My Performance</a>
+        </nav>
+        
+        <!-- Main Content Area -->
+        <main id="main-content" class="mt-8">
              <div id="auth-loader" class="w-full max-w-md space-y-4 text-center mx-auto mt-20">
                 <p class="text-lg text-gray-400">Initializing Session...</p>
                 <div class="loader mx-auto"></div>
             </div>
+            <!-- All Screens are added here, initially hidden -->
             <div id="login-screen" class="hidden"></div>
             <div id="home-screen" class="hidden"></div>
             <div id="ppdt-settings-screen" class="hidden"></div>
@@ -209,66 +220,74 @@
     </div>
     
     <div id="templates" class="hidden">
+        <!-- PPDT Settings Template (Updated style/icons) -->
         <template id="ppdt-settings-screen-template">
             <div class="space-y-8">
                 <div class="text-center">
-                    <h2 class="text-4xl md:text-5xl font-bold text-white">PPDT SIMULATION</h2>
+                    <h2 class="text-4xl md:text-5xl font-bold text-gray-700">PPDT SIMULATION</h2>
                 </div>
                 <div class="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto pt-8">
                     <div class="space-y-6">
-                        <div class="p-5 bg-black bg-opacity-20 border border-gray-800 text-left rounded-lg">
-                            <h3 class="font-bold text-lg text-white mb-3">MISSION BRIEFING:</h3>
-                            <ul class="list-disc list-inside text-gray-400 space-y-1">
+                        <div class="p-5 bg-blue-50 border border-blue-200 text-left rounded-lg shadow-md">
+                            <h3 class="font-bold text-lg text-gray-700 mb-3 flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent-blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                                MISSION BRIEFING:
+                            </h3>
+                            <ul class="list-disc list-inside text-gray-600 space-y-1 text-sm">
                                 <li>Acquire pen and paper for story composition.</li>
                                 <li>Secure a quiet, well-lit area for narration.</li>
                                 <li>Select gender to tailor the simulation.</li>
                             </ul>
                         </div>
-                        <div class="space-y-3 text-center">
-                            <h3 class="text-xl font-semibold text-white">IDENTIFY GENDER</h3>
+                        <div class="space-y-3 text-center p-4 bg-white rounded-lg shadow-md border">
+                            <h3 class="text-lg font-semibold text-gray-700">IDENTIFY GENDER</h3>
                             <div class="flex justify-center gap-4">
                                 <input type="radio" id="gender-male" name="gender" value="male" class="hidden radio-glow" checked>
-                                <label for="gender-male" class="flex flex-col items-center justify-center p-4 border-2 border-gray-700 rounded-lg cursor-pointer w-32 h-32 transition hover:border-blue-500">
+                                <label for="gender-male" class="flex flex-col items-center justify-center p-4 border-2 border-blue-500 rounded-lg cursor-pointer w-32 h-32 transition bg-blue-500 text-white">
                                     <svg width="48" height="48" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M78.125 53.125C78.125 68.6125 65.4875 81.25 50 81.25C34.5125 81.25 21.875 68.6125 21.875 53.125C21.875 37.6375 34.5125 25 50 25C65.4875 25 78.125 37.6375 78.125 53.125Z" stroke="currentColor" stroke-width="8" stroke-miterlimit="10"/><path d="M71.875 28.125L87.5 12.5" stroke="currentColor" stroke-width="8" stroke-miterlimit="10" stroke-linecap="round"/><path d="M87.5 25V12.5H75" stroke="currentColor" stroke-width="8" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round"/></svg>
                                     <span class="mt-2 font-medium">Male</span>
                                 </label>
                                 <input type="radio" id="gender-female" name="gender" value="female" class="hidden radio-glow">
-                                <label for="gender-female" class="flex flex-col items-center justify-center p-4 border-2 border-gray-700 rounded-lg cursor-pointer w-32 h-32 transition hover:border-blue-500">
+                                <label for="gender-female" class="flex flex-col items-center justify-center p-4 border-2 border-gray-300 rounded-lg cursor-pointer w-32 h-32 transition hover:border-blue-500">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="9" r="5"/><path d="M12 14v8"/><path d="M9 18h6"/></svg>
                                     <span class="mt-2 font-medium">Female</span>
                                 </label>
                             </div>
                         </div>
                     </div>
+                    <!-- Right Column -->
                     <div class="space-y-6 flex flex-col">
-                        <div class="choice-card p-6 rounded-xl flex-1 flex flex-col justify-between">
-                            <h3 class="text-2xl font-bold text-white">TIMED SIMULATION</h3>
-                            <div class="flex justify-center gap-3 pt-2">
+                        <div class="choice-card p-6 flex-1 flex flex-col justify-between">
+                            <h3 class="text-xl font-bold text-gray-700">TIMED SIMULATION</h3>
+                            <p class="text-gray-500 text-sm mb-4">Simulates actual time pressure.</p>
+                            <div class="flex justify-center gap-3 pt-2 text-gray-700">
                                 <input type="radio" id="timer-visible" name="timer-visibility" value="visible" class="hidden radio-glow" checked>
-                                <label for="timer-visible" class="py-2 px-4 border-2 border-gray-600 rounded-lg cursor-pointer transition flex-1 text-sm">TIMER VISIBLE</label>
+                                <label for="timer-visible" class="py-2 px-4 border-2 border-gray-400 rounded-lg cursor-pointer transition flex-1 text-sm">VISIBLE</label>
                                 <input type="radio" id="timer-hidden" name="timer-visibility" value="hidden" class="hidden radio-glow">
-                                <label for="timer-hidden" class="py-2 px-4 border-2 border-gray-600 rounded-lg cursor-pointer transition flex-1 text-sm">TIMER HIDDEN</label>
+                                <label for="timer-hidden" class="py-2 px-4 border-2 border-gray-400 rounded-lg cursor-pointer transition flex-1 text-sm">HIDDEN</label>
                             </div>
-                            <button class="w-full glow-btn font-bold py-3 px-6 rounded-lg text-lg mt-6" data-test-type="PPDT" data-timed="true">START TIMED TEST</button>
+                            <button class="w-full primary-btn font-bold py-3 px-6 rounded-lg text-lg mt-6" data-test-type="PPDT" data-timed="true">START TIMED TEST</button>
                         </div>
-                        <div class="choice-card p-6 rounded-xl flex-1 flex flex-col justify-between">
-                            <h3 class="text-2xl font-bold text-white">FREE PRACTICE</h3>
-                            <button class="w-full glow-btn font-bold py-3 px-6 rounded-lg text-lg mt-6" data-test-type="PPDT" data-timed="false" style="background: linear-gradient(45deg, #6d28d9, #4f46e5);">START FREE PRACTICE</button>
+                        <div class="choice-card p-6 flex-1 flex flex-col justify-between">
+                            <h3 class="text-xl font-bold text-gray-700">FREE PRACTICE</h3>
+                            <p class="text-gray-500 text-sm mb-4">No time constraints or pressure.</p>
+                            <button class="w-full primary-btn font-bold py-3 px-6 rounded-lg text-lg mt-6" data-test-type="PPDT" data-timed="false" style="background: #1E3A8A;">START FREE PRACTICE</button>
                         </div>
                     </div>
                 </div>
             </div>
         </template>
         
+        <!-- PPDT Stage Templates (Unchanged structure, updated class/color) -->
         <template id="ppdt-picture-stage-template">
             <div class="space-y-4">
-                <div class="flex justify-between items-center bg-black bg-opacity-20 p-4 rounded-xl border border-gray-800">
-                     <h2 class="text-xl font-semibold">OBSERVE SCENARIO</h2>
-                     <div class="text-2xl font-bold text-red-400 bg-gray-900 px-4 py-2 rounded-lg" id="timer-display">00:30</div>
+                <div class="flex justify-between items-center bg-gray-100 p-4 rounded-xl border border-blue-200">
+                     <h2 class="text-xl font-semibold text-gray-700">OBSERVE SCENARIO</h2>
+                     <div class="text-2xl font-bold text-red-600 bg-white px-4 py-2 rounded-lg border border-red-300" id="timer-display">00:30</div>
                 </div>
-                <div id="image-container" class="bg-black bg-opacity-20 p-4 rounded-xl border border-gray-800 min-h-[60vh] flex items-center justify-center relative">
+                <div id="image-container" class="bg-gray-100 p-4 rounded-xl border border-blue-200 min-h-[60vh] flex items-center justify-center relative">
                     <div id="image-loader" class="w-full max-w-md space-y-4 text-center">
-                        <p class="text-lg text-gray-400">Generating unique AI scenario...</p>
+                        <p class="text-lg text-gray-600">Generating unique AI scenario...</p>
                         <div class="loader mx-auto"></div>
                     </div>
                     <img id="test-image" src="" alt="AI Generated PPDT Image" class="hidden w-full h-auto max-h-[60vh] object-contain rounded-lg ppdt-image">
@@ -278,89 +297,94 @@
         
         <template id="ppdt-story-stage-template">
              <div class="space-y-4">
-                <div class="flex justify-between items-center bg-black bg-opacity-20 p-4 rounded-xl border border-gray-800">
-                    <h2 class="text-xl font-semibold">COMPOSE STORY</h2>
-                    <div class="text-2xl font-bold text-red-400 bg-gray-900 px-4 py-2 rounded-lg" id="timer-display">04:30</div>
+                <div class="flex justify-between items-center bg-gray-100 p-4 rounded-xl border border-blue-200">
+                    <h2 class="text-xl font-semibold text-gray-700">COMPOSE STORY</h2>
+                    <div class="text-2xl font-bold text-red-600 bg-white px-4 py-2 rounded-lg border border-red-300" id="timer-display">04:30</div>
                 </div>
-                <div class="bg-black bg-opacity-20 p-8 rounded-xl flex flex-col items-center justify-center min-h-[60vh] border border-gray-800">
-                    <p class="text-xl text-gray-300 font-medium">Please write your story on your piece of paper.</p>
+                <div class="bg-gray-100 p-8 rounded-xl flex flex-col items-center justify-center min-h-[60vh] border border-blue-200">
+                    <p class="text-xl text-gray-600 font-medium">Please write your story on your piece of paper.</p>
                 </div>
             </div>
         </template>
         
         <template id="narration-stage-template">
              <div class="space-y-4">
-                 <div class="flex justify-between items-center bg-black bg-opacity-20 p-4 rounded-xl border border-gray-800">
-                    <h2 class="text-xl font-semibold">NARRATE STORY</h2>
-                    <div class="text-2xl font-bold text-red-400 bg-gray-900 px-4 py-2 rounded-lg" id="timer-display">01:00</div>
+                 <div class="flex justify-between items-center bg-gray-100 p-4 rounded-xl border border-blue-200">
+                    <h2 class="text-xl font-semibold text-gray-700">NARRATE STORY</h2>
+                    <div class="text-2xl font-bold text-red-600 bg-white px-4 py-2 rounded-lg border border-red-300" id="timer-display">01:00</div>
                 </div>
-                <div class="bg-black bg-opacity-20 p-4 rounded-xl border border-gray-800">
-                    <video id="webcam-feed" class="w-full h-auto max-h-[60vh] rounded-lg bg-black video-feed" autoplay muted></video>
-                    <p id="webcam-status" class="mt-2 text-gray-400">Requesting camera access...</p>
+                <div class="bg-gray-100 p-4 rounded-xl border border-blue-200">
+                    <video id="webcam-feed" class="w-full h-auto max-h-[60vh] rounded-lg bg-gray-900 video-feed" autoplay muted></video>
+                    <p id="webcam-status" class="mt-2 text-gray-600">Requesting camera access...</p>
                 </div>
             </div>
         </template>
 
         <template id="ppdt-review-screen-template">
              <div class="space-y-6">
-                <h2 class="text-3xl md:text-4xl font-bold text-white">PPDT AFTER ACTION REVIEW</h2>
+                <h2 class="text-3xl md:text-4xl font-bold text-gray-700">PPDT AFTER ACTION REVIEW</h2>
                 <div class="grid md:grid-cols-2 gap-6 text-left">
-                    <div class="bg-black bg-opacity-20 p-6 rounded-xl border border-gray-800">
-                        <h3 class="text-2xl font-bold mb-4 text-white">Scenario Image</h3>
+                    <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-md">
+                        <h3 class="text-xl font-bold mb-4 text-gray-700">Scenario Image</h3>
                         <img id="review-image" src="" alt="Test Picture" class="w-full rounded-lg ppdt-image">
                     </div>
-                    <div class="bg-black bg-opacity-20 p-6 rounded-xl border border-gray-800">
-                        <h3 class="text-2xl font-bold mb-4 text-white">Narration Playback</h3>
-                        <video id="review-video" class="w-full rounded-lg bg-black mb-4" controls></video>
+                    <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-md">
+                        <h3 class="text-xl font-bold mb-4 text-gray-700">Narration Playback</h3>
+                        <video id="review-video" class="w-full rounded-lg bg-gray-900 mb-4" controls></video>
                         <div id="review-controls" class="space-y-3">
-                             <p class="text-sm text-gray-400">Analyze your performance using the review modes below.</p>
+                             <p class="text-sm text-gray-500">Analyze your performance using the review modes below.</p>
                              <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                                <button id="review-audio-btn" class="font-semibold py-2 px-4 rounded-lg transition" style="background:#15803d; color:white;">Audio Only</button>
-                                <button id="review-muted-btn" class="font-semibold py-2 px-4 rounded-lg transition" style="background:#b45309; color:white;">Muted Video</button>
-                                <button id="review-both-btn" class="font-semibold py-2 px-4 rounded-lg transition" style="background:#1d4ed8; color:white;">Full Video</button>
+                                <button id="review-audio-btn" class="font-semibold py-2 px-4 rounded-lg transition primary-btn" style="background:#10B981;">Audio Only</button>
+                                <button id="review-muted-btn" class="font-semibold py-2 px-4 rounded-lg transition primary-btn" style="background:#F59E0B;">Muted Video</button>
+                                <button id="review-both-btn" class="font-semibold py-2 px-4 rounded-lg transition primary-btn" style="background:var(--accent-blue);">Full Video</button>
                             </div>
                         </div>
                     </div>
                 </div>
-                 <button id="restart-btn" class="glow-btn font-bold py-3 px-8 rounded-lg mt-6">
+                 <button id="restart-btn" class="primary-btn font-bold py-3 px-8 rounded-lg mt-6">
                     RETURN TO MENU
                 </button>
             </div>
         </template>
 
+        <!-- Psychology Templates (Updated style/icons) -->
         <template id="psychology-screen-template">
             <div class="text-center mb-10">
-                <h2 class="text-4xl md:text-5xl font-bold text-white">PSYCHOLOGY TEST BATTERY</h2>
-                <p class="text-gray-400 mt-2 max-w-2xl mx-auto">Select a test to begin.</p>
+                <h2 class="text-4xl md:text-5xl font-bold text-gray-700">PSYCHOLOGY TEST BATTERY</h2>
+                <p class="text-gray-500 mt-2 max-w-2xl mx-auto">Select a test to begin.</p>
             </div>
             <div class="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-                <div class="choice-card p-6 rounded-xl text-center flex flex-col">
-                    <h3 class="text-2xl font-bold text-white">TAT</h3>
-                    <p class="text-gray-400 mt-2 flex-grow">Thematic Apperception Test: AI-generated pictures for story writing.</p>
-                    <button class="w-full glow-btn font-bold py-3 px-6 rounded-lg text-lg mt-6" data-test-type="TAT">START TAT</button>
+                <div class="choice-card p-6 text-center flex flex-col items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--accent-blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h0v0a8 8 0 0 0 8-8V4H4v8a8 8 0 0 0 8 8z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                    <h3 class="text-xl font-bold text-gray-700 mt-3">TAT</h3>
+                    <p class="text-gray-500 mt-2 flex-grow text-sm">Thematic Apperception Test: AI-generated pictures for story writing.</p>
+                    <button class="w-full primary-btn font-bold py-3 px-6 rounded-lg text-lg mt-6" data-test-type="TAT">START TAT</button>
                 </div>
-                <div class="choice-card p-6 rounded-xl text-center flex flex-col">
-                    <h3 class="text-2xl font-bold text-white">WAT</h3>
-                    <p class="text-gray-400 mt-2 flex-grow">Word Association Test: AI-generated words and personalized feedback.</p>
-                    <button class="w-full glow-btn font-bold py-3 px-6 rounded-lg text-lg mt-6" data-test-type="WAT">START WAT</button>
+                <div class="choice-card p-6 text-center flex flex-col items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--accent-blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M8 12h8"></path><path d="M12 8v8"></path><path d="M16 16l-3.5-3.5"></path></svg>
+                    <h3 class="text-xl font-bold text-gray-700 mt-3">WAT</h3>
+                    <p class="text-gray-500 mt-2 flex-grow text-sm">Word Association Test: AI-generated words and personalized feedback.</p>
+                    <button class="w-full primary-btn font-bold py-3 px-6 rounded-lg text-lg mt-6" data-test-type="WAT">START WAT</button>
                 </div>
-                <div class="choice-card p-6 rounded-xl text-center flex flex-col">
-                    <h3 class="text-2xl font-bold text-white">SRT</h3>
-                    <p class="text-gray-400 mt-2 flex-grow">Situation Reaction Test: AI-generated scenarios and personalized feedback.</p>
-                    <button class="w-full glow-btn font-bold py-3 px-6 rounded-lg text-lg mt-6" data-test-type="SRT">START SRT</button>
+                <div class="choice-card p-6 text-center flex flex-col items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--accent-blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s-8-4-8-10V4l8-3 8 3v8c0 6-8 10-8 10z"></path><path d="M16 10L12 14 8 10"></path></svg>
+                    <h3 class="text-xl font-bold text-gray-700 mt-3">SRT</h3>
+                    <p class="text-gray-500 mt-2 flex-grow text-sm">Situation Reaction Test: AI-generated scenarios and personalized feedback.</p>
+                    <button class="w-full primary-btn font-bold py-3 px-6 rounded-lg text-lg mt-6" data-test-type="SRT">START SRT</button>
                 </div>
             </div>
         </template>
         
+        <!-- Psychology Stage Templates (Updated style/color) -->
         <template id="tat-picture-stage-template">
              <div class="space-y-4">
-                <div class="flex justify-between items-center bg-black bg-opacity-20 p-4 rounded-xl border border-gray-800">
-                     <h2 class="text-xl font-semibold">OBSERVE SCENARIO <span class="text-gray-400" id="test-progress-counter"></span></h2>
-                     <div class="text-2xl font-bold text-red-400 bg-gray-900 px-4 py-2 rounded-lg" id="timer-display">00:30</div>
+                <div class="flex justify-between items-center bg-gray-100 p-4 rounded-xl border border-blue-200">
+                     <h2 class="text-xl font-semibold text-gray-700">OBSERVE SCENARIO <span class="text-gray-500" id="test-progress-counter"></span></h2>
+                     <div class="text-2xl font-bold text-red-600 bg-white px-4 py-2 rounded-lg border border-red-300" id="timer-display">00:30</div>
                 </div>
-                <div id="image-container" class="bg-black bg-opacity-20 p-4 rounded-xl border border-gray-800 min-h-[60vh] flex items-center justify-center">
+                <div id="image-container" class="bg-gray-100 p-4 rounded-xl border border-blue-200 min-h-[60vh] flex items-center justify-center">
                     <div id="image-loader" class="w-full max-w-md space-y-4 text-center">
-                        <p class="text-lg text-gray-400">Generating unique AI scenario...</p>
+                        <p class="text-lg text-gray-600">Generating unique AI scenario...</p>
                         <div class="loader mx-auto"></div>
                     </div>
                     <img id="test-image" src="" alt="AI Generated TAT Image" class="hidden w-full h-auto max-h-[60vh] object-contain rounded-lg ppdt-image">
@@ -370,42 +394,42 @@
         
         <template id="tat-story-stage-template">
              <div class="space-y-4">
-                <div class="flex justify-between items-center bg-black bg-opacity-20 p-4 rounded-xl border border-gray-800">
-                    <h2 class="text-xl font-semibold">COMPOSE STORY <span class="text-gray-400" id="test-progress-counter"></span></h2>
-                    <div class="text-2xl font-bold text-red-400 bg-gray-900 px-4 py-2 rounded-lg" id="timer-display">04:00</div>
+                <div class="flex justify-between items-center bg-gray-100 p-4 rounded-xl border border-blue-200">
+                    <h2 class="text-xl font-semibold text-gray-700">COMPOSE STORY <span class="text-gray-500" id="test-progress-counter"></span></h2>
+                    <div class="text-2xl font-bold text-red-600 bg-white px-4 py-2 rounded-lg border border-red-300" id="timer-display">04:00</div>
                 </div>
-                <div class="bg-black bg-opacity-20 p-8 rounded-xl flex items-center justify-center min-h-[60vh] border border-gray-800">
+                <div class="bg-gray-100 p-8 rounded-xl flex items-center justify-center min-h-[60vh] border border-blue-200">
                     <div id="blank-slide-message" class="hidden text-center">
-                        <h3 class="text-3xl font-bold text-white">BLANK SLIDE</h3>
-                        <p class="text-xl text-gray-300 font-medium mt-4">Compose a story of your own choice.</p>
+                        <h3 class="text-3xl font-bold text-gray-700">BLANK SLIDE</h3>
+                        <p class="text-xl text-gray-600 font-medium mt-4">Compose a story of your own choice.</p>
                     </div>
-                    <p id="write-story-message" class="text-xl text-gray-300 font-medium">Please write your story on your piece of paper.</p>
+                    <p id="write-story-message" class="text-xl text-gray-600 font-medium">Please write your story on your piece of paper.</p>
                 </div>
             </div>
         </template>
         
         <template id="wat-stage-template">
              <div class="space-y-4">
-                <div class="flex justify-between items-center bg-black bg-opacity-20 p-4 rounded-xl border border-gray-800">
-                     <h2 class="text-xl font-semibold">WORD ASSOCIATION TEST <span class="text-gray-400" id="test-progress-counter"></span></h2>
-                     <div class="text-2xl font-bold text-red-400 bg-gray-900 px-4 py-2 rounded-lg" id="timer-display">00:15</div>
+                <div class="flex justify-between items-center bg-gray-100 p-4 rounded-xl border border-blue-200">
+                     <h2 class="text-xl font-semibold text-gray-700">WORD ASSOCIATION TEST <span class="text-gray-500" id="test-progress-counter"></span></h2>
+                     <div class="text-2xl font-bold text-red-600 bg-white px-4 py-2 rounded-lg border border-red-300" id="timer-display">00:15</div>
                 </div>
-                <div class="bg-black bg-opacity-20 p-8 rounded-xl flex flex-col items-center justify-center min-h-[60vh] border border-gray-800">
-                    <h3 id="wat-word" class="text-8xl font-bold mb-10"></h3>
-                    <input type="text" id="wat-input" class="bg-gray-900 border border-gray-700 rounded-md w-full max-w-lg px-4 py-3 text-white text-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Type your sentence here...">
+                <div class="bg-gray-100 p-8 rounded-xl flex flex-col items-center justify-center min-h-[60vh] border border-blue-200">
+                    <h3 id="wat-word" class="text-8xl font-bold mb-10 text-gray-700"></h3>
+                    <input type="text" id="wat-input" class="bg-white border border-gray-300 rounded-md w-full max-w-lg px-4 py-3 text-gray-800 text-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Type your sentence here...">
                 </div>
             </div>
         </template>
 
         <template id="srt-stage-template">
              <div class="space-y-4">
-                <div class="flex justify-between items-center bg-black bg-opacity-20 p-4 rounded-xl border border-gray-800">
-                     <h2 class="text-xl font-semibold">SITUATION REACTION TEST <span class="text-gray-400" id="test-progress-counter"></span></h2>
-                     <div class="text-2xl font-bold text-red-400 bg-gray-900 px-4 py-2 rounded-lg" id="timer-display">00:30</div>
+                <div class="flex justify-between items-center bg-gray-100 p-4 rounded-xl border border-blue-200">
+                     <h2 class="text-xl font-semibold text-gray-700">SITUATION REACTION TEST <span class="text-gray-500" id="test-progress-counter"></span></h2>
+                     <div class="text-2xl font-bold text-red-600 bg-white px-4 py-2 rounded-lg border border-red-300" id="timer-display">00:30</div>
                 </div>
-                <div class="bg-black bg-opacity-20 p-8 rounded-xl flex flex-col items-center justify-center min-h-[60vh] border border-gray-800 text-center">
-                    <p id="srt-situation" class="text-2xl font-medium mb-8 max-w-2xl"></p>
-                    <textarea id="srt-input" class="bg-gray-900 border border-gray-700 rounded-md w-full max-w-xl h-24 px-4 py-3 text-white text-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Type your reaction here..."></textarea>
+                <div class="bg-gray-100 p-8 rounded-xl flex flex-col items-center justify-center min-h-[60vh] border border-blue-200 text-center">
+                    <p id="srt-situation" class="text-2xl font-medium mb-8 max-w-2xl text-gray-700"></p>
+                    <textarea id="srt-input" class="bg-white border border-gray-300 rounded-md w-full max-w-xl h-24 px-4 py-3 text-gray-800 text-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Type your reaction here..."></textarea>
                 </div>
             </div>
         </template>
@@ -413,31 +437,32 @@
         <template id="text-review-template">
             <div class="space-y-6">
                 <div class="flex justify-between items-start">
-                    <h2 class="text-3xl md:text-4xl font-bold text-white" id="review-title"></h2>
-                    <button class="glow-btn font-bold py-2 px-6 rounded-lg" id="get-feedback-btn">Get AI Feedback</button>
+                    <h2 class="text-3xl md:text-4xl font-bold text-gray-700" id="review-title"></h2>
+                    <button class="primary-btn font-bold py-2 px-6 rounded-lg" id="get-feedback-btn">Get AI Feedback</button>
                 </div>
-                <div id="feedback-container" class="hidden bg-black bg-opacity-20 p-6 rounded-xl border border-gray-800">
-                    <h3 class="text-2xl font-bold mb-4 text-white">AI Psychologist Analysis</h3>
+                <div id="feedback-container" class="hidden bg-blue-50 p-6 rounded-xl border border-blue-200 shadow-md">
+                    <h3 class="text-2xl font-bold mb-4 text-gray-700">AI Psychologist Analysis</h3>
                     <div id="feedback-loader" class="w-full max-w-md space-y-4">
-                        <p class="text-lg text-gray-400">Analyzing your responses...</p>
+                        <p class="text-lg text-gray-600">Analyzing your responses...</p>
                         <div class="loader"></div>
                     </div>
-                    <div id="feedback-content" class="prose prose-invert max-w-none"></div>
+                    <div id="feedback-content" class="prose max-w-none text-gray-700"></div>
                 </div>
-                <div class="bg-black bg-opacity-20 p-6 rounded-xl border border-gray-800 max-h-[60vh] overflow-y-auto">
-                    <h3 class="text-2xl font-bold mb-4 text-white">Your Responses</h3>
+                <div class="bg-white p-6 rounded-xl border border-gray-200 max-h-[60vh] overflow-y-auto shadow-md">
+                    <h3 class="text-2xl font-bold mb-4 text-gray-700">Your Responses</h3>
                     <div id="review-list" class="space-y-4"></div>
                 </div>
-                <button id="restart-btn" class="glow-btn font-bold py-3 px-8 rounded-lg mt-6">
+                <button id="restart-btn" class="primary-btn font-bold py-3 px-8 rounded-lg mt-6">
                     RETURN TO MENU
                 </button>
             </div>
         </template>
 
+        <!-- Account Templates -->
         <template id="past-tests-screen-template">
              <div class="text-center mb-10">
-                <h2 class="text-4xl md:text-5xl font-bold text-white">MY PERFORMANCE</h2>
-                <p class="text-gray-400 mt-2">Review your previously completed tests and AI feedback.</p>
+                <h2 class="text-4xl md:text-5xl font-bold text-gray-700">MY PERFORMANCE</h2>
+                <p class="text-gray-500 mt-2">Review your previously completed tests and AI feedback.</p>
             </div>
             <div id="past-tests-list" class="space-y-4 max-h-[60vh] overflow-y-auto p-2">
                 </div>
@@ -446,17 +471,17 @@
         <template id="view-test-screen-template">
             <div class="space-y-6">
                 <div class="flex justify-between items-start">
-                    <h2 class="text-3xl md:text-4xl font-bold text-white" id="review-title"></h2>
+                    <h2 class="text-3xl md:text-4xl font-bold text-gray-700" id="review-title"></h2>
                      <button class="back-btn font-bold py-2 px-6 rounded-lg" id="back-to-history-btn">&lt; Back to History</button>
                 </div>
 
-                <div id="feedback-container" class="hidden bg-black bg-opacity-20 p-6 rounded-xl border border-gray-800">
-                    <h3 class="text-2xl font-bold mb-4 text-white">AI Psychologist Analysis</h3>
-                    <div id="feedback-content" class="prose prose-invert max-w-none"></div>
+                <div id="feedback-container" class="hidden bg-blue-50 p-6 rounded-xl border border-blue-200 shadow-md">
+                    <h3 class="text-2xl font-bold mb-4 text-gray-700">AI Psychologist Analysis</h3>
+                    <div id="feedback-content" class="prose max-w-none text-gray-700"></div>
                 </div>
 
-                <div class="bg-black bg-opacity-20 p-6 rounded-xl border border-gray-800 max-h-[60vh] overflow-y-auto">
-                    <h3 class="text-2xl font-bold mb-4 text-white">Your Responses</h3>
+                <div class="bg-white p-6 rounded-xl border border-gray-200 max-h-[60vh] overflow-y-auto shadow-md">
+                    <h3 class="text-2xl font-bold mb-4 text-gray-700">Your Responses</h3>
                     <div id="review-list" class="space-y-4"></div>
                 </div>
             </div>
@@ -464,7 +489,7 @@
 
     </div>
 
+    <!-- The Consolidated JavaScript File -->
     <script type="module" src="script.js"></script>
 </body>
 </html>
-
