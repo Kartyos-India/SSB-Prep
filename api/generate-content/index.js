@@ -34,16 +34,36 @@ async function queryGroqText(prompt, apiKey) {
   return JSON.parse(result.choices[0].message.content);
 }
 
-// Helper for Hugging Face API (for images)
-async function queryHuggingFaceImage(data, apiKey) {
-    const response = await fetch(
-        "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0",
-        {
-            headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
-            method: "POST",
-            body: JSON.stringify(data),
-        }
-    );
+// Helper for Stability AI API (for images) - REPLACING HUGGING FACE LOGIC
+async function queryStabilityAIImage(data, apiKey) {
+    // Using a common SDXL endpoint
+    const apiUrl = "https://api.stability.ai/v1/generation/stable-diffusion-xl-1024-v1-0/text-to-image";
+    const { prompt } = data;
+
+    const payload = {
+        text_prompts: [
+            { text: prompt, weight: 1.0 },
+            // Negative prompt to enforce the black & white, non-photographic SSB style
+            { text: "blurry, low quality, colored, modern, digital, photograph, watermark, signature", weight: -1.0 } 
+        ],
+        cfg_scale: 7,
+        height: 512, // Reduced resolution for faster, cheaper inference
+        width: 768,
+        samples: 1,
+        steps: 30, 
+        sampler: "K_DPM_2_ANCESTRAL", 
+    };
+    
+    const response = await fetch(apiUrl, {
+        method: "POST",
+        headers: { 
+            "Authorization": `Bearer ${apiKey}`, 
+            "Content-Type": "application/json",
+            "Accept": "image/png", // Request the image buffer directly
+        },
+        body: JSON.stringify(payload),
+    });
+
     return response;
 }
 
@@ -52,7 +72,9 @@ async function queryHuggingFaceImage(data, apiKey) {
 
 export default async function handler(request, response) {
   const { type, prompt, data } = request.body;
-  const HF_API_KEY = process.env.HF_API_KEY;
+  
+  // NEW KEY: STABILITY_AI_API_KEY replaces HF_API_KEY
+  const STABILITY_AI_API_KEY = process.env.STABILITY_AI_API_KEY;
   const GROQ_API_KEY = process.env.GROQ_API_KEY;
   const FIREBASE_CONFIG = process.env.__firebase_config;
 
@@ -71,22 +93,30 @@ export default async function handler(request, response) {
             return response.status(500).json({ error: 'Server-side Firebase configuration is not valid JSON.' });
         }
 
-      // --- All other cases (image, wat, srt, feedback) are unchanged ---
-      
+      // --- IMAGE GENERATION (Now using Stability AI) ---
       case 'image':
-        if (!HF_API_KEY) return response.status(500).json({ error: 'Hugging Face API key not configured.' });
+        if (!STABILITY_AI_API_KEY) return response.status(500).json({ error: 'Stability AI API key not configured. (Please use STABILITY_AI_API_KEY)' });
         if (!prompt) return response.status(400).json({ error: 'Prompt is required for image generation' });
         
-        const hfImageResponse = await queryHuggingFaceImage({ "inputs": prompt }, HF_API_KEY);
+        // Use the new Stability AI helper
+        const aiImageResponse = await queryStabilityAIImage({ prompt }, STABILITY_AI_API_KEY);
 
-        if (!hfImageResponse.ok) {
-            const errorText = await hfImageResponse.text();
-            return response.status(hfImageResponse.status).json({ error: `Hugging Face API Error: ${errorText}` });
+        if (!aiImageResponse.ok) {
+            const errorText = await aiImageResponse.text();
+            // Try to parse the error body from the API
+            let errorMessage = 'Unknown API Error';
+            try {
+                 const errorBody = JSON.parse(errorText);
+                 errorMessage = errorBody.message || errorBody.errors[0] || errorMessage;
+            } catch {
+                 errorMessage = errorText;
+            }
+            return response.status(aiImageResponse.status).json({ error: `Stability AI Error: ${errorMessage}` });
         }
         
-        const imageBlob = await hfImageResponse.blob();
+        // Stability AI returns the image buffer directly
+        const imageBuffer = Buffer.from(await aiImageResponse.arrayBuffer());
         response.setHeader('Content-Type', 'image/png');
-        const imageBuffer = Buffer.from(await imageBlob.arrayBuffer());
         return response.status(200).send(imageBuffer);
 
       case 'wat':
@@ -119,4 +149,3 @@ export default async function handler(request, response) {
     return response.status(500).json({ error: `An internal server error occurred: ${error.message}` });
   }
 }
-
