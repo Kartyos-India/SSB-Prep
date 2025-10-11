@@ -1,5 +1,4 @@
-// This versatile serverless function now handles all AI requests AND
-// securely provides the Firebase configuration to the application.
+import { Buffer } from 'buffer'; // FIX: Explicitly import Buffer to resolve runtime errors
 
 // --- Helper Functions to call APIs ---
 
@@ -9,9 +8,8 @@ async function queryGroqText(prompt, apiKey) {
   
   const payload = {
     messages: [{ role: "user", content: prompt }],
-    model: "llama-3.1-8b-instant", // Using a current, supported, and fast model
+    model: "llama-3.1-8b-instant", 
     temperature: 0.7,
-    // This is the key for reliable lists! It forces the model to output valid JSON.
     response_format: { type: "json_object" }, 
   };
 
@@ -30,16 +28,11 @@ async function queryGroqText(prompt, apiKey) {
   }
 
   const result = await response.json();
-  // The response is a stringified JSON within the content, so we parse it.
   return JSON.parse(result.choices[0].message.content);
 }
 
-// Helper for Stability AI API (for images) - REPLACING HUGGING FACE LOGIC
-// REPLACE THE EXISTING queryStabilityAIImage FUNCTION WITH THIS:
-
-// REPLACE IT WITH THIS CORRECTED VERSION:
+// Helper for Stability AI API (for images) - Corrected Dimensions
 async function queryStabilityAIImage(data, apiKey) {
-    // Using a common SDXL endpoint
     const apiUrl = "https://api.stability.ai/v1/generation/stable-diffusion-xl-1024-v1-0/text-to-image";
     const { prompt } = data;
 
@@ -50,9 +43,9 @@ async function queryStabilityAIImage(data, apiKey) {
             { text: "blurry, low quality, colored, modern, digital, photograph, watermark, signature", weight: -1.0 } 
         ],
         cfg_scale: 7,
-        // FIX: Using the allowed landscape dimension for SDXL, listed as 1152x768
+        // FIX: Using the allowed landscape dimension (3:2 ratio)
         height: 768,   
-        width: 1344,  
+        width: 1152,  
         samples: 1,
         steps: 30, 
         sampler: "K_DPM_2_ANCESTRAL", 
@@ -63,20 +56,7 @@ async function queryStabilityAIImage(data, apiKey) {
         headers: { 
             "Authorization": `Bearer ${apiKey}`, 
             "Content-Type": "application/json",
-            "Accept": "image/png", // Request the image buffer directly
-        },
-        body: JSON.stringify(payload),
-    });
-
-    return response;
-}
-    
-    const response = await fetch(apiUrl, {
-        method: "POST",
-        headers: { 
-            "Authorization": `Bearer ${apiKey}`, 
-            "Content-Type": "application/json",
-            "Accept": "image/png", // Request the image buffer directly
+            "Accept": "image/png", 
         },
         body: JSON.stringify(payload),
     });
@@ -90,7 +70,6 @@ async function queryStabilityAIImage(data, apiKey) {
 export default async function handler(request, response) {
   const { type, prompt, data } = request.body;
   
-  // NEW KEY: STABILITY_AI_API_KEY replaces HF_API_KEY
   const STABILITY_AI_API_KEY = process.env.STABILITY_AI_API_KEY;
   const GROQ_API_KEY = process.env.GROQ_API_KEY;
   const FIREBASE_CONFIG = process.env.__firebase_config;
@@ -115,12 +94,10 @@ export default async function handler(request, response) {
         if (!STABILITY_AI_API_KEY) return response.status(500).json({ error: 'Stability AI API key not configured. (Please use STABILITY_AI_API_KEY)' });
         if (!prompt) return response.status(400).json({ error: 'Prompt is required for image generation' });
         
-        // Use the new Stability AI helper
         const aiImageResponse = await queryStabilityAIImage({ prompt }, STABILITY_AI_API_KEY);
 
         if (!aiImageResponse.ok) {
             const errorText = await aiImageResponse.text();
-            // Try to parse the error body from the API
             let errorMessage = 'Unknown API Error';
             try {
                  const errorBody = JSON.parse(errorText);
@@ -131,7 +108,6 @@ export default async function handler(request, response) {
             return response.status(aiImageResponse.status).json({ error: `Stability AI Error: ${errorMessage}` });
         }
         
-        // Stability AI returns the image buffer directly
         const imageBuffer = Buffer.from(await aiImageResponse.arrayBuffer());
         response.setHeader('Content-Type', 'image/png');
         return response.status(200).send(imageBuffer);
@@ -166,5 +142,3 @@ export default async function handler(request, response) {
     return response.status(500).json({ error: `An internal server error occurred: ${error.message}` });
   }
 }
-
-
