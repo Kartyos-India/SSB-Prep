@@ -130,6 +130,25 @@ function handleAuthState(user) {
     }
 }
 
+// Helper to get template content
+function getTemplateContent(templateId) {
+    const template = document.getElementById('templates').querySelector(`#${templateId}`);
+    return template ? template.content.cloneNode(true) : null;
+}
+
+// New Navigation Helper
+function addGoBackButton(screenElement, targetScreenFunction) {
+    const header = screenElement.querySelector('.text-center');
+    if (header) {
+        const backButton = document.createElement('button');
+        backButton.className = 'back-btn py-1 px-3 rounded-lg absolute top-4 left-4 font-bold';
+        backButton.textContent = '← Back';
+        backButton.addEventListener('click', targetScreenFunction);
+        header.style.position = 'relative'; // Ensure header can position the button
+        header.prepend(backButton);
+    }
+}
+
 // --- Home Screen Logic ---
 function renderHomeScreen() {
     const homeScreen = document.getElementById('home-screen');
@@ -145,7 +164,7 @@ function renderHomeScreen() {
                     <p class="text-gray-400 mt-2">Practice the Picture Perception & Discussion Test (PPDT).</p>
                 </a>
                 <a href="#" data-screen="psychology-screen" class="choice-card p-8 rounded-xl flex-1 flex flex-col justify-center items-center text-center no-underline">
-                    <h3 class="text-3xl font-bold text-white">PSYCHOLOGY TESTS</h3>
+                    <h3 class="3xl font-bold text-white">PSYCHOLOGY TESTS</h3>
                     <p class="text-gray-400 mt-2">Hone your skills in TAT, WAT, and SRT with AI feedback.</p>
                 </a>
             </div>
@@ -185,7 +204,8 @@ function startTimer(duration, displayElement, onComplete) {
     let timeLeft = duration;
     displayElement.textContent = formatTime(timeLeft);
 
-    const isTimed = appState.timed === 'true';
+    // Timer should run unless explicitly set to 'false' (Free Practice)
+    const isTimed = appState.timed === 'true' || appState.testType === 'WAT' || appState.testType === 'SRT'; 
 
     if (isTimed) {
         timerInterval = setInterval(() => {
@@ -235,9 +255,9 @@ function showPPDTReview() {
     showScreen('review-screen');
     
     const reviewScreen = document.getElementById('review-screen');
-    const template = document.getElementById('templates').querySelector('#ppdt-review-screen-template');
+    const template = getTemplateContent('ppdt-review-screen-template');
     reviewScreen.innerHTML = '';
-    reviewScreen.appendChild(template.content.cloneNode(true));
+    reviewScreen.appendChild(template);
     
     const reviewImage = document.getElementById('review-image');
     const reviewVideo = document.getElementById('review-video');
@@ -273,6 +293,8 @@ async function beginPPDTNarration(duration, timerDisplay) {
         webcamStatus.textContent = "Video recording is not supported in this browser.";
         return;
     }
+    
+    webcamStatus.textContent = "Requesting camera and microphone access...";
 
     try {
         ppdtMediaStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
@@ -304,7 +326,6 @@ async function beginPPDTNarration(duration, timerDisplay) {
             } else {
                 webcamStatus.innerHTML = "Recording... <button id='manual-stop' class='back-btn py-1 px-3 rounded-lg ml-3'>Stop Practice</button>";
                 document.getElementById('manual-stop').addEventListener('click', () => {
-                    // Need to stop the recording process gracefully for the onstop event to fire.
                     if (ppdtMediaRecorder && ppdtMediaRecorder.state === 'recording') {
                         ppdtMediaRecorder.stop();
                     } else {
@@ -359,8 +380,8 @@ function runPPDTTestStage() {
     screen.innerHTML = '';
     const stage = appState.stages[appState.currentItem];
     const templateId = `ppdt-${stage}-stage-template`;
-    const template = document.getElementById('templates').querySelector(`#${templateId}`);
-    screen.appendChild(template.content.cloneNode(true));
+    const template = getTemplateContent(templateId);
+    screen.appendChild(template);
     
     const timerDisplay = screen.querySelector('#timer-display');
     let duration;
@@ -417,16 +438,25 @@ function initializePPDTTest(config) {
 
 function renderPPDTSettingsScreen() {
     const settingsScreen = document.getElementById('ppdt-settings-screen');
-    const template = document.getElementById('templates').querySelector('#ppdt-settings-screen-template');
+    const template = getTemplateContent('ppdt-settings-screen-template');
     if (template) {
         settingsScreen.innerHTML = ''; 
-        settingsScreen.appendChild(template.content.cloneNode(true));
+        settingsScreen.appendChild(template);
     }
+    
+    // Add Back Button
+    addGoBackButton(settingsScreen, renderHomeScreen);
+
     showScreen('ppdt-settings-screen');
     
     settingsScreen.querySelectorAll('[data-test-type="PPDT"]').forEach(btn => {
         btn.addEventListener('click', () => {
-            initializePPDTTest(btn.dataset);
+            // PPDT tests are always untimed/free practice unless data-timed="true" is present
+            const config = { 
+                ...btn.dataset, 
+                timed: btn.dataset.timed || 'false' 
+            };
+            initializePPDTTest(config);
         });
     });
 }
@@ -441,11 +471,15 @@ let testResponses = [];
 
 function renderPsychologyScreen() {
     const psychScreen = document.getElementById('psychology-screen');
-    const template = document.getElementById('templates').querySelector('#psychology-screen-template');
+    const template = getTemplateContent('psychology-screen-template');
     if (template) {
         psychScreen.innerHTML = '';
-        psychScreen.appendChild(template.content.cloneNode(true));
+        psychScreen.appendChild(template);
     }
+
+    // Add Back Button
+    addGoBackButton(psychScreen, renderHomeScreen);
+
     showScreen('psychology-screen');
     
     psychScreen.querySelectorAll('[data-test-type]').forEach(btn => {
@@ -461,6 +495,8 @@ async function initializePsyTest(config) {
         ...config,
         userId,
         currentItem: 0,
+        // Ensure 'timed' property is present for the general startTimer function, even if hardcoded
+        timed: 'true' 
     };
     testResponses = [];
     testData = [];
@@ -546,8 +582,8 @@ function runPsyTestStage() {
             break;
     }
 
-    const template = document.getElementById('templates').querySelector(`#${templateId}`);
-    screen.appendChild(template.content.cloneNode(true));
+    const template = getTemplateContent(templateId);
+    screen.appendChild(template);
     
     const progressCounter = screen.querySelector('#test-progress-counter');
     if (progressCounter) {
@@ -563,7 +599,6 @@ function runPsyTestStage() {
         });
     } else {
         setupPsyStageContent(stageConfig);
-        // TAT/SRT/WAT timer starts. WAT/SRT use finishPsyTest, TAT uses its dedicated onComplete.
         startTimer(stageConfig.duration, timerDisplay, stageConfig.onComplete); 
     }
 }
@@ -593,7 +628,6 @@ function setupPsyStageContent(config) {
 
 // FIX 2: Correct finishPsyTest logic to ONLY handle WAT/SRT. TAT progression is self-contained.
 function finishPsyTest() {
-    // This function is only designed to handle WAT/SRT progression and response capture.
     if (appState.testType === 'WAT' || appState.testType === 'SRT') {
         const input = document.getElementById(`${appState.testType.toLowerCase()}-input`);
         testResponses.push({
@@ -604,14 +638,12 @@ function finishPsyTest() {
         appState.currentItem++;
 
         if (appState.currentItem < appState.totalItems) {
-             runPsyTestStage(); // Continue to the next WAT/SRT item
+             runPsyTestStage(); 
         } else {
-            // WAT/SRT complete
             clearInterval(timerInterval);
             showPsyReview();
         }
     } 
-    // TAT does nothing here; its stages advance via their own onComplete callback.
 }
 
 async function generateAndLoadTATImage(onLoadCallback) {
@@ -654,8 +686,8 @@ function showPsyReview() {
     const reviewContainer = document.getElementById('review-screen');
     reviewContainer.innerHTML = '';
     
-    const template = document.getElementById('templates').querySelector('#text-review-template');
-    reviewContainer.appendChild(template.content.cloneNode(true));
+    const template = getTemplateContent('text-review-template');
+    reviewContainer.appendChild(template);
     
     if (appState.testType === 'TAT') {
         document.getElementById('review-title').textContent = `TAT COMPLETE`;
@@ -757,11 +789,14 @@ async function getAIFeedback() {
 async function showPastTests() {
     showScreen('past-tests-screen');
     const pastTestsScreen = document.getElementById('past-tests-screen');
-    const template = document.getElementById('templates').querySelector('#past-tests-screen-template');
+    const template = getTemplateContent('past-tests-screen-template');
     if (template) {
         pastTestsScreen.innerHTML = '';
-        pastTestsScreen.appendChild(template.content.cloneNode(true));
+        pastTestsScreen.appendChild(template);
     }
+    
+    // Add Back Button
+    addGoBackButton(pastTestsScreen, renderHomeScreen);
 
     const pastTestsList = document.getElementById('past-tests-list');
     pastTestsList.innerHTML = `<div class="loader mx-auto"></div>`;
@@ -806,10 +841,10 @@ async function showPastTests() {
 async function viewPastTest(testId) {
     showScreen('view-test-screen');
     const viewTestScreen = document.getElementById('view-test-screen');
-    const template = document.getElementById('templates').querySelector('#view-test-screen-template');
+    const template = getTemplateContent('view-test-screen-template');
     
     viewTestScreen.innerHTML = '';
-    viewTestScreen.appendChild(template.content.cloneNode(true));
+    viewTestScreen.appendChild(template);
     viewTestScreen.querySelector('#review-list').innerHTML = `<div class="loader mx-auto"></div>`;
 
     document.getElementById('back-to-history-btn').addEventListener('click', showPastTests);
@@ -860,7 +895,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 e.preventDefault();
                 const targetScreen = link.dataset.screen;
                 if (!userId) {
-                    // If not logged in, prompt for login
                     renderLoginScreen();
                     showScreen('login-screen');
                     return; 
