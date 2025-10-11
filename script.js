@@ -17,7 +17,7 @@ const topNav = document.getElementById('top-nav');
 const headerRight = document.getElementById('header-right');
 
 // --- Test State Flags ---
-let isTestActive = false; // NEW FLAG: Tracks if a test is currently running
+let isTestActive = false; // Tracks if a test is currently running
 let ppdtMediaStream = null; // Reference to the PPDT media stream
 
 // --- Helper Functions (from shared.js) ---
@@ -139,7 +139,7 @@ function getTemplateContent(templateId) {
     return template ? template.content.cloneNode(true) : null;
 }
 
-// New Navigation Helper
+// Navigation Helper: Adds a back button
 function addGoBackButton(screenElement, targetScreenFunction) {
     const header = screenElement.querySelector('.text-center');
     if (header) {
@@ -149,6 +149,43 @@ function addGoBackButton(screenElement, targetScreenFunction) {
         backButton.addEventListener('click', targetScreenFunction);
         header.style.position = 'relative'; // Ensure header can position the button
         header.prepend(backButton);
+    }
+}
+
+/**
+ * Aborts the current test, cleans up resources, and returns to the appropriate menu.
+ */
+function abortTest() {
+    isTestActive = false; // Disable warning
+    clearInterval(timerInterval); // Stop any running timer
+    
+    // Attempt to stop media stream if active (for PPDT)
+    if (ppdtMediaStream) {
+        ppdtMediaStream.getTracks().forEach(track => track.stop());
+        ppdtMediaStream = null;
+    }
+
+    // Determine the correct menu to return to
+    if (appState.testType === 'PPDT') {
+        renderPPDTSettingsScreen();
+    } else if (['TAT', 'WAT', 'SRT'].includes(appState.testType)) {
+        renderPsychologyScreen();
+    } else {
+        renderHomeScreen();
+    }
+}
+
+// Function to inject the Abort button into the current test stage
+function addAbortButtonToStage(screen) {
+    const stageHeader = screen.querySelector('.flex.justify-between.items-center');
+    const h2 = stageHeader ? stageHeader.querySelector('h2') : null;
+    
+    if (h2) {
+        const abortBtn = document.createElement('button');
+        abortBtn.className = 'back-btn py-1 px-3 rounded-lg text-sm ml-4 inline-block';
+        abortBtn.textContent = 'Abort Test';
+        abortBtn.addEventListener('click', abortTest);
+        h2.appendChild(abortBtn); 
     }
 }
 
@@ -197,30 +234,6 @@ function renderHomeScreen() {
 let appState = {};
 let timerInterval;
 
-/**
- * Aborts the current test, cleans up resources, and returns to the appropriate menu.
- */
-function abortTest() {
-    isTestActive = false; // Disable warning
-    clearInterval(timerInterval); // Stop any running timer
-    
-    // Attempt to stop media stream if active (for PPDT)
-    if (ppdtMediaStream) {
-        ppdtMediaStream.getTracks().forEach(track => track.stop());
-        ppdtMediaStream = null;
-    }
-
-    // Determine the correct menu to return to
-    if (appState.testType === 'PPDT') {
-        renderPPDTSettingsScreen();
-    } else if (['TAT', 'WAT', 'SRT'].includes(appState.testType)) {
-        renderPsychologyScreen();
-    } else {
-        renderHomeScreen();
-    }
-}
-
-
 // --- Helper Functions (used by all tests) ---
 function formatTime(s) {
     return `${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`;
@@ -243,20 +256,6 @@ function startTimer(duration, displayElement, onComplete) {
                 onComplete();
             }
         }, 1000);
-    }
-}
-
-// Function to inject the Abort button into the current test stage
-function addAbortButtonToStage(screen) {
-    const stageHeader = screen.querySelector('.flex.justify-between.items-center');
-    const h2 = stageHeader ? stageHeader.querySelector('h2') : null;
-    
-    if (h2) {
-        const abortBtn = document.createElement('button');
-        abortBtn.className = 'back-btn py-1 px-3 rounded-lg text-sm ml-4 inline-block';
-        abortBtn.textContent = 'Abort Test';
-        abortBtn.addEventListener('click', abortTest);
-        h2.appendChild(abortBtn); 
     }
 }
 
@@ -568,6 +567,21 @@ async function initializePsyTest(config) {
                  throw new Error(err.error || 'Failed to fetch test data from AI.');
             }
             const data = await response.json();
+            
+            // --- AI Response Robustness Fix ---
+            if (appState.testType === 'WAT') {
+                // Ensure data is an array of strings (the words)
+                if (!Array.isArray(data) || typeof data[0] !== 'string' || data.length < 5) {
+                    throw new Error("AI returned malformed or non-word data. (Expected a list of words, got SRT prompt or invalid JSON.)");
+                }
+            } else if (appState.testType === 'SRT') {
+                 // Ensure data is an array of strings (the situations)
+                 if (!Array.isArray(data) || typeof data[0] !== 'string' || data.length < 5) {
+                    throw new Error("AI returned malformed data for SRT. (Expected a list of situations.)");
+                }
+            }
+            // --- End AI Response Robustness Fix ---
+
             testData = data; 
             appState.totalItems = testData.length;
         } else if (appState.testType === 'TAT') {
@@ -747,12 +761,19 @@ function showPsyReview() {
     } else { 
         document.getElementById('review-title').textContent = `${appState.testType} Review`;
         const list = document.getElementById('review-list');
-        list.innerHTML = testResponses.map((item, index) => `
-            <div class="p-4 bg-gray-900 rounded-lg border border-gray-700">
-                <p class="text-gray-400 font-semibold">${index + 1}. ${item.prompt}</p>
-                <p class="text-white mt-2 pl-4 border-l-2 border-blue-500">${item.response || 'No response.'}</p>
-            </div>
-        `).join('');
+        
+        // --- Review Screen Robustness Fix ---
+        if (testResponses.length === 0) {
+            list.innerHTML = `<p class="text-center text-lg text-red-400">No responses were recorded for this test.</p>`;
+        } else {
+            list.innerHTML = testResponses.map((item, index) => `
+                <div class="p-4 bg-gray-900 rounded-lg border border-gray-700">
+                    <p class="text-gray-400 font-semibold">${index + 1}. ${item.prompt}</p>
+                    <p class="text-white mt-2 pl-4 border-l-2 border-blue-500">${item.response || 'No response.'}</p>
+                </div>
+            `).join('');
+        }
+        // --- End Review Screen Robustness Fix ---
     }
 
     document.getElementById('restart-btn').addEventListener('click', renderPsychologyScreen);
