@@ -35,6 +35,8 @@ async function queryGroqText(prompt, apiKey) {
 }
 
 // Helper for Stability AI API (for images) - REPLACING HUGGING FACE LOGIC
+// REPLACE THE EXISTING queryStabilityAIImage FUNCTION WITH THIS:
+
 async function queryStabilityAIImage(data, apiKey) {
     // Using a common SDXL endpoint
     const apiUrl = "https://api.stability.ai/v1/generation/stable-diffusion-xl-1024-v1-0/text-to-image";
@@ -47,8 +49,10 @@ async function queryStabilityAIImage(data, apiKey) {
             { text: "blurry, low quality, colored, modern, digital, photograph, watermark, signature", weight: -1.0 } 
         ],
         cfg_scale: 7,
-        height: 512, // Reduced resolution for faster, cheaper inference
-        width: 768,
+        // FIX: Using one of the allowed dimensions for landscape aspect ratio (3:2)
+        // 1152x768 is the closest allowed landscape ratio listed in the error message.
+        height: 768,   
+        width: 1152,  
         samples: 1,
         steps: 30, 
         sampler: "K_DPM_2_ANCESTRAL", 
@@ -149,3 +153,4 @@ export default async function handler(request, response) {
     return response.status(500).json({ error: `An internal server error occurred: ${error.message}` });
   }
 }
+
