@@ -44,56 +44,34 @@ function handleNoUser() {
     if (pageContent) pageContent.classList.remove('hidden');
 }
 
-// --- FIREBASE CONFIG ---
-// Replace this with your actual Firebase config from Firebase Console
-const firebaseConfig = {
-    apiKey: "your-api-key-here",
-    authDomain: "your-project-id.firebaseapp.com",
-    projectId: "your-project-id",
-    storageBucket: "your-project-id.appspot.com",
-    messagingSenderId: "123456789",
-    appId: "your-app-id"
-};
-
 // --- INITIALIZATION ---
 async function initializeFirebaseApp() {
     try {
-        // Try to get config from backend first
-        let config = firebaseConfig;
+        console.log("Fetching Firebase config from Vercel environment...");
         
-        try {
-            const response = await fetch('/api/generate-content', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ type: 'get-config' })
-            });
-            
-            if (response.ok) {
-                const contentType = response.headers.get("content-type");
-                if (contentType && contentType.includes("application/json")) {
-                    const serverConfig = await response.json();
-                    if (serverConfig.apiKey) {
-                        config = serverConfig;
-                        console.log("Using Firebase config from server");
-                    }
-                }
-            }
-        } catch (fetchError) {
-            console.log("Using default Firebase config");
+        const response = await fetch('/api/get-firebase-config', {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        
+        if (!response.ok) {
+            throw new Error(`Server responded with status ${response.status}`);
+        }
+        
+        const firebaseConfig = await response.json();
+        
+        if (!firebaseConfig.apiKey) {
+            throw new Error("Invalid Firebase config received from server");
         }
 
-        if (!config.apiKey || config.apiKey === "your-api-key-here") {
-            throw new Error("Please configure Firebase in main.js with your actual Firebase project settings");
-        }
-
-        const app = initializeApp(config);
+        console.log("Firebase config loaded successfully");
+        const app = initializeApp(firebaseConfig);
         auth = getAuth(app);
-        console.log("Firebase initialized successfully");
 
     } catch (error) {
         console.error("Firebase Initialization Error:", error);
         if (authLoader) {
-            authLoader.innerHTML = `Firebase Error<br><span style="font-size: 0.8rem; color: #ffb8b8;">Check Console</span>`;
+            authLoader.innerHTML = `Config Error<br><span style="font-size: 0.8rem; color: #ffb8b8;">${error.message}</span>`;
         }
         throw error;
     }
