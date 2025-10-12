@@ -44,52 +44,104 @@ function handleNoUser() {
     if (pageContent) pageContent.classList.remove('hidden');
 }
 
+// --- FIREBASE CONFIG FALLBACK ---
+// Add this as a temporary fallback while we debug the API
+const fallbackConfig = {
+    // You'll need to add your actual Firebase config here temporarily
+    // Get this from your Firebase project settings
+    apiKey: "your-api-key-here",
+    authDomain: "your-project.firebaseapp.com",
+    projectId: "your-project-id",
+    storageBucket: "your-project.appspot.com",
+    messagingSenderId: "123456789",
+    appId: "your-app-id"
+};
+
 // --- INITIALIZATION ---
 async function initializeFirebaseApp() {
     try {
-        console.log("Fetching Firebase config from Vercel environment...");
+        console.log("Testing API connection...");
+        
+        // First, test if the API is working
+        try {
+            const testResponse = await fetch('/api/test');
+            if (testResponse.ok) {
+                const testData = await testResponse.json();
+                console.log("API Test Success:", testData);
+            } else {
+                console.error("API Test Failed - Status:", testResponse.status);
+            }
+        } catch (testError) {
+            console.error("API Test Error:", testError);
+        }
+
+        console.log("Fetching Firebase config from server...");
         
         const response = await fetch('/api/get-firebase-config', {
             method: 'GET',
             headers: { 'Content-Type': 'application/json' }
         });
         
+        console.log("Response status:", response.status);
+        
         if (!response.ok) {
-            throw new Error(`Server responded with status ${response.status}`);
+            throw new Error(`Server responded with status ${response.status}. Check if API route exists.`);
         }
         
         const firebaseConfig = await response.json();
+        console.log("Firebase config received:", firebaseConfig);
         
         if (!firebaseConfig.apiKey) {
             throw new Error("Invalid Firebase config received from server");
         }
 
-        console.log("Firebase config loaded successfully");
+        console.log("Firebase config loaded successfully from server");
         const app = initializeApp(firebaseConfig);
         auth = getAuth(app);
 
     } catch (error) {
         console.error("Firebase Initialization Error:", error);
+        
+        // Show detailed error in the loader
         if (authLoader) {
-            authLoader.innerHTML = `Config Error<br><span style="font-size: 0.8rem; color: #ffb8b8;">${error.message}</span>`;
+            authLoader.innerHTML = `
+                Config Error<br>
+                <span style="font-size: 0.8rem; color: #ffb8b8;">
+                    ${error.message}<br>
+                    Check browser console for details
+                </span>
+            `;
         }
-        throw error;
+        
+        // Don't throw error - let the app continue without Firebase for now
+        console.log("App will continue without Firebase initialization");
     }
 }
 
 async function main() {
     try {
         await initializeFirebaseApp();
-        onAuthStateChanged(auth, (user) => {
+        
+        // If auth was initialized, set up auth state listener
+        if (auth) {
+            onAuthStateChanged(auth, (user) => {
+                if (authLoader) authLoader.classList.add('hidden');
+                if (user) {
+                    handleAuthenticatedUser(user);
+                } else {
+                    handleNoUser();
+                }
+            });
+        } else {
+            // If Firebase didn't initialize, still show the page content
             if (authLoader) authLoader.classList.add('hidden');
-            if (user) {
-                handleAuthenticatedUser(user);
-            } else {
-                handleNoUser();
-            }
-        });
+            if (pageContent) pageContent.classList.remove('hidden');
+            handleNoUser(); // Show login button even without Firebase
+        }
     } catch (error) {
         console.error("Failed to start the application.", error.message);
+        if (authLoader) authLoader.classList.add('hidden');
+        if (pageContent) pageContent.classList.remove('hidden');
     }
 }
 
