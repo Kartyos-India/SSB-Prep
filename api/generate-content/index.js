@@ -1,104 +1,216 @@
-import { Buffer } from 'buffer';
+// --- Firebase Module Imports ---
+const { 
+    initializeApp, getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut,
+    getFirestore, collection, addDoc, query, getDocs, doc, getDoc, orderBy
+} = window.FirebaseModules;
 
-// --- Helper Functions to call APIs ---
-async function queryGroqText(prompt, apiKey) {
-  const apiUrl = "https://api.groq.com/openai/v1/chat/completions";
-  const payload = {
-    messages: [{ role: "user", content: prompt }],
-    model: "llama-3.1-8b-instant", 
-    temperature: 0.7,
-    response_format: { type: "json_object" }, 
-  };
-  const response = await fetch(apiUrl, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify(payload),
-  });
-  if (!response.ok) {
-    const errorBody = await response.json();
-    throw new Error(`Groq API Error: ${errorBody.error.message}`);
-  }
-  const result = await response.json();
-  return JSON.parse(result.choices[0].message.content);
+// --- Global State ---
+let app, auth, db, userId;
+let isTestActive = false;
+let ppdtMediaStream = null;
+
+// --- DOM Elements ---
+const authLoader = document.getElementById('auth-loader');
+const mainContent = document.getElementById('main-content');
+const topNav = document.getElementById('top-nav');
+const headerRight = document.getElementById('header-right');
+
+// --- Utility Functions ---
+function getTemplateContent(templateId) {
+    const template = document.getElementById(templateId);
+    return template ? template.content.cloneNode(true) : null;
 }
 
-async function queryStabilityAIImage(data, apiKey) {
-    const apiUrl = "https://api.stability.ai/v1/generation/stable-diffusion-xl-1024-v1-0/text-to-image";
-    const { prompt } = data;
-    const payload = {
-        text_prompts: [{ text: prompt, weight: 1.0 }, { text: "blurry, low quality, colored, modern, digital, photograph, watermark, signature", weight: -1.0 }],
-        cfg_scale: 7,
-        height: 768,   
-        width: 1344,  
-        samples: 1,
-        steps: 30, 
-        sampler: "K_DPM_2_ANCESTRAL", 
-    };
-    return await fetch(apiUrl, {
-        method: "POST",
-        headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json", "Accept": "image/png" },
-        body: JSON.stringify(payload),
+function showScreen(screenId) {
+    if (!mainContent) return;
+    Array.from(mainContent.children).forEach(child => child.classList.add('hidden'));
+    const screen = document.getElementById(screenId);
+    if (screen) screen.classList.remove('hidden');
+
+    document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
+    const activeLink = document.querySelector(`.nav-link[data-screen="${screenId}"]`);
+    if(activeLink) activeLink.classList.add('active');
+}
+
+function addGoBackButton(screenElement, targetScreenFunction) {
+    const backButton = document.createElement('button');
+    backButton.className = 'back-btn py-1 px-3 rounded-lg absolute top-4 left-4 font-bold bg-gray-200 text-gray-700';
+    backButton.textContent = '← Back';
+    backButton.addEventListener('click', targetScreenFunction);
+    screenElement.prepend(backButton);
+}
+
+// --- Firebase Initialization ---
+async function initializeAppWithRemoteConfig() {
+    try {
+        const response = await fetch('/api/generate-content', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ type: 'get-config' })
+        });
+        if (!response.ok) throw new Error("Failed to fetch Firebase config.");
+        
+        const firebaseConfig = await response.json();
+        if (!firebaseConfig.apiKey) throw new Error("Invalid Firebase config.");
+
+        app = initializeApp(firebaseConfig);
+        auth = getAuth(app);
+        db = getFirestore(app);
+        return { auth, db };
+    } catch (error) {
+        console.error("Firebase Init Error:", error);
+        if(authLoader) authLoader.innerHTML = `<p class="text-red-500">${error.message}</p>`;
+        return {};
+    }
+}
+
+// --- Authentication Logic ---
+function renderLoginScreen() {
+    const loginScreen = document.getElementById('login-screen');
+    if (!loginScreen) return;
+    
+    loginScreen.innerHTML = `
+        <div class="text-center mb-10">
+            <h2 class="text-4xl md:text-5xl font-bold text-gray-700">WELCOME, CANDIDATE</h2>
+            <p class="text-gray-500 mt-2">Sign in to begin.</p>
+        </div>
+        <button id="google-signin-btn" class="mx-auto primary-btn font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-3">
+            Sign in with Google
+        </button>`;
+    
+    document.getElementById('google-signin-btn').addEventListener('click', () => {
+        const provider = new GoogleAuthProvider();
+        signInWithPopup(auth, provider).catch(console.error);
+    });
+    showScreen('login-screen');
+}
+
+function handleAuthState(user) {
+    if (authLoader) authLoader.classList.add('hidden');
+    if (user) {
+        userId = user.uid;
+        headerRight.innerHTML = `
+            <span>${user.displayName || user.email}</span>
+            <button id="logout-btn" class="back-btn py-1 px-3 rounded-lg">Logout</button>`;
+        document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
+        topNav.classList.remove('hidden');
+        renderHomeScreen();
+    } else {
+        userId = null;
+        headerRight.innerHTML = '';
+        topNav.classList.add('hidden');
+        renderLoginScreen();
+    }
+}
+
+// --- Screen Rendering Logic ---
+function renderHomeScreen() {
+    const homeScreen = document.getElementById('home-screen');
+    homeScreen.innerHTML = '';
+    const template = getTemplateContent('home-screen-template');
+    if (template) {
+        homeScreen.appendChild(template);
+        homeScreen.querySelectorAll('button[data-action]').forEach(button => {
+            button.addEventListener('click', () => {
+                const action = button.dataset.action;
+                if (window[action]) window[action]();
+            });
+        });
+    }
+    showScreen('home-screen');
+}
+
+function renderScreeningMenu() {
+    // Placeholder for the full screening menu (like PPDT settings)
+    renderPPDTSettingsScreen();
+}
+
+function renderPsychologyMenu() {
+    const psychScreen = document.getElementById('psychology-screen');
+    psychScreen.innerHTML = '';
+    const template = getTemplateContent('psychology-screen-template');
+    if (template) {
+        psychScreen.appendChild(template);
+        addGoBackButton(psychScreen, renderHomeScreen);
+        psychScreen.querySelectorAll('button[data-test-type]').forEach(button => {
+            button.addEventListener('click', () => {
+                initializePsyTest({ testType: button.dataset.testType });
+            });
+        });
+    }
+    showScreen('psychology-screen');
+}
+
+function renderGTOPlaceholderScreen() {
+    const gtoScreen = document.getElementById('gto-placeholder-screen');
+    gtoScreen.innerHTML = '';
+    const template = getTemplateContent('gto-placeholder-screen-template');
+    if (template) {
+        gtoScreen.appendChild(template);
+        addGoBackButton(gtoScreen, renderHomeScreen);
+        gtoScreen.querySelector('button[data-action="renderHomeScreen"]').addEventListener('click', renderHomeScreen);
+    }
+    showScreen('gto-placeholder-screen');
+}
+
+function renderPPDTSettingsScreen() {
+    const ppdtScreen = document.getElementById('ppdt-settings-screen');
+    ppdtScreen.innerHTML = '<h2>PPDT Settings</h2><p>PPDT functionality to be built here.</p>';
+    addGoBackButton(ppdtScreen, renderHomeScreen);
+    showScreen('ppdt-settings-screen');
+}
+
+// --- Test Initialization and Logic ---
+function initializeOIRTest() {
+    const testScreen = document.getElementById('test-screen');
+    testScreen.innerHTML = '';
+    const template = getTemplateContent('oir-test-screen-template');
+    if(template) {
+        testScreen.appendChild(template);
+        // Add OIR logic here
+    }
+    showScreen('test-screen');
+}
+
+function initializePsyTest(config) {
+    const testScreen = document.getElementById('test-screen');
+    testScreen.innerHTML = `<h2>Psychology Test: ${config.testType}</h2><p>Test content for ${config.testType} would go here.</p>`;
+    addGoBackButton(testScreen, renderPsychologyMenu);
+    showScreen('test-screen');
+}
+
+// --- Event Listeners and Main Execution ---
+function setupNavigation() {
+    topNav.addEventListener('click', (e) => {
+        const target = e.target.closest('a');
+        if (!target) return;
+        e.preventDefault();
+
+        const screen = target.dataset.screen;
+        const testType = target.dataset.testType;
+        const action = target.dataset.action;
+
+        if (screen === 'home-screen') renderHomeScreen();
+        if (screen === 'gto-placeholder-screen') renderGTOPlaceholderScreen();
+        if (screen === 'ppdt-settings-screen') renderPPDTSettingsScreen();
+        
+        if (action === 'start-test' && testType === 'OIR') initializeOIRTest();
+        if (['TAT', 'WAT', 'SRT'].includes(testType)) initializePsyTest({ testType });
     });
 }
 
-// --- Main Serverless Function Handler ---
-export default async function handler(request, response) {
-  const { type, prompt, data } = request.body;
-  
-  const STABILITY_AI_API_KEY = process.env.STABILITY_AI_API_KEY;
-  const GROQ_API_KEY = process.env.GROQ_API_KEY;
-  const FIREBASE_CONFIG = process.env.__firebase_config;
-
-  try {
-    switch (type) {
-      case 'get-config':
-        if (!FIREBASE_CONFIG) return response.status(500).json({ error: 'Firebase configuration is not set on the server.' });
-        try {
-            return response.status(200).json(JSON.parse(FIREBASE_CONFIG));
-        } catch (error) {
-            return response.status(500).json({ error: 'Server-side Firebase configuration is not valid JSON.' });
-        }
-      case 'image':
-        if (!STABILITY_AI_API_KEY) return response.status(500).json({ error: 'Stability AI API key not configured.' });
-        if (!prompt) return response.status(400).json({ error: 'Prompt is required' });
-        
-        const aiImageResponse = await queryStabilityAIImage({ prompt }, STABILITY_AI_API_KEY);
-        if (!aiImageResponse.ok) {
-            const errorText = await aiImageResponse.text();
-            let errorMessage = 'Unknown API Error';
-            try { errorMessage = JSON.parse(errorText).message || 'API Error'; } catch {}
-            return response.status(aiImageResponse.status).json({ error: `Stability AI Error: ${errorMessage}` });
-        }
-        
-        const imageBuffer = Buffer.from(await aiImageResponse.arrayBuffer());
-        response.setHeader('Content-Type', 'image/png');
-        return response.status(200).send(imageBuffer);
-      case 'wat':
-        if (!GROQ_API_KEY) return response.status(500).json({ error: 'Groq API key not configured.' });
-        const watPrompt = "Generate a list of 60 diverse, single, neutral to slightly positive English words for a Word Association Test. Cover themes like relationships, work, emotions, and abstract concepts. CRITICAL: Return a single JSON object with one key: 'words', which holds a JSON array of 60 strings.";
-        const watJson = await queryGroqText(watPrompt, GROQ_API_KEY);
-        return response.status(200).json(watJson.words);
-      case 'srt':
-        if (!GROQ_API_KEY) return response.status(500).json({ error: 'Groq API key not configured.' });
-        const srtPrompt = "Generate a list of 60 realistic situations for a Situation Reaction Test (SRT) for military officer selection. Each situation must start with 'He...' or 'She...' and end with '...He/She would...'. CRITICAL: Return a single JSON object with one key: 'situations', which holds a JSON array of 60 strings.";
-        const srtJson = await queryGroqText(srtPrompt, GROQ_API_KEY);
-        return response.status(200).json(srtJson.situations);
-      case 'feedback':
-        if (!GROQ_API_KEY) return response.status(500).json({ error: 'Groq API key not configured.' });
-        if (!data || !data.testType || !data.responses) return response.status(400).json({ error: 'Test data is required' });
-        
-        const formattedResponses = data.responses.map(r => `Prompt: "${r.prompt}"\nResponse: "${r.response || 'No response.'}"`).join('\n\n');
-        const feedbackPrompt = `You are an expert SSB psychologist. Analyze these ${data.testType} responses based on Officer Like Qualities (OLQs). Provide constructive feedback. Structure your response as a single JSON object with one key: "feedback", where the value is a markdown formatted string containing three sections: "### Overall Analysis", "### Positive Traits Revealed", and "### Areas for Improvement". Be encouraging and professional.\n\nHere are the user's responses:\n\n${formattedResponses}`;
-        const feedbackJson = await queryGroqText(feedbackPrompt, GROQ_API_KEY);
-        return response.status(200).json({ feedback: feedbackJson.feedback });
-      default:
-        return response.status(400).json({ error: 'Invalid request type' });
+document.addEventListener('DOMContentLoaded', async () => {
+    const { auth, db } = await initializeAppWithRemoteConfig();
+    if (auth && db) {
+        setupNavigation();
+        onAuthStateChanged(auth, handleAuthState);
     }
-  } catch (error) {
-    console.error("Server-side error:", error);
-    return response.status(500).json({ error: `An internal server error occurred: ${error.message}` });
-  }
-}
+});
+
+// Make functions globally accessible for onclick attributes if needed
+window.renderHomeScreen = renderHomeScreen;
+window.renderScreeningMenu = renderScreeningMenu;
+window.renderPsychologyMenu = renderPsychologyMenu;
+window.renderGTOPlaceholderScreen = renderGTOPlaceholderScreen;
+
+
