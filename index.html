@@ -25,27 +25,23 @@
             background-image: url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"%3E%3Cg fill="%23254C91" fill-opacity="0.4"%3E%3Crect x="0" y="0" width="100" height="1"/%3E%3Crect x="0" y="0" width="1" height="100"/%3E%3C/g%3E%3C/svg%3E');
         }
         
-        /* FIX 1: Make arena-container take up most of the screen space */
         .arena-container {
             background: var(--card-light);
             border-radius: 1.5rem;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
             padding: 2rem;
             position: relative;
-            /* New fluid width for large screens, leaving padding around edges */
             max-width: 95%; 
             width: 100%;
             margin-left: auto;
             margin-right: auto;
         }
         
-        /* Center content on mobile, stretch on PC */
         @media (min-width: 1024px) { 
             .arena-container {
                 max-width: 1100px; 
             }
         }
-
 
         h1, h2, h3 {
             font-family: 'Orbitron', sans-serif;
@@ -103,7 +99,6 @@
             align-items: center;
         }
         
-        /* FIX 2: Dropdown Styles */
         .dropdown-menu {
             position: absolute;
             background-color: white;
@@ -129,7 +124,6 @@
             color: var(--accent-blue);
         }
 
-        /* Mobile Dropdown Menu Styles for Hamburger */
         #top-nav {
             display: none; 
             position: absolute;
@@ -159,7 +153,6 @@
             border-radius: 0;
         }
         
-        /* Desktop Navigation Styles (Dropdown Containers) */
         @media (min-width: 640px) { /* sm breakpoint */
             #top-nav {
                 display: flex !important;
@@ -187,7 +180,6 @@
             }
         }
 
-        /* Custom Styles for Icons/Images */
         .ppdt-image { filter: grayscale(100%) contrast(1.1); }
         #feedback-content h3 { color: var(--primary-blue); }
 
@@ -195,12 +187,24 @@
             width: 100%; height: 8px; background-color: #E5E7EB; border-radius: 9999px; overflow: hidden; position: relative;
         }
         .loader::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 40%;
             background: var(--accent-blue);
             box-shadow: 0 0 10px var(--accent-blue);
+            border-radius: 9999px;
+            animation: loader-anim 1.5s linear infinite;
+        }
+        @keyframes loader-anim {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(250%); }
         }
     </style>
     
-    <!-- Required Firebase Scripts (MUST be external) -->
+    <!-- Required Firebase Scripts -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
@@ -216,7 +220,7 @@
 
     <div class="arena-container w-full">
         
-        <!-- NEW HEADER STRUCTURE -->
+        <!-- HEADER STRUCTURE -->
         <header id="header-bar" class="flex-wrap mb-4">
             <div id="header-left" class="flex items-center gap-3">
                 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
@@ -225,7 +229,6 @@
             
             <div class="flex items-center gap-4 text-sm mt-2 sm:mt-0 ml-auto relative">
                 <div id="header-right" class="flex items-center gap-4 text-sm text-white"></div>
-                <!-- Mobile Menu Button - Hidden on screens >= sm -->
                 <button id="mobile-menu-btn" class="sm:hidden p-2 rounded-lg bg-blue-700 text-white">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
                 </button>
@@ -235,35 +238,22 @@
         <!-- Navigation Links / Dropdown Bar -->
         <nav id="top-nav" class="my-3 flex justify-center sm:justify-start gap-1 sm:gap-4">
              <a href="#" data-screen="home-screen" class="nav-link active">Home</a>
-             
-             <!-- Screening Test Dropdown -->
-             <div id="screening-nav-container" class="relative group">
-                 <div class="nav-link flex items-center gap-1 group-hover:bg-gray-100 sm:group-hover:bg-E5E7EB" onclick="toggleDropdown('screening-dropdown')">
-                     Screening Test
-                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                 </div>
-                 <div id="screening-dropdown" class="dropdown-menu hidden sm:group-hover:block">
-                     <a href="#" data-action="start-test" data-test-type="OIR" class="dropdown-item" onclick="handleTestSelection(event)">OIR Test</a>
-                     <a href="#" data-screen="ppdt-settings-screen" class="dropdown-item" onclick="handleTestSelection(event)">PPDT</a>
+             <div class="relative group">
+                 <div class="nav-link flex items-center gap-1">Screening</div>
+                 <div class="dropdown-menu hidden group-hover:block">
+                     <a href="#" data-action="start-test" data-test-type="OIR" class="dropdown-item">OIR Test</a>
+                     <a href="#" data-screen="ppdt-settings-screen" class="dropdown-item">PPDT</a>
                  </div>
              </div>
-
-             <!-- Psychology Test Dropdown -->
-             <div id="psychology-nav-container" class="relative group">
-                 <div class="nav-link flex items-center gap-1 group-hover:bg-gray-100 sm:group-hover:bg-E5E7EB" onclick="toggleDropdown('psychology-dropdown')">
-                     Psychology Tests
-                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                 </div>
-                 <div id="psychology-dropdown" class="dropdown-menu hidden sm:group-hover:block">
-                     <a href="#" data-test-type="TAT" class="dropdown-item" onclick="handleTestSelection(event)">TAT</a>
-                     <a href="#" data-test-type="WAT" class="dropdown-item" onclick="handleTestSelection(event)">WAT</a>
-                     <a href="#" data-test-type="SRT" class="dropdown-item" onclick="handleTestSelection(event)">SRT</a>
+             <div class="relative group">
+                 <div class="nav-link flex items-center gap-1">Psychology</div>
+                 <div class="dropdown-menu hidden group-hover:block">
+                     <a href="#" data-test-type="TAT" class="dropdown-item">TAT</a>
+                     <a href="#" data-test-type="WAT" class="dropdown-item">WAT</a>
+                     <a href="#" data-test-type="SRT" class="dropdown-item">SRT</a>
                  </div>
              </div>
-
-             <!-- GTO Test Placeholder -->
              <a href="#" data-screen="gto-placeholder-screen" class="nav-link">GTO Tests</a>
-
              <a href="#" data-screen="past-tests-screen" class="nav-link">My Performance</a>
         </nav>
         
@@ -278,38 +268,65 @@
             <div id="home-screen" class="hidden"></div>
             <div id="ppdt-settings-screen" class="hidden"></div>
             <div id="psychology-screen" class="hidden"></div>
-            <div id="oir-test-screen" class="hidden"></div> <!-- New OIR screen -->
+            <div id="gto-placeholder-screen" class="hidden"></div>
             <div id="test-screen" class="hidden"></div>
             <div id="review-screen" class="hidden"></div>
             <div id="past-tests-screen" class="hidden"></div>
             <div id="view-test-screen" class="hidden"></div>
-            <div id="gto-placeholder-screen" class="hidden"></div>
         </main>
     </div>
     
     <div id="templates" class="hidden">
-        
-        <!-- OIR Test Template -->
+    
+        <template id="home-screen-template">
+            <div class="space-y-8">
+                <div class="text-center">
+                    <h2 class="text-4xl md:text-5xl font-bold text-gray-700">CHOOSE YOUR TRAINING MODULE</h2>
+                    <p class="text-gray-500 mt-2 max-w-2xl mx-auto">Select a module to begin your assessment and training.</p>
+                </div>
+                <div class="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto pt-8">
+                    <div class="choice-card p-6 text-center flex flex-col items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--accent-blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17s.8-6.1 6-10c4.5-5 10 2 10 2"></path><path d="M12 21a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h0a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2z"></path><path d="M10 13c1.7 0 3 1.3 3 3"></path></svg>
+                        <h3 class="text-xl font-bold text-gray-700 mt-3">SCREENING</h3>
+                        <p class="text-gray-500 mt-2 flex-grow text-sm">OIR and PPDT practice for Stage I assessment.</p>
+                        <button class="w-full primary-btn font-bold py-3 px-6 rounded-lg text-lg mt-6" data-action="renderScreeningMenu">START STAGE I</button>
+                    </div>
+                    
+                    <div class="choice-card p-6 text-center flex flex-col items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--accent-blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+                        <h3 class="text-xl font-bold text-gray-700 mt-3">PSYCHOLOGY</h3>
+                        <p class="text-gray-500 mt-2 flex-grow text-sm">Hone skills in TAT, WAT, and SRT with AI feedback.</p>
+                        <button class="w-full primary-btn font-bold py-3 px-6 rounded-lg text-lg mt-6" data-action="renderPsychologyMenu">START TESTS</button>
+                    </div>
+
+                    <div class="choice-card p-6 text-center flex flex-col items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--accent-blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 15s1-4 7-4 7 4 7 4"></path><path d="M12 21a9 9 0 0 0 9-9c0-5-4-9-9-9s-9 4-9 9a9 9 0 0 0 9 9z"></path><line x1="8" y1="12" x2="16" y2="12"></line><line x1="12" y1="8" x2="12" y2="16"></line></svg>
+                        <h3 class="text-xl font-bold text-gray-700 mt-3">GTO TASKS</h3>
+                        <p class="text-gray-500 mt-2 flex-grow text-sm">Conceptual and strategy guides for Group Tasks.</p>
+                        <button class="w-full primary-btn font-bold py-3 px-6 rounded-lg text-lg mt-6" data-action="renderGTOPlaceholderScreen">VIEW MODULE</button>
+                    </div>
+                </div>
+            </div>
+        </template>
+
+        <template id="gto-placeholder-screen-template">
+            <div class="text-center mb-10">
+                <h2 class="text-4xl md:text-5xl font-bold text-gray-700">GTO TESTS</h2>
+                <p class="text-gray-500 mt-2">Group Testing Officer tasks are primarily physical and are not simulated here.</p>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-md border max-w-xl mx-auto space-y-4">
+                <p class="text-gray-700">This module provides information on tasks like PGT, HGT, FGT, and Lecturettes, but currently offers no interactive simulation.</p>
+                <button class="primary-btn mt-4 w-full" data-action="renderHomeScreen">Return to Home</button>
+            </div>
+        </template>
+
         <template id="oir-test-screen-template">
             <div class="text-center mb-10">
                 <h2 class="text-4xl md:text-5xl font-bold text-gray-700">OIR TEST</h2>
                 <p class="text-gray-500 mt-2">Officer Intelligence Rating Aptitude Questions.</p>
             </div>
             <div class="bg-white p-6 rounded-xl shadow-md border max-w-2xl mx-auto space-y-6">
-                <div id="oir-question-container" class="space-y-4">
-                    <p class="text-lg text-gray-700">Question 1/50: If a shirt costs $20 and is discounted by 25%, what is the final price?</p>
-                    <div class="space-y-2">
-                        <label class="block bg-gray-50 p-3 rounded-md border cursor-pointer hover:bg-gray-100">
-                            <input type="radio" name="oir_q1" value="a" class="mr-2"> $15
-                        </label>
-                        <label class="block bg-gray-50 p-3 rounded-md border cursor-pointer hover:bg-gray-100">
-                            <input type="radio" name="oir_q1" value="b" class="mr-2"> $16
-                        </label>
-                        <label class="block bg-gray-50 p-3 rounded-md border cursor-pointer hover:bg-gray-100">
-                            <input type="radio" name="oir_q1" value="c" class="mr-2"> $18
-                        </label>
-                    </div>
-                </div>
+                <div id="oir-question-container" class="space-y-4"></div>
                 <div class="flex justify-between pt-4 border-t border-gray-200">
                     <button id="oir-prev-btn" class="back-btn py-2 px-4 rounded-lg">← Previous</button>
                     <button id="oir-next-btn" class="primary-btn py-2 px-4 rounded-lg">Next →</button>
@@ -318,282 +335,17 @@
             </div>
         </template>
         
-        <!-- GTO Placeholder Template -->
-        <template id="gto-placeholder-screen-template">
-             <div class="text-center mb-10">
-                <h2 class="text-4xl md:text-5xl font-bold text-gray-700">GTO TESTS</h2>
-                <p class="text-gray-500 mt-2">Group Testing Officer tasks are primarily physical and are not simulated here.</p>
-            </div>
-            <div class="bg-white p-6 rounded-xl shadow-md border max-w-xl mx-auto space-y-4">
-                <p class="text-gray-700">This module provides information on tasks like PGT, HGT, FGT, and Lecturettes, but currently offers no interactive simulation.</p>
-                <button class="primary-btn mt-4 w-full" onclick="renderHomeScreen()">Return to Home</button>
+        <template id="ppdt-settings-screen-template">
+            <div class="space-y-8">
+                <div class="text-center">
+                    <h2 class="text-4xl md:text-5xl font-bold text-gray-700">PPDT SIMULATION</h2>
+                </div>
+                <div class="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto pt-8">
+                    <!-- ... PPDT settings content ... -->
+                </div>
             </div>
         </template>
 
-        <div id="templates" class="hidden">
-    
-    <template id="home-screen-template">
-        <div class="space-y-8">
-            <div class="text-center">
-                <h2 class="text-4xl md:text-5xl font-bold text-gray-700">CHOOSE YOUR TRAINING MODULE</h2>
-                <p class="text-gray-500 mt-2 max-w-2xl mx-auto">Select a module to begin your assessment and training.</p>
-            </div>
-            <div class="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto pt-8">
-                <div class="choice-card p-6 text-center flex flex-col items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--accent-blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17s.8-6.1 6-10c4.5-5 10 2 10 2"></path><path d="M12 21a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h0a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2z"></path><path d="M10 13c1.7 0 3 1.3 3 3"></path></svg>
-                    <h3 class="text-xl font-bold text-gray-700 mt-3">SCREENING</h3>
-                    <p class="text-gray-500 mt-2 flex-grow text-sm">OIR and PPDT practice for Stage I assessment.</p>
-                    <button class="w-full primary-btn font-bold py-3 px-6 rounded-lg text-lg mt-6" onclick="renderScreeningMenu()">START STAGE I</button>
-                </div>
-                
-                <div class="choice-card p-6 text-center flex flex-col items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--accent-blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
-                    <h3 class="text-xl font-bold text-gray-700 mt-3">PSYCHOLOGY</h3>
-                    <p class="text-gray-500 mt-2 flex-grow text-sm">Hone skills in TAT, WAT, and SRT with AI feedback.</p>
-                    <button class="w-full primary-btn font-bold py-3 px-6 rounded-lg text-lg mt-6" onclick="renderPsychologyMenu()">START TESTS</button>
-                </div>
-
-                <div class="choice-card p-6 text-center flex flex-col items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--accent-blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 15s1-4 7-4 7 4 7 4"></path><path d="M12 21a9 9 0 0 0 9-9c0-5-4-9-9-9s-9 4-9 9a9 9 0 0 0 9 9z"></path><line x1="8" y1="12" x2="16" y2="12"></line><line x1="12" y1="8" x2="12" y2="16"></line></svg>
-                    <h3 class="text-xl font-bold text-gray-700 mt-3">GTO TASKS</h3>
-                    <p class="text-gray-500 mt-2 flex-grow text-sm">Conceptual and strategy guides for Group Tasks.</p>
-                    <button class="w-full primary-btn font-bold py-3 px-6 rounded-lg text-lg mt-6" onclick="renderGTOPlaceholderScreen()">VIEW MODULE</button>
-                </div>
-            </div>
-        </div>
-    </template>
-    <template id="gto-placeholder-screen-template">
-        <div class="text-center mb-10">
-            <h2 class="text-4xl md:text-5xl font-bold text-gray-700">GTO TESTS</h2>
-            <p class="text-gray-500 mt-2">Group Testing Officer tasks are primarily physical and are not simulated here.</p>
-        </div>
-        <div class="bg-white p-6 rounded-xl shadow-md border max-w-xl mx-auto space-y-4">
-            <p class="text-gray-700">This module provides information on tasks like PGT, HGT, FGT, and Lecturettes, but currently offers no interactive simulation.</p>
-            <button class="primary-btn mt-4 w-full" onclick="renderHomeScreen()">Return to Home</button>
-        </div>
-    </template>
-
-    <template id="oir-test-screen-template">
-        <div class="text-center mb-10">
-            <h2 class="text-4xl md:text-5xl font-bold text-gray-700">OIR TEST</h2>
-            <p class="text-gray-500 mt-2">Officer Intelligence Rating Aptitude Questions.</p>
-        </div>
-        <div class="bg-white p-6 rounded-xl shadow-md border max-w-2xl mx-auto space-y-6">
-            <div id="oir-question-container" class="space-y-4">
-                <p class="text-lg text-gray-700">Question 1/50: If a shirt costs $20 and is discounted by 25%, what is the final price?</p>
-                <div class="space-y-2">
-                    <label class="block bg-gray-50 p-3 rounded-md border cursor-pointer hover:bg-gray-100">
-                        <input type="radio" name="oir_q1" value="a" class="mr-2"> $15
-                    </label>
-                    <label class="block bg-gray-50 p-3 rounded-md border cursor-pointer hover:bg-gray-100">
-                        <input type="radio" name="oir_q1" value="b" class="mr-2"> $16
-                    </label>
-                    <label class="block bg-gray-50 p-3 rounded-md border cursor-pointer hover:bg-gray-100">
-                        <input type="radio" name="oir_q1" value="c" class="mr-2"> $18
-                    </label>
-                </div>
-            </div>
-            <div class="flex justify-between pt-4 border-t border-gray-200">
-                <button id="oir-prev-btn" class="back-btn py-2 px-4 rounded-lg">← Previous</button>
-                <button id="oir-next-btn" class="primary-btn py-2 px-4 rounded-lg">Next →</button>
-                <button id="oir-finish-btn" class="primary-btn py-2 px-4 rounded-lg hidden">Submit & Verify Answers</button>
-            </div>
-        </div>
-    </template>
-    
-    <template id="ppdt-settings-screen-template">
-        <div class="space-y-8">
-            <div class="text-center">
-                <h2 class="text-4xl md:text-5xl font-bold text-gray-700">PPDT SIMULATION</h2>
-            </div>
-            <div class="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto pt-8">
-                <div class="space-y-6">
-                    <div class="p-5 bg-blue-50 border border-blue-200 text-left rounded-lg shadow-md">
-                        <h3 class="font-bold text-lg text-gray-700 mb-3 flex items-center gap-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent-blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-                            MISSION BRIEFING:
-                        </h3>
-                        <ul class="list-disc list-inside text-gray-600 space-y-1 text-sm">
-                            <li>Acquire pen and paper for story composition.</li>
-                            <li>Secure a quiet, well-lit area for narration.</li>
-                            <li>Select gender to tailor the simulation.</li>
-                        </ul>
-                    </div>
-                    <div class="space-y-3 text-center p-4 bg-white rounded-lg shadow-md border">
-                        <h3 class="text-lg font-semibold text-gray-700">IDENTIFY GENDER</h3>
-                        <div class="flex justify-center gap-4">
-                            <input type="radio" id="gender-male" name="gender" value="male" class="hidden radio-glow" checked>
-                            <label for="gender-male" class="flex flex-col items-center justify-center p-4 border-2 border-blue-500 rounded-lg cursor-pointer w-32 h-32 transition bg-blue-500 text-white">
-                                <svg width="48" height="48" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M78.125 53.125C78.125 68.6125 65.4875 81.25 50 81.25C34.5125 81.25 21.875 68.6125 21.875 53.125C21.875 37.6375 34.5125 25 50 25C65.4875 25 78.125 37.6375 78.125 53.125Z" stroke="currentColor" stroke-width="8" stroke-miterlimit="10"/><path d="M71.875 28.125L87.5 12.5" stroke="currentColor" stroke-width="8" stroke-miterlimit="10" stroke-linecap="round"/><path d="M87.5 25V12.5H75" stroke="currentColor" stroke-width="8" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                                <span class="mt-2 font-medium">Male</span>
-                            </label>
-                            <input type="radio" id="gender-female" name="gender" value="female" class="hidden radio-glow">
-                            <label for="gender-female" class="flex flex-col items-center justify-center p-4 border-2 border-gray-300 rounded-lg cursor-pointer w-32 h-32 transition hover:border-blue-500">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="9" r="5"/><path d="M12 14v8"/><path d="M9 18h6"/></svg>
-                                <span class="mt-2 font-medium">Female</span>
-                            </label>
-                        </div>
-                    </div>
-                </div>
-                <div class="space-y-6 flex flex-col">
-                    <div class="choice-card p-6 flex-1 flex flex-col justify-between">
-                        <h3 class="text-xl font-bold text-gray-700">TIMED SIMULATION</h3>
-                        <p class="text-gray-500 text-sm mb-4">Simulates actual time pressure.</p>
-                        <div class="flex justify-center gap-3 pt-2 text-gray-700">
-                            <input type="radio" id="timer-visible" name="timer-visibility" value="visible" class="hidden radio-glow" checked>
-                            <label for="timer-visible" class="py-2 px-4 border-2 border-gray-400 rounded-lg cursor-pointer transition flex-1 text-sm">VISIBLE</label>
-                            <input type="radio" id="timer-hidden" name="timer-visibility" value="hidden" class="hidden radio-glow">
-                            <label for="timer-hidden" class="py-2 px-4 border-2 border-gray-400 rounded-lg cursor-pointer transition flex-1 text-sm">HIDDEN</label>
-                        </div>
-                        <button class="w-full primary-btn font-bold py-3 px-6 rounded-lg text-lg mt-6" data-test-type="PPDT" data-timed="true">START TIMED TEST</button>
-                    </div>
-                    <div class="choice-card p-6 flex-1 flex flex-col justify-between">
-                        <h3 class="text-xl font-bold text-gray-700">FREE PRACTICE</h3>
-                        <p class="text-gray-500 text-sm mb-4">No time constraints or pressure.</p>
-                        <button class="w-full primary-btn font-bold py-3 px-6 rounded-lg text-lg mt-6" data-test-type="PPDT" data-timed="false" style="background: #1E3A8A;">START FREE PRACTICE</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </template>
-
-    <template id="psychology-screen-template">
-        <div class="text-center mb-10">
-            <h2 class="text-4xl md:text-5xl font-bold text-gray-700">PSYCHOLOGY TEST BATTERY</h2>
-            <p class="text-gray-500 mt-2 max-w-2xl mx-auto">Select a test to begin.</p>
-        </div>
-        <div class="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            <div class="choice-card p-6 text-center flex flex-col items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--accent-blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h0v0a8 8 0 0 0 8-8V4H4v8a8 8 0 0 0 8 8z"></path><circle cx="12" cy="10" r="3"></circle></svg>
-                <h3 class="text-xl font-bold text-gray-700 mt-3">TAT</h3>
-                <p class="text-gray-500 mt-2 flex-grow text-sm">Thematic Apperception Test: AI-generated pictures for story writing.</p>
-                <button class="w-full primary-btn font-bold py-3 px-6 rounded-lg text-lg mt-6" data-test-type="TAT">START TAT</button>
-            </div>
-            <div class="choice-card p-6 text-center flex flex-col items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--accent-blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M8 12h8"></path><path d="M12 8v8"></path><path d="M16 16l-3.5-3.5"></path></svg>
-                <h3 class="text-xl font-bold text-gray-700 mt-3">WAT</h3>
-                <p class="text-gray-500 mt-2 flex-grow text-sm">Word Association Test: AI-generated words and personalized feedback.</p>
-                <button class="w-full primary-btn font-bold py-3 px-6 rounded-lg text-lg mt-6" data-test-type="WAT">START WAT</button>
-            </div>
-            <div class="choice-card p-6 text-center flex flex-col items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--accent-blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s-8-4-8-10V4l8-3 8 3v8c0 6-8 10-8 10z"></path><path d="M16 10L12 14 8 10"></path></svg>
-                <h3 class="text-xl font-bold text-gray-700 mt-3">SRT</h3>
-                <p class="text-gray-500 mt-2 flex-grow text-sm">Situation Reaction Test: AI-generated scenarios and personalized feedback.</p>
-                <button class="w-full primary-btn font-bold py-3 px-6 rounded-lg text-lg mt-6" data-test-type="SRT">START SRT</button>
-            </div>
-        </div>
-    </template>
-
-    <template id="gto-placeholder-screen-template">
-         <div class="text-center mb-10">
-            <h2 class="text-4xl md:text-5xl font-bold text-gray-700">GTO TESTS</h2>
-            <p class="text-gray-500 mt-2">Group Testing Officer tasks are primarily physical and are not simulated here.</p>
-        </div>
-        <div class="bg-white p-6 rounded-xl shadow-md border max-w-xl mx-auto space-y-4">
-            <p class="text-gray-700">This module provides information on tasks like PGT, HGT, FGT, and Lecturettes, but currently offers no interactive simulation.</p>
-            <button class="primary-btn mt-4 w-full" onclick="renderHomeScreen()">Return to Home</button>
-        </div>
-    </template>
-
-    <template id="oir-test-screen-template">
-        <div class="text-center mb-10">
-            <h2 class="text-4xl md:text-5xl font-bold text-gray-700">OIR TEST</h2>
-            <p class="text-gray-500 mt-2">Officer Intelligence Rating Aptitude Questions.</p>
-        </div>
-        <div class="bg-white p-6 rounded-xl shadow-md border max-w-2xl mx-auto space-y-6">
-            <div id="oir-question-container" class="space-y-4">
-                <p class="text-lg text-gray-700">Question 1/50: If a shirt costs $20 and is discounted by 25%, what is the final price?</p>
-                <div class="space-y-2">
-                    <label class="block bg-gray-50 p-3 rounded-md border cursor-pointer hover:bg-gray-100">
-                        <input type="radio" name="oir_q1" value="a" class="mr-2"> $15
-                    </label>
-                    <label class="block bg-gray-50 p-3 rounded-md border cursor-pointer hover:bg-gray-100">
-                        <input type="radio" name="oir_q1" value="b" class="mr-2"> $16
-                    </label>
-                    <label class="block bg-gray-50 p-3 rounded-md border cursor-pointer hover:bg-gray-100">
-                        <input type="radio" name="oir_q1" value="c" class="mr-2"> $18
-                    </label>
-                </div>
-            </div>
-            <div class="flex justify-between pt-4 border-t border-gray-200">
-                <button id="oir-prev-btn" class="back-btn py-2 px-4 rounded-lg">← Previous</button>
-                <button id="oir-next-btn" class="primary-btn py-2 px-4 rounded-lg">Next →</button>
-                <button id="oir-finish-btn" class="primary-btn py-2 px-4 rounded-lg hidden">Submit & Verify Answers</button>
-            </div>
-        </div>
-    </template>
-    
-    <template id="ppdt-settings-screen-template">
-        <div class="space-y-8">
-            <div class="text-center">
-                <h2 class="text-4xl md:text-5xl font-bold text-gray-700">PPDT SIMULATION</h2>
-            </div>
-            <div class="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto pt-8">
-                <div class="space-y-6">
-                    <div class="p-5 bg-blue-50 border border-blue-200 text-left rounded-lg shadow-md">
-                        <h3 class="font-bold text-lg text-gray-700 mb-3 flex items-center gap-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent-blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-                            MISSION BRIEFING:
-                        </h3>
-                        <ul class="list-disc list-inside text-gray-600 space-y-1 text-sm">
-                            <li>Acquire pen and paper for story composition.</li>
-                            <li>Secure a quiet, well-lit area for narration.</li>
-                            <li>Select gender to tailor the simulation.</li>
-                        </ul>
-                    </div>
-                    <div class="space-y-3 text-center p-4 bg-white rounded-lg shadow-md border">
-                        <h3 class="text-lg font-semibold text-gray-700">IDENTIFY GENDER</h3>
-                        <div class="flex justify-center gap-4">
-                            <input type="radio" id="gender-male" name="gender" value="male" class="hidden radio-glow" checked>
-                            <label for="gender-male" class="flex flex-col items-center justify-center p-4 border-2 border-blue-500 rounded-lg cursor-pointer w-32 h-32 transition bg-blue-500 text-white">
-                                <svg width="48" height="48" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M78.125 53.125C78.125 68.6125 65.4875 81.25 50 81.25C34.5125 81.25 21.875 68.6125 21.875 53.125C21.875 37.6375 34.5125 25 50 25C65.4875 25 78.125 37.6375 78.125 53.125Z" stroke="currentColor" stroke-width="8" stroke-miterlimit="10"/><path d="M71.875 28.125L87.5 12.5" stroke="currentColor" stroke-width="8" stroke-miterlimit="10" stroke-linecap="round"/><path d="M87.5 25V12.5H75" stroke="currentColor" stroke-width="8" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                                <span class="mt-2 font-medium">Male</span>
-                            </label>
-                            <input type="radio" id="gender-female" name="gender" value="female" class="hidden radio-glow">
-                            <label for="gender-female" class="flex flex-col items-center justify-center p-4 border-2 border-gray-300 rounded-lg cursor-pointer w-32 h-32 transition hover:border-blue-500">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="9" r="5"/><path d="M12 14v8"/><path d="M9 18h6"/></svg>
-                                <span class="mt-2 font-medium">Female</span>
-                            </label>
-                        </div>
-                    </div>
-                </div>
-                <div class="space-y-6 flex flex-col">
-                    <div class="choice-card p-6 flex-1 flex flex-col justify-between">
-                        <h3 class="text-xl font-bold text-gray-700">TIMED SIMULATION</h3>
-                        <p class="text-gray-500 text-sm mb-4">Simulates actual time pressure.</p>
-                        <div class="flex justify-center gap-3 pt-2 text-gray-700">
-                            <input type="radio" id="timer-visible" name="timer-visibility" value="visible" class="hidden radio-glow" checked>
-                            <label for="timer-visible" class="py-2 px-4 border-2 border-gray-400 rounded-lg cursor-pointer transition flex-1 text-sm">VISIBLE</label>
-                            <input type="radio" id="timer-hidden" name="timer-visibility" value="hidden" class="hidden radio-glow">
-                            <label for="timer-hidden" class="py-2 px-4 border-2 border-gray-400 rounded-lg cursor-pointer transition flex-1 text-sm">HIDDEN</label>
-                        </div>
-                        <button class="w-full primary-btn font-bold py-3 px-6 rounded-lg text-lg mt-6" data-test-type="PPDT" data-timed="true">START TIMED TEST</button>
-                    </div>
-                    <div class="choice-card p-6 flex-1 flex flex-col justify-between">
-                        <h3 class="text-xl font-bold text-gray-700">FREE PRACTICE</h3>
-                        <p class="text-gray-500 text-sm mb-4">No time constraints or pressure.</p>
-                        <button class="w-full primary-btn font-bold py-3 px-6 rounded-lg text-lg mt-6" data-test-type="PPDT" data-timed="false" style="background: #1E3A8A;">START FREE PRACTICE</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </template>
-    
-    <template id="ppdt-picture-stage-template">...</template>
-    <template id="ppdt-story-stage-template">...</template>
-    <template id="narration-stage-template">...</template>
-    <template id="ppdt-review-screen-template">...</template>
-    <template id="tat-picture-stage-template">...</template>
-    <template id="tat-story-stage-template">...</template>
-    <template id="wat-stage-template">...</template>
-    <template id="srt-stage-template">...</template>
-    <template id="text-review-template">...</template>
-    <template id="past-tests-screen-template">...</template>
-    <template id="view-test-screen-template">...</template>
-
-</div>
-        
-        <!-- Psychology Templates (Standard) -->
         <template id="psychology-screen-template">
             <div class="text-center mb-10">
                 <h2 class="text-4xl md:text-5xl font-bold text-gray-700">PSYCHOLOGY TEST BATTERY</h2>
@@ -601,43 +353,37 @@
             </div>
             <div class="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
                 <div class="choice-card p-6 text-center flex flex-col items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--accent-blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h0v0a8 8 0 0 0 8-8V4H4v8a8 8 0 0 0 8 8z"></path><circle cx="12" cy="10" r="3"></circle></svg>
                     <h3 class="text-xl font-bold text-gray-700 mt-3">TAT</h3>
-                    <p class="text-gray-500 mt-2 flex-grow text-sm">Thematic Apperception Test: AI-generated pictures for story writing.</p>
+                    <p class="text-gray-500 mt-2 flex-grow text-sm">Thematic Apperception Test</p>
                     <button class="w-full primary-btn font-bold py-3 px-6 rounded-lg text-lg mt-6" data-test-type="TAT">START TAT</button>
                 </div>
                 <div class="choice-card p-6 text-center flex flex-col items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--accent-blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M8 12h8"></path><path d="M12 8v8"></path><path d="M16 16l-3.5-3.5"></path></svg>
                     <h3 class="text-xl font-bold text-gray-700 mt-3">WAT</h3>
-                    <p class="text-gray-500 mt-2 flex-grow text-sm">Word Association Test: AI-generated words and personalized feedback.</p>
+                    <p class="text-gray-500 mt-2 flex-grow text-sm">Word Association Test</p>
                     <button class="w-full primary-btn font-bold py-3 px-6 rounded-lg text-lg mt-6" data-test-type="WAT">START WAT</button>
                 </div>
                 <div class="choice-card p-6 text-center flex flex-col items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--accent-blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s-8-4-8-10V4l8-3 8 3v8c0 6-8 10-8 10z"></path><path d="M16 10L12 14 8 10"></path></svg>
                     <h3 class="text-xl font-bold text-gray-700 mt-3">SRT</h3>
-                    <p class="text-gray-500 mt-2 flex-grow text-sm">Situation Reaction Test: AI-generated scenarios and personalized feedback.</p>
+                    <p class="text-gray-500 mt-2 flex-grow text-sm">Situation Reaction Test</p>
                     <button class="w-full primary-btn font-bold py-3 px-6 rounded-lg text-lg mt-6" data-test-type="SRT">START SRT</button>
                 </div>
             </div>
         </template>
         
-        <!-- Other Templates (Unchanged, but using new CSS classes) -->
-        <template id="ppdt-picture-stage-template">...</template>
-        <template id="ppdt-story-stage-template">...</template>
-        <template id="narration-stage-template">...</template>
-        <template id="ppdt-review-screen-template">...</template>
-        <template id="tat-picture-stage-template">...</template>
-        <template id="tat-story-stage-template">...</template>
-        <template id="wat-stage-template">...</template>
-        <template id="srt-stage-template">...</template>
-        <template id="text-review-template">...</template>
-        <template id="past-tests-screen-template">...</template>
-        <template id="view-test-screen-template">...</template>
-
+        <!-- Other Templates -->
+        <template id="ppdt-picture-stage-template"><!-- ... --></template>
+        <template id="ppdt-story-stage-template"><!-- ... --></template>
+        <template id="narration-stage-template"><!-- ... --></template>
+        <template id="ppdt-review-screen-template"><!-- ... --></template>
+        <template id="tat-picture-stage-template"><!-- ... --></template>
+        <template id="tat-story-stage-template"><!-- ... --></template>
+        <template id="wat-stage-template"><!-- ... --></template>
+        <template id="srt-stage-template"><!-- ... --></template>
+        <template id="text-review-template"><!-- ... --></template>
+        <template id="past-tests-screen-template"><!-- ... --></template>
+        <template id="view-test-screen-template"><!-- ... --></template>
     </div>
 
-    <!-- The Consolidated JavaScript File -->
     <script type="module" src="script.js"></script>
 </body>
 </html>
-
