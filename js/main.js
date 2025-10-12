@@ -54,14 +54,18 @@ async function initializeFirebaseApp() {
         });
         
         if (!response.ok) {
-            throw new Error(`API Error: Server responded with status ${response.status}. Check Vercel logs.`);
+            // NEW: More specific error for 404
+            if (response.status === 404) {
+                 throw new Error(`API Error (404): The backend function at /api/generate-content was not found. This usually means the Vercel deployment failed. Check the logs.`);
+            }
+            throw new Error(`API Error: Server responded with status ${response.status}.`);
         }
         
         const contentType = response.headers.get("content-type");
         if (!contentType || !contentType.includes("application/json")) {
             const errorText = await response.text();
             console.error("Server Response (not JSON):", errorText);
-            throw new TypeError("Server did not return JSON. This is often caused by missing environment variables on Vercel.");
+            throw new TypeError("Server did not return valid JSON. The backend might have crashed.");
         }
 
         const firebaseConfig = await response.json();
@@ -73,7 +77,10 @@ async function initializeFirebaseApp() {
 
     } catch (error) {
         console.error("Firebase Initialization Error:", error);
-        if (authLoader) authLoader.textContent = "Config Error";
+        if (authLoader) {
+            // NEW: More helpful UI error
+            authLoader.innerHTML = `Config Error<br><span style="font-size: 0.8rem; color: #ffb8b8;">Check Vercel Deployment Logs</span>`;
+        }
         throw error;
     }
 }
