@@ -42,6 +42,10 @@ function handleNoUser() {
     const loginBtn = document.getElementById('login-btn');
     if (loginBtn) {
         loginBtn.addEventListener('click', () => {
+            if (!auth) {
+                alert("Firebase not initialized. Please refresh the page.");
+                return;
+            }
             const provider = new GoogleAuthProvider();
             signInWithPopup(auth, provider).catch(error => {
                 console.error("Auth Error:", error);
@@ -53,42 +57,25 @@ function handleNoUser() {
     if (pageContent) pageContent.classList.remove('hidden');
 }
 
-// --- FIREBASE CONFIG FALLBACK ---
-const fallbackConfig = {
-    apiKey: "AIzaSyArpI0CMPd8LeANujYkvYJYaLIvHZcTBrI",
-    authDomain: "ssb-preparation-69cfc.firebaseapp.com",
-    projectId: "ssb-preparation-69cfc",
-    storageBucket: "ssb-preparation-69cfc.firebasestorage.app",
-    messagingSenderId: "561636236693",
-    appId: "1:561636236693:web:e28dccd3b4a26a8432ea9c"
-};
-
 // --- INITIALIZATION ---
 async function initializeFirebaseApp() {
     try {
         console.log("🚀 Initializing Firebase...");
         
-        let firebaseConfig;
+        // Get config from Vercel serverless function
+        const response = await fetch('/api/get-firebase-config');
         
-        // Try to get config from Vercel serverless function
-        try {
-            const response = await fetch('/api/get-firebase-config');
-            
-            if (!response.ok) {
-                throw new Error(`API returned ${response.status}: ${response.statusText}`);
-            }
-            
-            firebaseConfig = await response.json();
-            console.log("✅ Firebase config loaded from API");
-        } catch (apiError) {
-            console.warn("❌ API failed, using fallback config:", apiError.message);
-            firebaseConfig = fallbackConfig;
+        if (!response.ok) {
+            throw new Error(`API returned ${response.status}: ${response.statusText}. Make sure the API route exists and environment variable is set.`);
         }
+        
+        const firebaseConfig = await response.json();
         
         if (!firebaseConfig || !firebaseConfig.apiKey) {
-            throw new Error("Invalid Firebase config received");
+            throw new Error("Invalid Firebase config received from server");
         }
 
+        console.log("✅ Firebase config loaded successfully from environment variables");
         const app = initializeApp(firebaseConfig);
         auth = getAuth(app);
         return true;
@@ -99,12 +86,10 @@ async function initializeFirebaseApp() {
         if (authLoader) {
             authLoader.innerHTML = `
                 <div style="text-align: center;">
-                    <div>Firebase Config Error</div>
+                    <div>Firebase Configuration Error</div>
                     <div style="font-size: 0.8rem; color: #ffb8b8; margin-top: 0.5rem;">
                         ${error.message}<br>
-                        <button onclick="window.location.reload()" style="margin-top: 0.5rem; padding: 0.25rem 0.5rem; background: #3B82F6; border: none; border-radius: 4px; color: white; cursor: pointer;">
-                            Retry
-                        </button>
+                        <small>Check Vercel environment variables and API route</small>
                     </div>
                 </div>
             `;
@@ -128,12 +113,10 @@ async function main() {
                 }
             });
         } else {
-            // Firebase failed to initialize, but still show the page
+            // Firebase failed to initialize
             if (authLoader) authLoader.classList.add('hidden');
             if (pageContent) pageContent.classList.remove('hidden');
             handleNoUser();
-            
-            console.warn("App running without Firebase authentication");
         }
     } catch (error) {
         console.error("💥 Failed to start application:", error);
