@@ -1,8 +1,15 @@
 // This script ONLY runs on performance.html
 
 // Import necessary Firebase functions from our central init file
-import { getAuth, onAuthStateChanged } from './firebase-init.js';
-import { getFirestore, collection, query, getDocs, orderBy } from './firebase-init.js';
+import { 
+    getAuth, 
+    onAuthStateChanged, 
+    getFirestore, 
+    collection, 
+    query, 
+    getDocs, 
+    orderBy 
+} from './firebase-init.js';
 
 const pageContent = document.getElementById('page-content');
 
@@ -83,13 +90,17 @@ async function loadPerformanceData(user) {
 
     } catch (error) {
         console.error("Error fetching performance data:", error);
-        pageContent.innerHTML = `<div class="text-center text-red-500">Could not load performance data. Please try again later.</div>`;
+        pageContent.innerHTML = `
+            <div class="text-center">
+                <h2 class="text-3xl font-bold text-red-600">Error Loading Data</h2>
+                <p class="text-gray-500 mt-2">Could not load performance data. Please try again later.</p>
+            </div>
+        `;
     }
 }
 
 // --- Initial Execution ---
 // We wait for the Firebase auth state to be confirmed before trying to load data.
-// The `main.js` script handles the initialization.
 const auth = getAuth();
 onAuthStateChanged(auth, (user) => {
     // The onAuthStateChanged listener in main.js will handle the header,
