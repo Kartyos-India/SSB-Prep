@@ -28,22 +28,16 @@ body {
 
 /* --- UTILITY CLASSES --- */
 .text-center { text-align: center; }
-.text-left { text-align: left; }
-.text-right { text-align: right; }
 .hidden { display: none !important; }
 
 .mt-2 { margin-top: 0.5rem; }
-.mt-3 { margin-top: 0.75rem; }
 .mt-4 { margin-top: 1rem; }
 .mt-6 { margin-top: 1.5rem; }
 .mt-8 { margin-top: 2rem; }
-.mb-2 { margin-bottom: 0.5rem; }
 .mb-4 { margin-bottom: 1rem; }
 .mb-6 { margin-bottom: 1.5rem; }
 .mb-8 { margin-bottom: 2rem; }
-.my-4 { margin: 1rem 0; }
 
-.space-y-2 > * + * { margin-top: 0.5rem; }
 .space-y-4 > * + * { margin-top: 1rem; }
 .space-y-6 > * + * { margin-top: 1.5rem; }
 
@@ -272,21 +266,6 @@ body {
     line-height: 1.6;
 }
 
-.sub-test-pills {
-    display: flex;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-}
-
-.sub-test-pills span {
-    background-color: #2D3748;
-    color: var(--text-secondary);
-    font-size: 0.8rem;
-    font-weight: 500;
-    padding: 0.25rem 0.75rem;
-    border-radius: 999px;
-}
-
 .card-icon {
     opacity: 0.1;
     position: absolute;
@@ -335,12 +314,6 @@ body {
     color: var(--text-primary);
 }
 
-.start-btn {
-    width: 100%;
-    padding: 0.75rem;
-    font-size: 1rem;
-}
-
 /* --- CARD STYLES --- */
 .choice-card {
     background-color: var(--card-bg);
@@ -359,10 +332,9 @@ body {
     display: grid;
 }
 
-.grid-cols-1 { grid-template-columns: repeat(1, 1fr); }
-.md\\:grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
-.md\\:grid-cols-3 { grid-template-columns: repeat(3, 1fr); }
-.lg\\:grid-cols-3 { grid-template-columns: repeat(3, 1fr); }
+.md\:grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
+.md\:grid-cols-3 { grid-template-columns: repeat(3, 1fr); }
+.lg\:grid-cols-3 { grid-template-columns: repeat(3, 1fr); }
 
 .gap-6 { gap: 1.5rem; }
 .gap-8 { gap: 2rem; }
@@ -410,10 +382,9 @@ input[type="radio"] {
         grid-template-columns: 1fr;
     }
     
-    .grid-cols-1,
-    .md\\:grid-cols-2,
-    .md\\:grid-cols-3,
-    .lg\\:grid-cols-3 {
+    .md\:grid-cols-2,
+    .md\:grid-cols-3,
+    .lg\:grid-cols-3 {
         grid-template-columns: 1fr;
     }
     
