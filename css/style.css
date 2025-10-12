@@ -31,15 +31,17 @@ a {
 
 /* --- Header & Navigation (from main.js) --- */
 #header-bar {
-    background-color: transparent;
-    width: 100%;
-    max-width: 1100px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 1rem 0;
-    border-bottom: 1px solid var(--secondary-dark);
-    margin-bottom: 2rem;
+    padding: 0.75rem 2rem;
+    background-color: var(--secondary-dark-bg);
+    border-bottom: 1px solid var(--border-color);
+    width: 100%;
+    box-sizing: border-box;
+    position: sticky; /* This makes the header stick */
+    top: 0;           /* This tells it to stick to the very top */
+    z-index: 1000;
 }
 
 #header-left a {
@@ -177,3 +179,4 @@ a {
         font-size: 1.25rem;
     }
 }
+
