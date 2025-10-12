@@ -2,9 +2,5 @@
   "name": "ssb-prep-platform",
   "version": "1.0.0",
   "description": "SSB Preparation Platform",
-  "type": "module",
-  "scripts": {
-    "dev": "vercel dev",
-    "build": "vercel build"
-  }
+  "type": "module"
 }
