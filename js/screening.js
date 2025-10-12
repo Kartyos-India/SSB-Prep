@@ -2,12 +2,17 @@
 import { getAuth, onAuthStateChanged, getFirestore, collection, addDoc, serverTimestamp } from './firebase-init.js';
 
 const pageContent = document.getElementById('page-content');
+const genderModal = document.getElementById('genderModal');
+const testTypeModal = document.getElementById('testTypeModal');
+
 let auth, db; // Firebase instances
+let ppdtSettings = {}; // To store user's PPDT choices
 
 // --- OIR Test State ---
 let oirQuestions = [];
 let currentOIRIndex = 0;
 let oirResponses = {};
+let oirTimerInterval;
 
 // --- PPDT Test State ---
 let ppdtTimerInterval;
@@ -18,10 +23,13 @@ let recordedChunks = [];
 // --- OIR TEST LOGIC ---
 
 async function initializeOIRTest() {
-    pageContent.innerHTML = `<div class="text-center"><h2 class="text-2xl font-bold">Generating OIR Test...</h2><p>Please wait a moment.</p></div>`;
+    pageContent.innerHTML = `<div class="text-center"><div class="loader"></div><h2 class="text-2xl font-bold mt-4">Generating OIR Test...</h2><p>Please wait a moment.</p></div>`;
     try {
         const response = await fetch('/api/generate-oir-questions');
-        if (!response.ok) throw new Error('Failed to fetch questions from the server.');
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Failed to fetch questions: ${response.status} ${errorText}`);
+        }
         
         oirQuestions = await response.json();
         if (oirQuestions.length > 50) {
@@ -30,24 +38,57 @@ async function initializeOIRTest() {
 
         currentOIRIndex = 0;
         oirResponses = {};
-        renderOIRQuestion();
+        renderOIRQuestion(); // Initial render
+        startOIRTimer(); // Start timer after first render
     } catch (error) {
         console.error("OIR Initialization Error:", error);
-        pageContent.innerHTML = `<div class="text-center text-red-500"><h2 class="text-2xl font-bold">Error</h2><p>Could not generate the OIR test. Please try again later.</p></div>`;
+        pageContent.innerHTML = `<div class="text-center text-red-500"><h2 class="text-2xl font-bold">Error</h2><p>Could not generate the OIR test. Please try again later.</p><p class="text-sm mt-2">${error.message}</p></div>`;
     }
 }
+
+function startOIRTimer() {
+    let timeLeft = 1800; // 30 minutes
+    const timerContainer = document.createElement('div');
+    timerContainer.id = 'oir-timer-container';
+    timerContainer.className = 'text-center text-xl font-bold mb-4';
+    
+    // Initial display
+    timerContainer.innerHTML = `Time Left: <span class="text-yellow-400">${formatTime(timeLeft)}</span>`;
+    
+    // Prepend to page content so it appears above the questions
+    if(!document.getElementById('oir-timer-container')) {
+        pageContent.prepend(timerContainer);
+    }
+
+    oirTimerInterval = setInterval(() => {
+        timeLeft--;
+        const timerDisplay = document.querySelector('#oir-timer-container span');
+        if (timerDisplay) {
+            timerDisplay.textContent = formatTime(timeLeft);
+        }
+        if (timeLeft <= 0) {
+            clearInterval(oirTimerInterval);
+            submitOIRTest(); 
+        }
+    }, 1000);
+}
+
 
 function renderOIRQuestion() {
     if (currentOIRIndex < 0 || currentOIRIndex >= oirQuestions.length) return;
 
     const question = oirQuestions[currentOIRIndex];
+    // Preserve the timer if it exists
+    const timerHTML = document.getElementById('oir-timer-container')?.outerHTML || '';
+    
     pageContent.innerHTML = `
+        ${timerHTML}
         <div class="text-center mb-8">
-            <h2 class="text-3xl font-bold">OIR TEST</h2>
+            <h2 class="text-3xl font-bold">OFFICER INTELLIGENCE RATING TEST</h2>
             <p class="text-gray-400 mt-2">Question ${currentOIRIndex + 1} of ${oirQuestions.length}</p>
         </div>
         <div class="bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-700 max-w-2xl mx-auto space-y-6">
-            <p class="text-lg text-gray-200 font-semibold">${question.q}</p>
+            <p class="text-lg text-gray-200 font-semibold">${currentOIRIndex + 1}. ${question.q}</p>
             <div class="space-y-3">
                 ${question.options.map(opt => `
                     <label class="block bg-gray-700 p-4 rounded-md border border-gray-600 cursor-pointer hover:bg-gray-600 transition-colors">
@@ -62,7 +103,7 @@ function renderOIRQuestion() {
             </div>
         </div>
     `;
-
+    
     document.getElementById('oir-prev-btn').style.visibility = currentOIRIndex === 0 ? 'hidden' : 'visible';
     document.getElementById('oir-next-btn').classList.toggle('hidden', currentOIRIndex === oirQuestions.length - 1);
     document.getElementById('oir-finish-btn').classList.toggle('hidden', currentOIRIndex !== oirQuestions.length - 1);
@@ -85,6 +126,7 @@ function handleOIRNavigation(direction) {
 }
 
 async function submitOIRTest() {
+    clearInterval(oirTimerInterval); // Stop the timer
     const selectedOption = document.querySelector('input[name="oir_q_option"]:checked');
     if (selectedOption) oirResponses[currentOIRIndex] = selectedOption.value;
 
@@ -144,41 +186,35 @@ function renderOIRReview(score) {
 
 // --- PPDT TEST LOGIC ---
 
-function renderPPDTSetup() {
-    pageContent.innerHTML = `
-        <div class="text-center">
-            <h2 class="text-4xl font-bold">PPDT Setup</h2>
-            <p class="text-gray-400 mt-2">Configure your test session.</p>
-        </div>
-        <div class="max-w-md mx-auto mt-8 bg-gray-800 p-8 rounded-lg shadow-lg border border-gray-700 space-y-6">
-            <div>
-                <label for="gender-select" class="block mb-2 font-semibold text-gray-300">Select Your Gender:</label>
-                <select id="gender-select" class="w-full p-3 bg-gray-700 rounded-md border border-gray-600 text-white">
-                    <option value="male">Male</option>
-                    <option value="female">Female</option>
-                </select>
-            </div>
-            <div>
-                <label class="block mb-2 font-semibold text-gray-300">Test Mode:</label>
-                <div class="space-y-2">
-                    <label class="flex items-center bg-gray-700 p-3 rounded-md"><input type="radio" name="ppdt-mode" value="timed-visible" class="mr-3" checked> Timed (Visible Timer)</label>
-                    <label class="flex items-center bg-gray-700 p-3 rounded-md"><input type="radio" name="ppdt-mode" value="timed-invisible" class="mr-3"> Timed (Invisible Timer)</label>
-                    <label class="flex items-center bg-gray-700 p-3 rounded-md"><input type="radio" name="ppdt-mode" value="untimed" class="mr-3"> Untimed</label>
-                </div>
-            </div>
-            <button id="start-ppdt-btn" class="w-full primary-btn font-bold py-3 mt-6 rounded-lg">Start PPDT</button>
-        </div>
-    `;
+function initializePPDTModals() {
+    genderModal.classList.remove('hidden');
 
-    document.getElementById('start-ppdt-btn').addEventListener('click', () => {
-        const gender = document.getElementById('gender-select').value;
-        const mode = document.querySelector('input[name="ppdt-mode"]:checked').value;
-        startPPDTTest({ gender, mode });
+    genderModal.querySelectorAll('.gender-btn').forEach(btn => {
+        btn.onclick = () => {
+            ppdtSettings.gender = btn.dataset.gender;
+            genderModal.classList.add('hidden');
+            testTypeModal.classList.remove('hidden');
+        };
+    });
+
+    testTypeModal.querySelectorAll('.test-type-btn').forEach(btn => {
+        btn.onclick = () => {
+            ppdtSettings.mode = btn.dataset.type;
+            testTypeModal.classList.add('hidden');
+            startPPDTTest(ppdtSettings);
+        };
+    });
+
+    document.querySelectorAll('.modal .close-modal').forEach(span => {
+        span.onclick = () => {
+            genderModal.classList.add('hidden');
+            testTypeModal.classList.add('hidden');
+        };
     });
 }
 
 async function startPPDTTest(settings) {
-    pageContent.innerHTML = `<div class="text-center"><h2 class="text-2xl font-bold">Generating PPDT Image...</h2><p>This may take a moment.</p></div>`;
+    pageContent.innerHTML = `<div class="text-center"><div class="loader"></div><h2 class="text-2xl font-bold mt-4">Generating PPDT Image...</h2><p>This may take a moment.</p></div>`;
     
     try {
         const response = await fetch('/api/generate-ppdt-image', {
@@ -186,7 +222,10 @@ async function startPPDTTest(settings) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ gender: settings.gender })
         });
-        if (!response.ok) throw new Error('Failed to generate image.');
+         if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Failed to generate image: ${response.status} ${errorText}`);
+        }
         const data = await response.json();
         const imageUrl = `data:image/png;base64,${data.image}`;
         
@@ -194,12 +233,11 @@ async function startPPDTTest(settings) {
 
     } catch (error) {
         console.error("PPDT Image Generation Error:", error);
-        pageContent.innerHTML = `<div class="text-center text-red-500"><h2 class="text-2xl font-bold">Error</h2><p>Could not generate the PPDT image. Please try again.</p></div>`;
+        pageContent.innerHTML = `<div class="text-center text-red-500"><h2 class="text-2xl font-bold">Error</h2><p>Could not generate the PPDT image. Please try again.</p><p class="text-sm mt-2">${error.message}</p></div>`;
     }
 }
 
 function runPPDTFlow(imageUrl, settings) {
-    // Phase 1: Show image for 30 seconds
     let timeLeft = 30;
     pageContent.innerHTML = `
         <div class="text-center">
@@ -215,7 +253,6 @@ function runPPDTFlow(imageUrl, settings) {
         if(timerDisplay) timerDisplay.textContent = `Time left: ${timeLeft}s`;
         if (timeLeft <= 0) {
             clearInterval(ppdtTimerInterval);
-            // Phase 2: Story writing time
             startStoryWritingPhase(imageUrl, settings);
         }
     }, 1000);
@@ -227,7 +264,7 @@ function startStoryWritingPhase(imageUrl, settings) {
     pageContent.innerHTML = `
         <div class="text-center">
             <h2 class="text-3xl font-bold">Write Your Story</h2>
-            <p class="text-gray-400 mt-2">You have 4 minutes and 30 seconds to write a story based on the picture you saw. Please write it on a piece of paper.</p>
+            <p class="text-gray-400 mt-2">You have 4 minutes and 30 seconds to write your story on a piece of paper.</p>
             ${settings.mode !== 'timed-invisible' ? `<p class="text-4xl font-bold mt-6 text-yellow-400" id="story-timer">${formatTime(timeLeft)}</p>` : ''}
         </div>
     `;
@@ -242,7 +279,7 @@ function startStoryWritingPhase(imageUrl, settings) {
                 startNarrationPhase(imageUrl);
             }
         }, 1000);
-    } else { // Untimed mode
+    } else { 
          pageContent.innerHTML += `<div class="text-center mt-8"><button id="finish-writing-btn" class="primary-btn">I'm Ready to Narrate</button></div>`;
          document.getElementById('finish-writing-btn').addEventListener('click', () => startNarrationPhase(imageUrl));
     }
@@ -252,8 +289,8 @@ async function startNarrationPhase(imageUrl) {
     pageContent.innerHTML = `
         <div class="text-center max-w-xl mx-auto">
             <h2 class="text-3xl font-bold">Narrate Your Story</h2>
-            <p class="text-gray-400 mt-2">Please allow camera and microphone access. You will have 1 minute to narrate your story.</p>
-            <div id="video-container" class="mt-4 bg-black rounded-lg aspect-video flex items-center justify-center text-gray-400">
+            <p class="text-gray-400 mt-2">Allow camera/mic access. You have 1 minute to narrate.</p>
+            <div id="video-container" class="mt-4 bg-black rounded-lg aspect-video flex items-center justify-center text-gray-400 border border-gray-600">
                 <p>Waiting for permissions...</p>
             </div>
             <p id="narration-timer" class="text-2xl font-bold my-4"></p>
@@ -267,21 +304,23 @@ async function startNarrationPhase(imageUrl) {
         videoElement.srcObject = stream;
         videoElement.muted = true;
         videoElement.autoplay = true;
-        document.getElementById('video-container').innerHTML = '';
-        document.getElementById('video-container').appendChild(videoElement);
+        videoElement.playsInline = true;
+        const videoContainer = document.getElementById('video-container');
+        videoContainer.innerHTML = '';
+        videoContainer.appendChild(videoElement);
 
         document.getElementById('start-narration-btn').addEventListener('click', () => {
             document.getElementById('start-narration-btn').disabled = true;
             recordedChunks = [];
-            mediaRecorder = new MediaRecorder(stream);
+            mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
 
             mediaRecorder.ondataavailable = event => {
                 if (event.data.size > 0) recordedChunks.push(event.data);
             };
 
             mediaRecorder.onstop = () => {
+                stream.getTracks().forEach(track => track.stop());
                 const videoBlob = new Blob(recordedChunks, { type: 'video/webm' });
-                // For now, we don't upload, just go to review. Upload will happen if user saves.
                 renderPPDTReview(videoBlob, imageUrl);
             };
 
@@ -295,14 +334,16 @@ async function startNarrationPhase(imageUrl) {
                 timerDisplay.textContent = formatTime(timeLeft);
                 if (timeLeft <= 0) {
                     clearInterval(ppdtTimerInterval);
-                    mediaRecorder.stop();
+                    if (mediaRecorder.state === 'recording') {
+                        mediaRecorder.stop();
+                    }
                 }
             }, 1000);
         });
 
     } catch (err) {
         console.error("Error accessing media devices.", err);
-        document.getElementById('video-container').innerHTML = `<p class="text-red-500">Error: Could not access camera or microphone. Please check your browser permissions.</p>`;
+        document.getElementById('video-container').innerHTML = `<p class="text-red-500">Error: Could not access camera or microphone. Please check browser permissions and refresh.</p>`;
         document.getElementById('start-narration-btn').disabled = true;
     }
 }
@@ -336,28 +377,56 @@ function renderPPDTReview(videoBlob, imageUrl) {
     `;
 
     const video = document.getElementById('review-video');
-    document.getElementById('play-audio-only').addEventListener('click', () => {
+    const audioBtn = document.getElementById('play-audio-only');
+    const mutedBtn = document.getElementById('play-video-muted');
+
+    audioBtn.addEventListener('click', () => {
+        video.style.visibility = 'hidden';
+        video.style.height = '0px';
         video.muted = false;
+        video.currentTime = 0;
         video.play();
-        // A simple trick to hide video: we can't just play audio, so we play video but hide it.
-        video.style.height = '0px'; 
     });
-     document.getElementById('play-video-muted').addEventListener('click', () => {
+    mutedBtn.addEventListener('click', () => {
+        video.style.visibility = 'visible';
         video.style.height = 'auto';
         video.muted = true;
+        video.currentTime = 0;
         video.play();
     });
+    video.addEventListener('play', () => {
+        if (!video.muted) { // If playing with audio, ensure it's visible
+             video.style.visibility = 'visible';
+             video.style.height = 'auto';
+        }
+    });
 
-    document.getElementById('redo-ppdt-btn').addEventListener('click', renderPPDTSetup);
-    document.getElementById('save-ppdt-btn').addEventListener('click', () => {
-        // Here you would upload the blob and image to Firebase storage
-        // then save the URLs to Firestore. For now, we'll just simulate it.
-        alert("Saving functionality is a placeholder. In a real app, this would upload your video and save the results.");
-        renderScreeningMenu();
+    document.getElementById('redo-ppdt-btn').addEventListener('click', initializePPDTModals);
+    document.getElementById('save-ppdt-btn').addEventListener('click', async () => {
+        const user = auth.currentUser;
+        if (user && db) {
+            try {
+                // In a real app, you would upload the image and video to Firebase Storage
+                // For this example, we'll save a placeholder record
+                await addDoc(collection(db, 'users', user.uid, 'tests'), {
+                    testType: 'PPDT',
+                    imageUrl: imageUrl.substring(0,100) + '...', // Store a truncated version for now
+                    // videoUrl: 'placeholder_for_uploaded_video.webm',
+                    timestamp: serverTimestamp()
+                });
+                alert("PPDT result saved successfully!");
+                renderScreeningMenu();
+            } catch(error) {
+                alert("Error saving PPDT result.");
+                console.error("Error saving PPDT result:", error);
+            }
+        }
     });
 }
 
+
 function formatTime(seconds) {
+    if (seconds < 0) seconds = 0;
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
     return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
@@ -374,7 +443,7 @@ function renderScreeningMenu() {
         <div class="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto pt-8">
             <div class="choice-card p-6 text-center flex flex-col rounded-lg">
                 <h3 class="text-xl font-bold mt-3">Officer Intelligence Rating (OIR)</h3>
-                <p class="text-gray-500 mt-2 flex-grow text-sm">A 50-question test of verbal and non-verbal reasoning to assess your logical ability.</p>
+                <p class="text-gray-500 mt-2 flex-grow text-sm">A 50-question test of verbal and non-verbal reasoning. Time Limit: 30 minutes.</p>
                 <button id="start-oir" class="w-full primary-btn font-bold py-3 mt-6 rounded-lg">START OIR TEST</button>
             </div>
             <div class="choice-card p-6 text-center flex flex-col rounded-lg">
@@ -385,7 +454,7 @@ function renderScreeningMenu() {
         </div>
     `;
     document.getElementById('start-oir').addEventListener('click', initializeOIRTest);
-    document.getElementById('start-ppdt').addEventListener('click', renderPPDTSetup);
+    document.getElementById('start-ppdt').addEventListener('click', initializePPDTModals);
 }
 
 // --- Initial Execution ---
@@ -395,7 +464,6 @@ onAuthStateChanged(auth, (user) => {
     if (user) {
         if (pageContent) renderScreeningMenu();
     } else {
-        // If not logged in, show a message. main.js handles the login button.
         pageContent.innerHTML = `<div class="text-center"><p class="text-xl">Please log in to access the screening tests.</p></div>`;
     }
 });
