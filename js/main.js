@@ -1,6 +1,11 @@
-import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+// js/main.js
+import { 
+    onAuthStateChanged, 
+    signInWithPopup, 
+    GoogleAuthProvider, 
+    signOut,
+    getAuth
+} from './firebase-init.js';
 
 // --- DOM ELEMENTS ---
 const headerRight = document.getElementById('header-right');
@@ -52,7 +57,7 @@ async function initializeFirebaseApp() {
     try {
         console.log("🚀 Initializing Firebase...");
         
-        // Try to get config from Vercel serverless function
+        // Get config from Vercel serverless function
         const response = await fetch('/api/get-firebase-config');
         
         if (!response.ok) {
@@ -66,6 +71,7 @@ async function initializeFirebaseApp() {
         }
 
         console.log("✅ Firebase config loaded successfully");
+        const { initializeApp } = await import('./firebase-init.js');
         const app = initializeApp(firebaseConfig);
         auth = getAuth(app);
         return true;
@@ -110,7 +116,6 @@ async function main() {
             if (pageContent) pageContent.classList.remove('hidden');
             handleNoUser();
             
-            // Show a warning
             console.warn("App running without Firebase authentication");
         }
     } catch (error) {
