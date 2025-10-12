@@ -19,25 +19,33 @@ export default async function handler(request, response) {
     if (!firebaseConfig) {
       console.error("Firebase config environment variable not found");
       return response.status(500).json({ 
-        error: 'Firebase configuration not found in environment variables'
+        error: 'Firebase configuration not found in environment variables',
+        availableVars: Object.keys(process.env)
       });
     }
 
-    console.log("Found Firebase config, parsing...");
+    console.log("Found Firebase config:", firebaseConfig.substring(0, 50) + "...");
+    
+    // Clean the config string (remove any semicolons or extra spaces)
+    const cleanedConfig = firebaseConfig.replace(/;\s*$/, '').trim();
     
     // Parse the JSON string from environment variable
-    const config = JSON.parse(firebaseConfig);
+    const config = JSON.parse(cleanedConfig);
     
-    console.log("Sending Firebase config to client");
+    // Validate required fields
+    if (!config.apiKey || !config.authDomain || !config.projectId) {
+      throw new Error("Missing required Firebase config fields");
+    }
     
-    // Return the config to the client
+    console.log("Successfully parsed Firebase config");
     response.status(200).json(config);
     
   } catch (error) {
     console.error("Error in get-firebase-config:", error);
     response.status(500).json({ 
       error: 'Failed to load Firebase configuration',
-      details: error.message
+      details: error.message,
+      configReceived: process.env.__firebase_config ? process.env.__firebase_config.substring(0, 100) + "..." : 'No config found'
     });
   }
 }
