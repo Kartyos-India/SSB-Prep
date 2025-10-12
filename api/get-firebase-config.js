@@ -12,37 +12,32 @@ export default async function handler(request, response) {
   }
 
   try {
-    console.log("Reading Firebase config from environment...");
-    
-    const firebaseConfig = process.env.__firebase_config;
+    const firebaseConfigString = process.env.__firebase_config;
 
-    if (!firebaseConfig) {
-      console.error("Firebase config environment variable not found");
+    if (!firebaseConfigString) {
+      console.error("Vercel environment variable '__firebase_config' not found.");
       return response.status(500).json({ 
-        error: 'Firebase configuration not found in environment variables'
+        error: "Server configuration error: Firebase environment variable not found."
       });
     }
-
-    console.log("Found Firebase config, parsing...");
     
-    // Clean the config string (remove any semicolons or extra spaces)
-    const cleanedConfig = firebaseConfig.replace(/;\s*$/, '').trim();
+    // Attempt to parse the JSON string
+    const config = JSON.parse(firebaseConfigString);
     
-    // Parse the JSON string from environment variable
-    const config = JSON.parse(cleanedConfig);
-    
-    // Validate required fields
+    // Validate that the parsed object has the necessary keys
     if (!config.apiKey || !config.authDomain || !config.projectId) {
-      throw new Error("Missing required Firebase config fields");
+      console.error("Firebase config is missing required fields (apiKey, authDomain, projectId).");
+      return response.status(500).json({ error: "Invalid Firebase configuration object." });
     }
     
-    console.log("Successfully parsed Firebase config");
-    response.status(200).json(config);
+    // If everything is successful, send the config
+    return response.status(200).json(config);
     
   } catch (error) {
-    console.error("Error in get-firebase-config:", error);
-    response.status(500).json({ 
-      error: 'Failed to load Firebase configuration',
+    // This block will catch errors from JSON.parse() if the string is malformed
+    console.error("Failed to parse Firebase config JSON:", error.message);
+    return response.status(500).json({ 
+      error: 'Failed to parse Firebase configuration. Check the format of the environment variable.',
       details: error.message
     });
   }
