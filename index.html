@@ -4,35 +4,36 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Defence Aspirants - SSB Prep</title>
-    <!-- We link to the new stylesheet -->
     <link rel="stylesheet" href="css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
 </head>
 <body>
 
-    <!-- Header: The content is loaded by main.js -->
+    <!-- NEW Simplified Header Structure -->
     <header id="header-bar">
         <div id="header-left">
-            <a href="index.html">
-                <!-- Simple Logo SVG -->
+            <a href="index.html" class="logo-link">
                 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><path fill="white" d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
-                <h1>SSB PLATFORM</h1>
+                <span>SSB Prep</span>
             </a>
         </div>
+        <!-- Nav links are now dynamically added here by main.js -->
+        <nav id="header-center"></nav>
+        <!-- Auth buttons/info are now dynamically added here by main.js -->
         <div id="header-right">
-            <!-- Auth Loader/Button appears here -->
-            <div id="auth-loader" class="text-white">Loading...</div>
+            <div id="auth-loader">Loading...</div>
         </div>
     </header>
 
-    <!-- This container holds all the main page content -->
+    <!-- Main Homepage Content -->
     <div class="homepage-container">
         <h2>Defence Aspirants</h2>
         <p class="subtitle">A unified platform to prepare for your SSB.</p>
 
-        <!-- The main login button -->
         <button id="main-login-btn" class="main-login-btn hidden">Login to Begin</button>
 
-        <!-- Navigation Card -->
         <div class="nav-card">
             <h3>Start Your Preparation</h3>
             <div class="nav-links-container">
