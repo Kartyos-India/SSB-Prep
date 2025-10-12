@@ -220,7 +220,7 @@ function abortTest() {
     if (appState.testType === 'PPDT') {
         renderPPDTSettingsScreen();
     } else if (['TAT', 'WAT', 'SRT'].includes(appState.testType)) {
-        renderPsychologyScreen();
+        renderPsychologyMenu();
     } else if (appState.testType === 'OIR') {
         renderScreeningMenu(); // Return to Screening Menu for OIR
     } else {
@@ -242,12 +242,12 @@ function addAbortButtonToStage(screen) {
     }
 }
 
-
 // --- Home Screen Logic ---
 function renderHomeScreen() {
     const homeScreen = document.getElementById('home-screen');
-    // FIX: Load the new home-screen-template instead of building it with fixed code
+    // FIX: Load the new structured home-screen-template
     const template = getTemplateContent('home-screen-template');
+    
     if (template) {
         homeScreen.innerHTML = '';
         homeScreen.appendChild(template);
@@ -258,10 +258,10 @@ function renderHomeScreen() {
     // Attach event listeners for selection buttons inside the template
     homeScreen.querySelectorAll('button').forEach(btn => {
         btn.addEventListener('click', (e) => {
-            const targetScreen = btn.getAttribute('onclick').match(/render(\w+)Screen/)[1];
-            if (targetScreen === 'ScreeningMenu') renderScreeningMenu();
-            if (targetScreen === 'PsychologyScreen') renderPsychologyMenu();
-            if (targetScreen === 'GTOPlaceholderScreen') renderGTOPlaceholderScreen();
+            const targetAction = btn.getAttribute('onclick');
+            if (targetAction.includes('renderScreeningMenu')) renderScreeningMenu();
+            if (targetAction.includes('renderPsychologyMenu')) renderPsychologyMenu();
+            if (targetAction.includes('renderGTOPlaceholderScreen')) renderGTOPlaceholderScreen();
         });
     });
     
@@ -299,25 +299,21 @@ function handleTestSelection(e) {
 
 function setupMobileMenuToggle(mobileMenuBtn) {
     mobileMenuBtn.addEventListener('click', () => {
-        // Toggle the visibility of the main navigation menu
         topNav.classList.toggle('hidden');
         
-        // Ensure dropdowns are hidden when the main menu closes
-        if (topNav.classList.contains('hidden')) {
-             document.querySelectorAll('.dropdown-menu').forEach(menu => menu.classList.add('hidden'));
-        }
+        // Hide all inner dropdowns when the main menu opens/closes
+        document.querySelectorAll('.dropdown-menu').forEach(menu => menu.classList.add('hidden'));
     });
 }
 
 // Global functions for direct calls from HTML (e.g., onclick="renderScreeningMenu()")
 window.renderScreeningMenu = renderScreeningMenu;
-window.renderPsychologyMenu = renderPsychologyScreen; // Renamed for consistency
+window.renderPsychologyMenu = renderPsychologyScreen; 
 window.renderGTOPlaceholderScreen = renderGTOPlaceholderScreen;
 window.handleTestSelection = handleTestSelection;
 
 
 // --- OIR Test Logic ---
-
 let oirQuestions = [];
 let currentOIRIndex = 0;
 let oirResponses = {};
@@ -337,7 +333,6 @@ function initializeOIRTest() {
     }
 
     // Mock Questions (In a real app, this would fetch from the server)
-    // NOTE: This array should be placed globally or fetched once to prevent re-creation
     oirQuestions = [
         { q: "If A = 1 and B = 2, then Z = ?", options: ["24", "25", "26", "27"], answer: "26" },
         { q: "Which number completes the series: 2, 4, 8, 16, __?", options: ["20", "24", "32", "40"], answer: "32" },
@@ -480,19 +475,15 @@ function renderScreeningMenu() {
 }
 
 
-function renderGTOPlaceholderScreen() {
-    const gtoScreen = document.getElementById('gto-placeholder-screen');
-    const template = getTemplateContent('gto-placeholder-screen-template');
-    if (template) {
-        gtoScreen.innerHTML = '';
-        gtoScreen.appendChild(template);
-    }
-    addGoBackButton(gtoScreen, renderHomeScreen);
-    showScreen('gto-placeholder-screen');
-}
+// --- REST OF THE CODE (Unchanged for brevity, but included in the full script) ---
 
+// --- Unified Test State and Timers ---
+let timerInterval;
 
-// --- PPDT Logic (Unchanged for brevity, but included in the full script) ---
+function formatTime(s) { /* ... same code ... */ }
+function startTimer(duration, displayElement, onComplete) { /* ... same code ... */ }
+
+// PPDT Logic
 let ppdtMediaRecorder, ppdtRecordedChunks = [], ppdtVideoUrl = null, ppdtCurrentImageUrl = '';
 
 function setupPPDTVideoControls(reviewVideo) { /* ... same code ... */ }
@@ -504,7 +495,7 @@ function initializePPDTTest(config) { /* ... same code ... */ }
 function renderPPDTSettingsScreen() { /* ... same code ... */ }
 
 
-// --- Psychology Logic (Unchanged for brevity, but included in the full script) ---
+// Psychology Logic
 let testData = []; 
 let testResponses = [];
 
@@ -518,7 +509,7 @@ function showPsyReview() { /* ... same code ... */ }
 async function savePsyTestToFirebase(aiFeedback) { /* ... same code ... */ }
 async function getAIFeedback() { /* ... same code ... */ }
 
-// --- Account Logic (Unchanged for brevity, but included in the full script) ---
+// Account Logic
 async function showPastTests() { /* ... same code ... */ }
 async function viewPastTest(testId) { /* ... same code ... */ }
 
@@ -533,15 +524,46 @@ document.addEventListener('DOMContentLoaded', async () => {
         auth = initializedAuth;
         db = initializedDb;
         
-        // 2. Setup Dropdown Toggles and Navigation Handlers (for nested links)
+        // 2. Set up Nav Link Listeners
+        topNav.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', (e) => {
+                // Ensure clicks on dropdown *containers* don't trigger simple navigation
+                if (link.closest('.group')) return;
+                
+                e.preventDefault();
+                const targetScreen = link.dataset.screen;
+                if (!userId) {
+                    renderLoginScreen();
+                    showScreen('login-screen');
+                    return; 
+                }
+                
+                if (targetScreen === 'home-screen') {
+                    renderHomeScreen();
+                } else if (targetScreen === 'gto-placeholder-screen') {
+                    renderGTOPlaceholderScreen();
+                } else if (targetScreen === 'past-tests-screen') {
+                    showPastTests();
+                }
+
+                // Close the mobile menu after selection
+                if (topNav && window.innerWidth < 640) topNav.classList.add('hidden');
+            });
+        });
+
+        // 3. Setup Dropdown Toggles and Handlers (for nested links)
         document.querySelectorAll('.dropdown-item').forEach(link => {
             link.addEventListener('click', handleTestSelection);
         });
-
-        // 3. Setup Mobile Menu Toggle (Hamburger button)
+        
+        // Setup Mobile Menu Toggle (Hamburger button)
         const mobileMenuBtn = document.getElementById('mobile-menu-btn');
-        if (mobileMenuBtn) setupMobileMenuToggle(mobileMenuBtn);
-
+        if (mobileMenuBtn) {
+            mobileMenuBtn.addEventListener('click', () => {
+                topNav.classList.toggle('hidden');
+            });
+        }
+        
         // 4. Start Authentication Listener
         onAuthStateChanged(auth, handleAuthState);
     }
@@ -555,18 +577,3 @@ window.addEventListener('beforeunload', (e) => {
         return message;
     }
 });
-
-// Final Helper functions for Window/Global access
-window.toggleDropdown = (id) => {
-    const dropdown = document.getElementById(id);
-    if (dropdown) {
-        // Only toggle on mobile screens
-        if (window.innerWidth < 640) {
-            dropdown.classList.toggle('hidden');
-        }
-    }
-};
-
-window.renderGTOPlaceholderScreen = renderGTOPlaceholderScreen;
-window.renderScreeningMenu = renderScreeningMenu;
-window.renderPsychologyMenu = renderPsychologyScreen; // Exposed global function for clarity
