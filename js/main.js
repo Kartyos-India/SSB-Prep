@@ -40,7 +40,7 @@ function handleNoUser() {
             signInWithPopup(auth, provider).catch(error => console.error("Auth Error:", error));
         });
     }
-    headerCenter.innerHTML = '';
+    headerCenter.innerHTML = ''; // No nav links if not logged in
     if (pageContent) pageContent.classList.remove('hidden');
 }
 
@@ -53,17 +53,21 @@ async function initializeFirebaseApp() {
             body: JSON.stringify({ type: 'get-config' })
         });
         
-        // **NEW ERROR HANDLING**
         if (!response.ok) {
-            throw new Error(`API Error: Server responded with status ${response.status}`);
+            throw new Error(`API Error: Server responded with status ${response.status}. Check Vercel logs.`);
         }
         
         const contentType = response.headers.get("content-type");
         if (!contentType || !contentType.includes("application/json")) {
-            throw new TypeError("Server did not return JSON. Check API logs on Vercel for errors.");
+            const errorText = await response.text();
+            console.error("Server Response (not JSON):", errorText);
+            throw new TypeError("Server did not return JSON. This is often caused by missing environment variables on Vercel.");
         }
 
         const firebaseConfig = await response.json();
+        if (!firebaseConfig.apiKey) {
+             throw new Error("Received invalid Firebase config from server.");
+        }
         const app = initializeApp(firebaseConfig);
         auth = getAuth(app);
 
@@ -86,7 +90,7 @@ async function main() {
             }
         });
     } catch (error) {
-        console.error("Failed to start the application.", error);
+        console.error("Failed to start the application.", error.message);
     }
 }
 
