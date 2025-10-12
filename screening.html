@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
 
@@ -27,6 +28,50 @@
     <main id="page-content" class="page-container hidden">
         <!-- Screening.js will populate this area -->
     </main>
+
+    <!-- Gender Selection Modal -->
+    <div id="genderModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>PPDT Test Setup</h3>
+                <span class="close-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p>Please select your gender for personalized image generation:</p>
+                <div class="gender-options">
+                    <button class="gender-btn male" data-gender="male">
+                        <i class="fas fa-mars"></i> Male
+                    </button>
+                    <button class="gender-btn female" data-gender="female">
+                        <i class="fas fa-venus"></i> Female
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Test Type Selection Modal -->
+    <div id="testTypeModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Select PPDT Test Type</h3>
+                <span class="close-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="test-type-options">
+                    <button class="test-type-btn" data-type="timed-visible">
+                        <i class="fas fa-clock"></i> Timed (Visible Timer)
+                    </button>
+                    <button class="test-type-btn" data-type="timed-invisible">
+                        <i class="fas fa-eye-slash"></i> Timed (Invisible Timer)
+                    </button>
+                    <button class="test-type-btn" data-type="untimed">
+                        <i class="fas fa-infinity"></i> Untimed
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script type="module" src="js/firebase-init.js"></script>
     <script type="module" src="js/main.js"></script>
