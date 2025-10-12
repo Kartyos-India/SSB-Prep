@@ -9,22 +9,18 @@
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     
     <style>
-        /* --- Consolidated styles.css content --- */
         :root {
-            --primary-blue: #1E3A8A; /* Darker Blue */
-            --accent-blue: #3B82F6; /* Brighter Blue */
-            --background-dark: #0f172a;
-            --card-light: #F8F9FA; /* Light card background */
+            --primary-blue: #1E3A8A;
+            --accent-blue: #3B82F6;
+            --card-light: #F8F9FA;
             --text-dark: #1F2937;
         }
-
         body {
             font-family: 'Inter', sans-serif;
             background-color: var(--primary-blue);
             color: var(--text-dark);
             background-image: url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"%3E%3Cg fill="%23254C91" fill-opacity="0.4"%3E%3Crect x="0" y="0" width="100" height="1"/%3E%3Crect x="0" y="0" width="1" height="100"/%3E%3C/g%3E%3C/svg%3E');
         }
-        
         .arena-container {
             background: var(--card-light);
             border-radius: 1.5rem;
@@ -33,72 +29,48 @@
             position: relative;
             max-width: 95%; 
             width: 100%;
-            margin-left: auto;
-            margin-right: auto;
+            margin: auto;
         }
-        
         @media (min-width: 1024px) { 
             .arena-container {
                 max-width: 1100px; 
             }
         }
-
         h1, h2, h3 {
             font-family: 'Orbitron', sans-serif;
             color: var(--primary-blue);
         }
-        
         .primary-btn {
             background-color: var(--accent-blue);
             color: white;
             transition: all 0.2s ease;
             box-shadow: 0 4px 10px rgba(59, 130, 246, 0.5);
-            border: none;
         }
-
         .primary-btn:hover:not(:disabled) {
             background-color: #2563EB;
             transform: translateY(-2px);
-            box-shadow: 0 6px 15px rgba(59, 130, 246, 0.7);
         }
-
-        .primary-btn:disabled {
-            background-color: #9CA3AF;
-            cursor: not-allowed;
-            box-shadow: none;
-        }
-        
         .choice-card {
             border: 1px solid #D1D5DB;
             background: white;
             transition: all 0.2s ease;
-            color: var(--text-dark);
-            border-radius: 0.75rem;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         }
-
         .choice-card:hover {
              border-color: var(--accent-blue);
              box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
         }
-
         .back-btn {
             background: #E5E7EB;
             border: 1px solid #D1D5DB;
             color: var(--text-dark);
         }
-        
         #header-bar {
             background-color: var(--primary-blue);
             color: white;
             padding: 1rem 2rem;
             border-radius: 1rem 1rem 0 0;
             margin: -2rem -2rem 2rem -2rem; 
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
         }
-        
         .dropdown-menu {
             position: absolute;
             background-color: white;
@@ -107,104 +79,20 @@
             min-width: 200px;
             border-radius: 0.5rem;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            top: 100%;
-            left: 0;
-            padding: 0.5rem 0;
         }
-        
-        .dropdown-item {
-            padding: 0.75rem 1rem;
-            cursor: pointer;
-            color: var(--text-dark);
-            display: block;
-        }
-        
         .dropdown-item:hover {
             background-color: #F3F4F6;
-            color: var(--accent-blue);
         }
-
-        #top-nav {
-            display: none; 
-            position: absolute;
-            top: 100%; 
-            left: 0;
-            right: 0;
-            background: var(--accent-blue);
-            z-index: 20;
-            padding: 0.5rem 0;
-            border-bottom-left-radius: 1.5rem;
-            border-bottom-right-radius: 1.5rem;
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
-            flex-direction: column;
-            gap: 0;
+        #top-nav { display: none; }
+        @media (min-width: 640px) {
+            #top-nav { display: flex !important; }
+            #mobile-menu-btn { display: none !important; }
         }
-        
-        .nav-link {
-            padding: 0.75rem 1.5rem;
-            color: white; 
-            text-align: left;
-            transition: background-color 0.1s;
-            position: relative;
-        }
-        
-        .nav-link:hover, .nav-link.active {
-            background-color: #2563EB; 
-            border-radius: 0;
-        }
-        
-        @media (min-width: 640px) { /* sm breakpoint */
-            #top-nav {
-                display: flex !important;
-                position: static;
-                margin: 0;
-                padding: 0;
-                background: transparent; 
-                box-shadow: none;
-                flex-direction: row;
-                gap: 1rem;
-                justify-content: flex-start;
-            }
-            .nav-link {
-                color: var(--text-dark); 
-                padding: 0.5rem 1rem;
-                background: transparent;
-                cursor: pointer;
-            }
-            .nav-link:hover, .nav-link.active {
-                background-color: #E5E7EB;
-                color: var(--accent-blue);
-            }
-            #mobile-menu-btn {
-                display: none !important;
-            }
-        }
-
-        .ppdt-image { filter: grayscale(100%) contrast(1.1); }
-        #feedback-content h3 { color: var(--primary-blue); }
-
-        .loader {
-            width: 100%; height: 8px; background-color: #E5E7EB; border-radius: 9999px; overflow: hidden; position: relative;
-        }
-        .loader::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            height: 100%;
-            width: 40%;
-            background: var(--accent-blue);
-            box-shadow: 0 0 10px var(--accent-blue);
-            border-radius: 9999px;
-            animation: loader-anim 1.5s linear infinite;
-        }
-        @keyframes loader-anim {
-            0% { transform: translateX(-100%); }
-            100% { transform: translateX(250%); }
-        }
+        .loader { width: 100%; height: 8px; background-color: #E5E7EB; border-radius: 9999px; overflow: hidden; position: relative; }
+        .loader::after { content: ''; position: absolute; height: 100%; width: 40%; background: var(--accent-blue); animation: loader-anim 1.5s linear infinite; }
+        @keyframes loader-anim { 0% { transform: translateX(-100%); } 100% { transform: translateX(250%); } }
     </style>
     
-    <!-- Required Firebase Scripts -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
@@ -218,52 +106,33 @@
 </head>
 <body class="text-gray-700 flex items-center justify-center min-h-screen p-4 md:p-8">
 
-    <div class="arena-container w-full">
-        
-        <!-- HEADER STRUCTURE -->
-        <header id="header-bar" class="flex-wrap mb-4">
-            <div id="header-left" class="flex items-center gap-3">
-                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
-                <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-white tracking-tight sm:tracking-widest">SSB PLATFORM</h1>
+    <div class="arena-container">
+        <header id="header-bar" class="flex flex-wrap justify-between items-center mb-4">
+            <div class="flex items-center gap-3">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                <h1 class="text-2xl font-bold text-white tracking-widest">SSB PLATFORM</h1>
             </div>
-            
-            <div class="flex items-center gap-4 text-sm mt-2 sm:mt-0 ml-auto relative">
+            <div class="flex items-center gap-4 text-sm mt-2 sm:mt-0 ml-auto">
                 <div id="header-right" class="flex items-center gap-4 text-sm text-white"></div>
                 <button id="mobile-menu-btn" class="sm:hidden p-2 rounded-lg bg-blue-700 text-white">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
                 </button>
             </div>
         </header>
         
-        <!-- Navigation Links / Dropdown Bar -->
-        <nav id="top-nav" class="my-3 flex justify-center sm:justify-start gap-1 sm:gap-4">
-             <a href="#" data-screen="home-screen" class="nav-link active">Home</a>
-             <div class="relative group">
-                 <div class="nav-link flex items-center gap-1">Screening</div>
-                 <div class="dropdown-menu hidden group-hover:block">
-                     <a href="#" data-action="start-test" data-test-type="OIR" class="dropdown-item">OIR Test</a>
-                     <a href="#" data-screen="ppdt-settings-screen" class="dropdown-item">PPDT</a>
-                 </div>
-             </div>
-             <div class="relative group">
-                 <div class="nav-link flex items-center gap-1">Psychology</div>
-                 <div class="dropdown-menu hidden group-hover:block">
-                     <a href="#" data-test-type="TAT" class="dropdown-item">TAT</a>
-                     <a href="#" data-test-type="WAT" class="dropdown-item">WAT</a>
-                     <a href="#" data-test-type="SRT" class="dropdown-item">SRT</a>
-                 </div>
-             </div>
-             <a href="#" data-screen="gto-placeholder-screen" class="nav-link">GTO Tests</a>
-             <a href="#" data-screen="past-tests-screen" class="nav-link">My Performance</a>
+        <nav id="top-nav" class="my-3 sm:flex justify-start gap-4">
+             <a href="#" data-screen="home-screen" class="nav-link active p-2 rounded hover:bg-gray-200">Home</a>
+             <a href="#" data-screen="ppdt-settings-screen" class="nav-link p-2 rounded hover:bg-gray-200">Screening</a>
+             <a href="#" data-screen="psychology-screen" class="nav-link p-2 rounded hover:bg-gray-200">Psychology</a>
+             <a href="#" data-screen="gto-placeholder-screen" class="nav-link p-2 rounded hover:bg-gray-200">GTO Tests</a>
+             <a href="#" data-screen="past-tests-screen" class="nav-link p-2 rounded hover:bg-gray-200">My Performance</a>
         </nav>
         
-        <!-- Main Content Area -->
         <main id="main-content" class="mt-8">
-             <div id="auth-loader" class="w-full max-w-md space-y-4 text-center mx-auto mt-20">
-                <p class="text-lg text-gray-400">Initializing Session...</p>
-                <div class="loader mx-auto"></div>
+             <div id="auth-loader" class="text-center mt-20">
+                <p class="text-lg text-gray-500">Initializing Session...</p>
+                <div class="loader mx-auto mt-4 max-w-sm"></div>
             </div>
-            <!-- All Screens are added here, initially hidden -->
             <div id="login-screen" class="hidden"></div>
             <div id="home-screen" class="hidden"></div>
             <div id="ppdt-settings-screen" class="hidden"></div>
@@ -277,113 +146,124 @@
     </div>
     
     <div id="templates" class="hidden">
-    
         <template id="home-screen-template">
-            <div class="space-y-8">
-                <div class="text-center">
-                    <h2 class="text-4xl md:text-5xl font-bold text-gray-700">CHOOSE YOUR TRAINING MODULE</h2>
-                    <p class="text-gray-500 mt-2 max-w-2xl mx-auto">Select a module to begin your assessment and training.</p>
+            <div class="text-center">
+                <h2 class="text-4xl font-bold">CHOOSE YOUR MODULE</h2>
+                <p class="text-gray-500 mt-2">Select a module to begin your training.</p>
+            </div>
+            <div class="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto pt-8">
+                <div class="choice-card p-6 text-center flex flex-col rounded-lg">
+                    <h3 class="text-xl font-bold mt-3">SCREENING</h3>
+                    <p class="text-gray-500 mt-2 flex-grow text-sm">OIR and PPDT practice for Stage I.</p>
+                    <button class="w-full primary-btn font-bold py-3 mt-6 rounded-lg" data-action="renderScreeningMenu">START STAGE I</button>
                 </div>
-                <div class="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto pt-8">
-                    <div class="choice-card p-6 text-center flex flex-col items-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--accent-blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17s.8-6.1 6-10c4.5-5 10 2 10 2"></path><path d="M12 21a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h0a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2z"></path><path d="M10 13c1.7 0 3 1.3 3 3"></path></svg>
-                        <h3 class="text-xl font-bold text-gray-700 mt-3">SCREENING</h3>
-                        <p class="text-gray-500 mt-2 flex-grow text-sm">OIR and PPDT practice for Stage I assessment.</p>
-                        <button class="w-full primary-btn font-bold py-3 px-6 rounded-lg text-lg mt-6" data-action="renderScreeningMenu">START STAGE I</button>
-                    </div>
-                    
-                    <div class="choice-card p-6 text-center flex flex-col items-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--accent-blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
-                        <h3 class="text-xl font-bold text-gray-700 mt-3">PSYCHOLOGY</h3>
-                        <p class="text-gray-500 mt-2 flex-grow text-sm">Hone skills in TAT, WAT, and SRT with AI feedback.</p>
-                        <button class="w-full primary-btn font-bold py-3 px-6 rounded-lg text-lg mt-6" data-action="renderPsychologyMenu">START TESTS</button>
-                    </div>
-
-                    <div class="choice-card p-6 text-center flex flex-col items-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--accent-blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 15s1-4 7-4 7 4 7 4"></path><path d="M12 21a9 9 0 0 0 9-9c0-5-4-9-9-9s-9 4-9 9a9 9 0 0 0 9 9z"></path><line x1="8" y1="12" x2="16" y2="12"></line><line x1="12" y1="8" x2="12" y2="16"></line></svg>
-                        <h3 class="text-xl font-bold text-gray-700 mt-3">GTO TASKS</h3>
-                        <p class="text-gray-500 mt-2 flex-grow text-sm">Conceptual and strategy guides for Group Tasks.</p>
-                        <button class="w-full primary-btn font-bold py-3 px-6 rounded-lg text-lg mt-6" data-action="renderGTOPlaceholderScreen">VIEW MODULE</button>
-                    </div>
+                <div class="choice-card p-6 text-center flex flex-col rounded-lg">
+                    <h3 class="text-xl font-bold mt-3">PSYCHOLOGY</h3>
+                    <p class="text-gray-500 mt-2 flex-grow text-sm">TAT, WAT, and SRT with AI feedback.</p>
+                    <button class="w-full primary-btn font-bold py-3 mt-6 rounded-lg" data-action="renderPsychologyMenu">START TESTS</button>
                 </div>
-            </div>
-        </template>
-
-        <template id="gto-placeholder-screen-template">
-            <div class="text-center mb-10">
-                <h2 class="text-4xl md:text-5xl font-bold text-gray-700">GTO TESTS</h2>
-                <p class="text-gray-500 mt-2">Group Testing Officer tasks are primarily physical and are not simulated here.</p>
-            </div>
-            <div class="bg-white p-6 rounded-xl shadow-md border max-w-xl mx-auto space-y-4">
-                <p class="text-gray-700">This module provides information on tasks like PGT, HGT, FGT, and Lecturettes, but currently offers no interactive simulation.</p>
-                <button class="primary-btn mt-4 w-full" data-action="renderHomeScreen">Return to Home</button>
-            </div>
-        </template>
-
-        <template id="oir-test-screen-template">
-            <div class="text-center mb-10">
-                <h2 class="text-4xl md:text-5xl font-bold text-gray-700">OIR TEST</h2>
-                <p class="text-gray-500 mt-2">Officer Intelligence Rating Aptitude Questions.</p>
-            </div>
-            <div class="bg-white p-6 rounded-xl shadow-md border max-w-2xl mx-auto space-y-6">
-                <div id="oir-question-container" class="space-y-4"></div>
-                <div class="flex justify-between pt-4 border-t border-gray-200">
-                    <button id="oir-prev-btn" class="back-btn py-2 px-4 rounded-lg">← Previous</button>
-                    <button id="oir-next-btn" class="primary-btn py-2 px-4 rounded-lg">Next →</button>
-                    <button id="oir-finish-btn" class="primary-btn py-2 px-4 rounded-lg hidden">Submit & Verify Answers</button>
-                </div>
-            </div>
-        </template>
-        
-        <template id="ppdt-settings-screen-template">
-            <div class="space-y-8">
-                <div class="text-center">
-                    <h2 class="text-4xl md:text-5xl font-bold text-gray-700">PPDT SIMULATION</h2>
-                </div>
-                <div class="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto pt-8">
-                    <!-- ... PPDT settings content ... -->
+                <div class="choice-card p-6 text-center flex flex-col rounded-lg">
+                    <h3 class="text-xl font-bold mt-3">GTO TASKS</h3>
+                    <p class="text-gray-500 mt-2 flex-grow text-sm">Guides for Group Tasks.</p>
+                    <button class="w-full primary-btn font-bold py-3 mt-6 rounded-lg" data-action="renderGTOPlaceholderScreen">VIEW MODULE</button>
                 </div>
             </div>
         </template>
 
         <template id="psychology-screen-template">
-            <div class="text-center mb-10">
-                <h2 class="text-4xl md:text-5xl font-bold text-gray-700">PSYCHOLOGY TEST BATTERY</h2>
-                <p class="text-gray-500 mt-2 max-w-2xl mx-auto">Select a test to begin.</p>
+            <div class="text-center">
+                <h2 class="text-4xl font-bold">PSYCHOLOGY TESTS</h2>
+                <p class="text-gray-500 mt-2">Select a test to begin.</p>
             </div>
-            <div class="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-                <div class="choice-card p-6 text-center flex flex-col items-center">
-                    <h3 class="text-xl font-bold text-gray-700 mt-3">TAT</h3>
-                    <p class="text-gray-500 mt-2 flex-grow text-sm">Thematic Apperception Test</p>
-                    <button class="w-full primary-btn font-bold py-3 px-6 rounded-lg text-lg mt-6" data-test-type="TAT">START TAT</button>
+            <div class="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto pt-8">
+                <div class="choice-card p-6 text-center rounded-lg">
+                    <h3 class="text-xl font-bold">TAT</h3>
+                    <button class="w-full primary-btn font-bold py-3 mt-6 rounded-lg" data-test-type="TAT">START TAT</button>
                 </div>
-                <div class="choice-card p-6 text-center flex flex-col items-center">
-                    <h3 class="text-xl font-bold text-gray-700 mt-3">WAT</h3>
-                    <p class="text-gray-500 mt-2 flex-grow text-sm">Word Association Test</p>
-                    <button class="w-full primary-btn font-bold py-3 px-6 rounded-lg text-lg mt-6" data-test-type="WAT">START WAT</button>
+                <div class="choice-card p-6 text-center rounded-lg">
+                    <h3 class="text-xl font-bold">WAT</h3>
+                    <button class="w-full primary-btn font-bold py-3 mt-6 rounded-lg" data-test-type="WAT">START WAT</button>
                 </div>
-                <div class="choice-card p-6 text-center flex flex-col items-center">
-                    <h3 class="text-xl font-bold text-gray-700 mt-3">SRT</h3>
-                    <p class="text-gray-500 mt-2 flex-grow text-sm">Situation Reaction Test</p>
-                    <button class="w-full primary-btn font-bold py-3 px-6 rounded-lg text-lg mt-6" data-test-type="SRT">START SRT</button>
+                <div class="choice-card p-6 text-center rounded-lg">
+                    <h3 class="text-xl font-bold">SRT</h3>
+                    <button class="w-full primary-btn font-bold py-3 mt-6 rounded-lg" data-test-type="SRT">START SRT</button>
                 </div>
             </div>
         </template>
+
+        <template id="gto-placeholder-screen-template">
+            <div class="text-center">
+                <h2 class="text-4xl font-bold">GTO TESTS</h2>
+                <p class="text-gray-500 mt-2">This module is under development.</p>
+                <button class="primary-btn mt-8" data-action="renderHomeScreen">Return to Home</button>
+            </div>
+        </template>
         
-        <!-- Other Templates -->
-        <template id="ppdt-picture-stage-template"><!-- ... --></template>
-        <template id="ppdt-story-stage-template"><!-- ... --></template>
-        <template id="narration-stage-template"><!-- ... --></template>
-        <template id="ppdt-review-screen-template"><!-- ... --></template>
-        <template id="tat-picture-stage-template"><!-- ... --></template>
-        <template id="tat-story-stage-template"><!-- ... --></template>
-        <template id="wat-stage-template"><!-- ... --></template>
-        <template id="srt-stage-template"><!-- ... --></template>
-        <template id="text-review-template"><!-- ... --></template>
-        <template id="past-tests-screen-template"><!-- ... --></template>
-        <template id="view-test-screen-template"><!-- ... --></template>
+        <template id="oir-test-template">
+            <div class="text-center">
+                <h2 class="text-3xl font-bold">OIR TEST</h2>
+                <div id="oir-timer" class="text-2xl font-mono text-red-500 mt-2">30:00</div>
+            </div>
+            <div id="oir-question-container" class="mt-6">
+                <!-- OIR questions will be injected here by script.js -->
+            </div>
+            <div class="flex justify-between mt-6">
+                <button id="oir-prev-btn" class="back-btn py-2 px-4 rounded-lg">Previous</button>
+                <button id="oir-next-btn" class="primary-btn py-2 px-4 rounded-lg">Next</button>
+                <button id="oir-finish-btn" class="primary-btn py-2 px-4 rounded-lg hidden">Finish Test</button>
+            </div>
+        </template>
+
+        <template id="ppdt-settings-template">
+            <div class="text-center">
+                <h2 class="text-4xl font-bold">PPDT - Settings</h2>
+                <p class="text-gray-500 mt-2">Configure your test environment.</p>
+            </div>
+            <div class="max-w-md mx-auto mt-8 space-y-6">
+                 <div class="choice-card p-4 rounded-lg">
+                    <h3 class="font-semibold text-lg">Narration Gender</h3>
+                    <p class="text-sm text-gray-500 mb-2">This helps generate a relevant image.</p>
+                    <div class="flex gap-4">
+                        <label class="flex-1"><input type="radio" name="ppdt-gender" value="male" class="mr-2" checked> Male</label>
+                        <label class="flex-1"><input type="radio" name="ppdt-gender" value="female" class="mr-2"> Female</label>
+                    </div>
+                </div>
+                <button id="start-ppdt-btn" class="w-full primary-btn font-bold py-3 mt-6 rounded-lg">Start PPDT</button>
+            </div>
+        </template>
+
+        <template id="psy-test-stage-template">
+            <div class="flex justify-between items-center">
+                <h2 class="text-3xl font-bold" id="test-title">Psychology Test</h2>
+                <div class="text-right">
+                    <div id="test-timer" class="text-2xl font-mono text-red-500">00:00</div>
+                    <div id="test-progress" class="text-sm text-gray-500">0/0</div>
+                </div>
+            </div>
+            <div id="test-stimulus-container" class="my-6 text-center">
+                <!-- Image for TAT or Text for WAT/SRT goes here -->
+            </div>
+            <textarea id="test-response-area" class="w-full h-48 p-2 border rounded-lg" placeholder="Your response..."></textarea>
+            <div class="text-right mt-4">
+                 <button id="next-stimulus-btn" class="primary-btn py-2 px-6 rounded-lg">Next</button>
+            </div>
+        </template>
+        
+        <template id="review-screen-template">
+             <div class="text-center">
+                <h2 class="text-4xl font-bold">Test Complete</h2>
+                <p class="text-gray-500 mt-2">Review your performance below.</p>
+            </div>
+            <div id="review-content" class="mt-8 space-y-4">
+                <!-- Feedback and scores will be injected here -->
+            </div>
+            <div class="text-center mt-8">
+                <button class="primary-btn" data-action="renderHomeScreen">Back to Home</button>
+            </div>
+        </template>
     </div>
 
     <script type="module" src="script.js"></script>
 </body>
 </html>
+
