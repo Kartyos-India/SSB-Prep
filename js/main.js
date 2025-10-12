@@ -44,42 +44,56 @@ function handleNoUser() {
     if (pageContent) pageContent.classList.remove('hidden');
 }
 
+// --- FIREBASE CONFIG ---
+// Replace this with your actual Firebase config from Firebase Console
+const firebaseConfig = {
+    apiKey: "your-api-key-here",
+    authDomain: "your-project-id.firebaseapp.com",
+    projectId: "your-project-id",
+    storageBucket: "your-project-id.appspot.com",
+    messagingSenderId: "123456789",
+    appId: "your-app-id"
+};
+
 // --- INITIALIZATION ---
 async function initializeFirebaseApp() {
     try {
-        const response = await fetch('/api/generate-content', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ type: 'get-config' })
-        });
+        // Try to get config from backend first
+        let config = firebaseConfig;
         
-        if (!response.ok) {
-            // NEW: More specific error for 404
-            if (response.status === 404) {
-                 throw new Error(`API Error (404): The backend function at /api/generate-content was not found. This usually means the Vercel deployment failed. Check the logs.`);
+        try {
+            const response = await fetch('/api/generate-content', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ type: 'get-config' })
+            });
+            
+            if (response.ok) {
+                const contentType = response.headers.get("content-type");
+                if (contentType && contentType.includes("application/json")) {
+                    const serverConfig = await response.json();
+                    if (serverConfig.apiKey) {
+                        config = serverConfig;
+                        console.log("Using Firebase config from server");
+                    }
+                }
             }
-            throw new Error(`API Error: Server responded with status ${response.status}.`);
-        }
-        
-        const contentType = response.headers.get("content-type");
-        if (!contentType || !contentType.includes("application/json")) {
-            const errorText = await response.text();
-            console.error("Server Response (not JSON):", errorText);
-            throw new TypeError("Server did not return valid JSON. The backend might have crashed.");
+        } catch (fetchError) {
+            console.log("Using default Firebase config");
         }
 
-        const firebaseConfig = await response.json();
-        if (!firebaseConfig.apiKey) {
-             throw new Error("Received invalid Firebase config from server.");
+        if (!config.apiKey || config.apiKey === "your-api-key-here") {
+            throw new Error("Please configure Firebase in main.js with your actual Firebase project settings");
         }
-        const app = initializeApp(firebaseConfig);
+
+        const app = initializeApp(config);
         auth = getAuth(app);
+        console.log("Firebase initialized successfully");
 
     } catch (error) {
         console.error("Firebase Initialization Error:", error);
         if (authLoader) {
-            // NEW: More helpful UI error
-            authLoader.innerHTML = `Config Error<br><span style="font-size: 0.8rem; color: #ffb8b8;">Check Vercel Deployment Logs</span>`;
+            authLoader.innerHTML = `Firebase Error<br><span style="font-size: 0.8rem; color: #ffb8b8;">Check Console</span>`;
         }
         throw error;
     }
@@ -102,4 +116,3 @@ async function main() {
 }
 
 main();
-
