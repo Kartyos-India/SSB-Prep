@@ -4,7 +4,8 @@ import {
     signInWithPopup, 
     GoogleAuthProvider, 
     signOut,
-    getAuth
+    getAuth,
+    initializeApp
 } from './firebase-init.js';
 
 // --- DOM ELEMENTS ---
@@ -52,26 +53,42 @@ function handleNoUser() {
     if (pageContent) pageContent.classList.remove('hidden');
 }
 
+// --- FIREBASE CONFIG FALLBACK ---
+const fallbackConfig = {
+    apiKey: "AIzaSyArpI0CMPd8LeANujYkvYJYaLIvHZcTBrI",
+    authDomain: "ssb-preparation-69cfc.firebaseapp.com",
+    projectId: "ssb-preparation-69cfc",
+    storageBucket: "ssb-preparation-69cfc.firebasestorage.app",
+    messagingSenderId: "561636236693",
+    appId: "1:561636236693:web:e28dccd3b4a26a8432ea9c"
+};
+
 // --- INITIALIZATION ---
 async function initializeFirebaseApp() {
     try {
         console.log("🚀 Initializing Firebase...");
         
-        // Get config from Vercel serverless function
-        const response = await fetch('/api/get-firebase-config');
+        let firebaseConfig;
         
-        if (!response.ok) {
-            throw new Error(`API returned ${response.status}: ${response.statusText}`);
+        // Try to get config from Vercel serverless function
+        try {
+            const response = await fetch('/api/get-firebase-config');
+            
+            if (!response.ok) {
+                throw new Error(`API returned ${response.status}: ${response.statusText}`);
+            }
+            
+            firebaseConfig = await response.json();
+            console.log("✅ Firebase config loaded from API");
+        } catch (apiError) {
+            console.warn("❌ API failed, using fallback config:", apiError.message);
+            firebaseConfig = fallbackConfig;
         }
-        
-        const firebaseConfig = await response.json();
         
         if (!firebaseConfig || !firebaseConfig.apiKey) {
-            throw new Error("Invalid Firebase config received from server");
+            throw new Error("Invalid Firebase config received");
         }
 
-        console.log("✅ Firebase config loaded successfully");
-        const { initializeApp } = await import('./firebase-init.js');
         const app = initializeApp(firebaseConfig);
         auth = getAuth(app);
         return true;
