@@ -19,8 +19,7 @@ export default async function handler(request, response) {
     if (!firebaseConfig) {
       console.error("Firebase config environment variable not found");
       return response.status(500).json({ 
-        error: 'Firebase configuration not found in environment variables',
-        availableVars: Object.keys(process.env).filter(key => key.includes('firebase') || key.includes('FIREBASE'))
+        error: 'Firebase configuration not found in environment variables'
       });
     }
 
@@ -31,15 +30,14 @@ export default async function handler(request, response) {
     
     console.log("Sending Firebase config to client");
     
-    // Return the config to the client (without sensitive server-only fields if any)
+    // Return the config to the client
     response.status(200).json(config);
     
   } catch (error) {
     console.error("Error in get-firebase-config:", error);
     response.status(500).json({ 
       error: 'Failed to load Firebase configuration',
-      details: error.message,
-      configString: process.env.__firebase_config ? 'Config exists but invalid JSON' : 'Config not found'
+      details: error.message
     });
   }
 }
