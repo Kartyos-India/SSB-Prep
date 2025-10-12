@@ -1,6 +1,4 @@
-// This file's purpose is to import the Firebase modules and make them available
-// to other scripts that need them.
-
+// js/firebase-init.js
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { 
     getAuth, 
@@ -20,8 +18,6 @@ import {
     orderBy 
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-// We export all the functions we imported so that other scripts (like main.js)
-// can import them from this file.
 export {
     initializeApp,
     getAuth,
@@ -38,4 +34,3 @@ export {
     getDoc,
     orderBy
 };
-
