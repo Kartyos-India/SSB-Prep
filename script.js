@@ -159,6 +159,7 @@ function handleAuthState(user) {
              }
         }
 
+        // FIX: Load the structured home screen on successful login
         if (document.getElementById('login-screen').classList.contains('hidden') && 
             document.getElementById('home-screen').classList.contains('hidden')) {
             renderHomeScreen();
@@ -307,8 +308,6 @@ function setupMobileMenuToggle(mobileMenuBtn) {
 }
 
 // Global functions for direct calls from HTML (e.g., onclick="renderScreeningMenu()")
-window.renderScreeningMenu = renderScreeningMenu;
-window.renderPsychologyMenu = renderPsychologyScreen; 
 window.renderGTOPlaceholderScreen = renderGTOPlaceholderScreen;
 window.handleTestSelection = handleTestSelection;
 
@@ -475,15 +474,7 @@ function renderScreeningMenu() {
 }
 
 
-// --- REST OF THE CODE (Unchanged for brevity, but included in the full script) ---
-
-// --- Unified Test State and Timers ---
-let timerInterval;
-
-function formatTime(s) { /* ... same code ... */ }
-function startTimer(duration, displayElement, onComplete) { /* ... same code ... */ }
-
-// PPDT Logic
+// --- PPDT Logic (Unchanged for brevity) ---
 let ppdtMediaRecorder, ppdtRecordedChunks = [], ppdtVideoUrl = null, ppdtCurrentImageUrl = '';
 
 function setupPPDTVideoControls(reviewVideo) { /* ... same code ... */ }
@@ -495,11 +486,22 @@ function initializePPDTTest(config) { /* ... same code ... */ }
 function renderPPDTSettingsScreen() { /* ... same code ... */ }
 
 
-// Psychology Logic
+// --- Psychology Logic (Unchanged for brevity) ---
 let testData = []; 
 let testResponses = [];
 
-function renderPsychologyScreen() { /* ... same code ... */ }
+function renderPsychologyScreen() {
+    const psychScreen = document.getElementById('psychology-screen');
+    const template = getTemplateContent('psychology-screen-template');
+    if (template) {
+        psychScreen.innerHTML = '';
+        psychScreen.appendChild(template);
+    }
+
+    addGoBackButton(psychScreen, renderHomeScreen);
+    showScreen('psychology-screen');
+}
+
 async function initializePsyTest(config) { /* ... same code ... */ }
 function runPsyTestStage() { /* ... same code ... */ }
 function setupPsyTestStageContent(config) { /* ... same code ... */ }
@@ -509,7 +511,7 @@ function showPsyReview() { /* ... same code ... */ }
 async function savePsyTestToFirebase(aiFeedback) { /* ... same code ... */ }
 async function getAIFeedback() { /* ... same code ... */ }
 
-// Account Logic
+// --- Account Logic (Unchanged for brevity) ---
 async function showPastTests() { /* ... same code ... */ }
 async function viewPastTest(testId) { /* ... same code ... */ }
 
@@ -524,10 +526,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         auth = initializedAuth;
         db = initializedDb;
         
-        // 2. Set up Nav Link Listeners
+        // 2. Set up Nav Link Listeners (for non-dropdown links)
         topNav.querySelectorAll('.nav-link').forEach(link => {
             link.addEventListener('click', (e) => {
-                // Ensure clicks on dropdown *containers* don't trigger simple navigation
                 if (link.closest('.group')) return;
                 
                 e.preventDefault();
@@ -546,7 +547,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                     showPastTests();
                 }
 
-                // Close the mobile menu after selection
                 if (topNav && window.innerWidth < 640) topNav.classList.add('hidden');
             });
         });
