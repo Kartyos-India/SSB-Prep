@@ -37,93 +37,65 @@ function handleNoUser() {
     if (loginBtn) {
         loginBtn.addEventListener('click', () => {
             const provider = new GoogleAuthProvider();
-            signInWithPopup(auth, provider).catch(error => console.error("Auth Error:", error));
+            signInWithPopup(auth, provider).catch(error => {
+                console.error("Auth Error:", error);
+                alert("Login failed. Please check console for details.");
+            });
         });
     }
     headerCenter.innerHTML = ''; // No nav links if not logged in
     if (pageContent) pageContent.classList.remove('hidden');
 }
 
-// --- FIREBASE CONFIG FALLBACK ---
-// Add this as a temporary fallback while we debug the API
-const fallbackConfig = {
-    // You'll need to add your actual Firebase config here temporarily
-    // Get this from your Firebase project settings
-    apiKey: "your-api-key-here",
-    authDomain: "your-project.firebaseapp.com",
-    projectId: "your-project-id",
-    storageBucket: "your-project.appspot.com",
-    messagingSenderId: "123456789",
-    appId: "your-app-id"
-};
-
 // --- INITIALIZATION ---
 async function initializeFirebaseApp() {
     try {
-        console.log("Testing API connection...");
+        console.log("🚀 Initializing Firebase...");
         
-        // First, test if the API is working
-        try {
-            const testResponse = await fetch('/api/test');
-            if (testResponse.ok) {
-                const testData = await testResponse.json();
-                console.log("API Test Success:", testData);
-            } else {
-                console.error("API Test Failed - Status:", testResponse.status);
-            }
-        } catch (testError) {
-            console.error("API Test Error:", testError);
-        }
-
-        console.log("Fetching Firebase config from server...");
-        
-        const response = await fetch('/api/get-firebase-config', {
-            method: 'GET',
-            headers: { 'Content-Type': 'application/json' }
-        });
-        
-        console.log("Response status:", response.status);
+        // Try to get config from Vercel serverless function
+        const response = await fetch('/api/get-firebase-config');
         
         if (!response.ok) {
-            throw new Error(`Server responded with status ${response.status}. Check if API route exists.`);
+            throw new Error(`API returned ${response.status}: ${response.statusText}`);
         }
         
         const firebaseConfig = await response.json();
-        console.log("Firebase config received:", firebaseConfig);
         
-        if (!firebaseConfig.apiKey) {
+        if (!firebaseConfig || !firebaseConfig.apiKey) {
             throw new Error("Invalid Firebase config received from server");
         }
 
-        console.log("Firebase config loaded successfully from server");
+        console.log("✅ Firebase config loaded successfully");
         const app = initializeApp(firebaseConfig);
         auth = getAuth(app);
+        return true;
 
     } catch (error) {
-        console.error("Firebase Initialization Error:", error);
+        console.error("❌ Firebase Initialization Failed:", error);
         
-        // Show detailed error in the loader
         if (authLoader) {
             authLoader.innerHTML = `
-                Config Error<br>
-                <span style="font-size: 0.8rem; color: #ffb8b8;">
-                    ${error.message}<br>
-                    Check browser console for details
-                </span>
+                <div style="text-align: center;">
+                    <div>Firebase Config Error</div>
+                    <div style="font-size: 0.8rem; color: #ffb8b8; margin-top: 0.5rem;">
+                        ${error.message}<br>
+                        <button onclick="window.location.reload()" style="margin-top: 0.5rem; padding: 0.25rem 0.5rem; background: #3B82F6; border: none; border-radius: 4px; color: white; cursor: pointer;">
+                            Retry
+                        </button>
+                    </div>
+                </div>
             `;
         }
-        
-        // Don't throw error - let the app continue without Firebase for now
-        console.log("App will continue without Firebase initialization");
+        return false;
     }
 }
 
 async function main() {
     try {
-        await initializeFirebaseApp();
+        const firebaseInitialized = await initializeFirebaseApp();
         
-        // If auth was initialized, set up auth state listener
-        if (auth) {
+        if (firebaseInitialized) {
+            // Firebase initialized successfully
             onAuthStateChanged(auth, (user) => {
                 if (authLoader) authLoader.classList.add('hidden');
                 if (user) {
@@ -133,15 +105,19 @@ async function main() {
                 }
             });
         } else {
-            // If Firebase didn't initialize, still show the page content
+            // Firebase failed to initialize, but still show the page
             if (authLoader) authLoader.classList.add('hidden');
             if (pageContent) pageContent.classList.remove('hidden');
-            handleNoUser(); // Show login button even without Firebase
+            handleNoUser();
+            
+            // Show a warning
+            console.warn("App running without Firebase authentication");
         }
     } catch (error) {
-        console.error("Failed to start the application.", error.message);
+        console.error("💥 Failed to start application:", error);
         if (authLoader) authLoader.classList.add('hidden');
         if (pageContent) pageContent.classList.remove('hidden');
+        handleNoUser();
     }
 }
 
