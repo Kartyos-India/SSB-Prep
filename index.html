@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SSB Preparation Platform</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+
+    <div class="arena-container w-full">
+        <!-- Consistent Header: Populated by main.js -->
+        <header id="header-bar">
+            <div id="header-left">
+                <a href="index.html" class="flex items-center gap-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><path fill="white" d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                    <h1 class="text-2xl font-bold text-white tracking-widest">SSB PLATFORM</h1>
+                </a>
+            </div>
+            <div id="header-right" class="flex items-center gap-4 text-sm text-white">
+                <!-- User info / Login button will be loaded here -->
+            </div>
+        </header>
+
+        <!-- Consistent Navigation Bar -->
+        <nav id="top-nav" class="my-4">
+            <a href="index.html" class="nav-link active">Home</a>
+            <a href="screening.html" class="nav-link">Screening</a>
+            <a href="psychology.html" class="nav-link">Psychology</a>
+            <a href="gto.html" class="nav-link">GTO</a>
+            <a href="performance.html" class="nav-link">My Performance</a>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main id="main-content">
+            <!-- Auth Loader: Shown while Firebase is initializing -->
+            <div id="auth-loader" class="text-center mt-20">
+                <p class="text-lg text-gray-500">Initializing Session...</p>
+            </div>
+            
+            <!-- Page Content: Shown after auth is checked -->
+            <div id="page-content" class="hidden">
+                <div class="space-y-8">
+                    <div class="text-center">
+                        <h2 class="text-4xl md:text-5xl font-bold text-gray-700">CHOOSE YOUR TRAINING MODULE</h2>
+                        <p class="text-gray-500 mt-2 max-w-2xl mx-auto">Select a module to begin your assessment and training.</p>
+                    </div>
+                    <div class="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto pt-8">
+                        
+                        <!-- Screening Card -->
+                        <a href="screening.html" class="choice-card p-6 text-center flex flex-col items-center no-underline">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z"/><path d="m16 8-4 4-4-4"/><path d="m8 12 4 4 4-4"/></svg>
+                            <h3 class="text-xl font-bold text-gray-700 mt-3">SCREENING</h3>
+                            <p class="text-gray-500 mt-2 flex-grow text-sm">OIR and PPDT practice for Stage I assessment.</p>
+                            <div class="w-full primary-btn font-bold py-3 px-6 rounded-lg text-lg mt-6">START STAGE I</div>
+                        </a>
+                        
+                        <!-- Psychology Card -->
+                        <a href="psychology.html" class="choice-card p-6 text-center flex flex-col items-center no-underline">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z"/><path d="M12 18a6 6 0 1 0 0-12 6 6 0 0 0 0 12z"/><path d="M12 12v6"/></svg>
+                            <h3 class="text-xl font-bold text-gray-700 mt-3">PSYCHOLOGY</h3>
+                            <p class="text-gray-500 mt-2 flex-grow text-sm">Hone skills in TAT, WAT, and SRT with AI feedback.</p>
+                            <div class="w-full primary-btn font-bold py-3 px-6 rounded-lg text-lg mt-6">START TESTS</div>
+                        </a>
+
+                        <!-- GTO Card -->
+                        <a href="gto.html" class="choice-card p-6 text-center flex flex-col items-center no-underline">
+                           <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z"/><path d="m12 14-4-4 4-4"/><path d="m16 10h-8"/></svg>
+                            <h3 class="text-xl font-bold text-gray-700 mt-3">GTO TASKS</h3>
+                            <p class="text-gray-500 mt-2 flex-grow text-sm">Conceptual and strategy guides for Group Tasks.</p>
+                            <div class="w-full primary-btn font-bold py-3 px-6 rounded-lg text-lg mt-6">VIEW MODULE</div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Load JavaScript files -->
+    <script type="module" src="js/firebase-init.js"></script>
+    <script type="module" src="js/main.js"></script>
+
+</body>
+</html>
+
