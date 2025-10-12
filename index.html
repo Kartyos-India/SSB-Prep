@@ -1,142 +1,102 @@
-import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SSB Preparation Platform</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
 
-// --- DOM ELEMENTS ---
-const headerRight = document.getElementById('header-right');
-const headerCenter = document.getElementById('header-center');
-const pageContent = document.getElementById('page-content');
-const authLoader = document.getElementById('auth-loader');
+    <header id="header-bar">
+        <div id="header-left">
+            <a href="index.html" class="logo-link">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><path fill="white" d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                <span>SSB Prep</span>
+            </a>
+        </div>
+        <nav id="header-center"></nav>
+        <div id="header-right">
+            <div id="auth-loader">Loading...</div>
+        </div>
+    </header>
 
-let auth; // Firebase Auth instance
-
-// --- RENDER FUNCTIONS ---
-
-/**
- * Renders the main navigation links in the header for a logged-in user.
- */
-function renderAuthenticatedNav() {
-    // Determine the current page to set the 'active' class
-    const currentPage = window.location.pathname.split('/').pop();
-
-    headerCenter.innerHTML = `
-        <a href="screening.html" class="nav-link ${currentPage === 'screening.html' ? 'active' : ''}">Screening</a>
-        <a href="psychology.html" class="nav-link ${currentPage === 'psychology.html' ? 'active' : ''}">Psychology</a>
-        <a href="gto.html" class="nav-link ${currentPage === 'gto.html' ? 'active' : ''}">GTO</a>
-        <a href="performance.html" class="nav-link ${currentPage === 'performance.html' ? 'active' : ''}">My Performance</a>
-    `;
-}
-
-/**
- * Handles the UI state when a user is successfully authenticated.
- * @param {object} user - The Firebase user object.
- */
-function handleAuthenticatedUser(user) {
-    // Display user info and logout button
-    headerRight.innerHTML = `
-        <span class="text-sm text-gray-400">${user.displayName || user.email}</span>
-        <button id="logout-btn" class="action-btn logout-btn">Logout</button>
-    `;
-    document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
-
-    // Render the main navigation links
-    renderAuthenticatedNav();
-
-    // Show the main content of the page
-    if (pageContent) {
-        pageContent.classList.remove('hidden');
-    }
-}
-
-/**
- * Handles the UI state when no user is logged in.
- */
-function handleNoUser() {
-    // Display login button
-    const loginButtonHTML = `
-        <button id="login-btn" class="action-btn login-btn">Login to Begin</button>
-    `;
-    headerRight.innerHTML = loginButtonHTML;
-    
-    // Attach event listener for the login button
-    const loginBtn = document.getElementById('login-btn');
-    if (loginBtn) {
-        loginBtn.addEventListener('click', () => {
-            const provider = new GoogleAuthProvider();
-            signInWithPopup(auth, provider).catch(error => {
-                console.error("Authentication Error:", error);
-            });
-        });
-    }
-
-    // Clear any navigation links
-    headerCenter.innerHTML = '';
-
-    // Show the main content (as it might contain guest-friendly content)
-    if (pageContent) {
-        pageContent.classList.remove('hidden');
-    }
-}
-
-// --- INITIALIZATION ---
-
-/**
- * Fetches Firebase config from the backend and initializes the app.
- * MUST be called before any other Firebase functions.
- */
-async function initializeFirebaseApp() {
-    try {
-        // Fetch the config from our secure serverless function
-        const response = await fetch('/api/generate-content', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ type: 'get-config' })
-        });
-
-        if (!response.ok) {
-            const err = await response.json();
-            throw new Error(err.error || "Failed to fetch Firebase config.");
-        }
-        const firebaseConfig = await response.json();
-
-        // Initialize the Firebase app with the fetched config
-        const app = initializeApp(firebaseConfig);
-        auth = getAuth(app); // Set the global auth instance
-
-    } catch (error) {
-        console.error("Firebase Initialization Error:", error);
-        if (authLoader) {
-            authLoader.textContent = "Config Error";
-        }
-        // If initialization fails, prevent further execution
-        throw error;
-    }
-}
-
-/**
- * Main function that runs on page load.
- */
-async function main() {
-    try {
-        await initializeFirebaseApp();
+    <main id="page-content" class="page-container hidden">
         
-        // Now that Firebase is initialized, set up the auth state listener
-        onAuthStateChanged(auth, (user) => {
-            if (authLoader) authLoader.classList.add('hidden');
+        <!-- Hero Section -->
+        <section class="hero-section">
+            <h1>SSB Preparation Platform</h1>
+            <p>A unified, modern platform to excel in your SSB interview.</p>
+        </section>
+
+        <!-- Interactive Test Grid -->
+        <section class="test-grid">
+
+            <!-- Screening Test Card -->
+            <a href="screening.html" class="test-card screening">
+                <div class="card-content">
+                    <h2>Screening Test</h2>
+                    <p>Essential OIR & PPDT practice for mastering Stage I assessment.</p>
+                    <div class="sub-test-pills">
+                        <span>OIR</span>
+                        <span>PPDT</span>
+                    </div>
+                </div>
+                <div class="card-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>
+                </div>
+            </a>
+
+            <!-- Psychology Test Card -->
+            <a href="psychology.html" class="test-card psychology">
+                <div class="card-content">
+                    <h2>Psychology Tests</h2>
+                    <p>Develop psychological fitness with TAT, WAT, and SRT, backed by AI feedback.</p>
+                     <div class="sub-test-pills">
+                        <span>TAT</span>
+                        <span>WAT</span>
+                        <span>SRT</span>
+                    </div>
+                </div>
+                <div class="card-icon">
+                   <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 0 0-7.53 16.58A10 10 0 0 0 12 22a10 10 0 0 0 7.53-3.42A10 10 0 0 0 12 2z"></path><path d="M8 14s1.5 2 4 2 4-2 4-2"></path><circle cx="9" cy="9" r="1"></circle><circle cx="15" cy="9" r="1"></circle></svg>
+                </div>
+            </a>
+
+            <!-- GTO Tasks Card -->
+            <a href="gto.html" class="test-card gto">
+                 <div class="card-content">
+                    <h2>GTO Tasks</h2>
+                    <p>Understand the dynamics of group tasks with guides on Lecturette and GPE.</p>
+                     <div class="sub-test-pills">
+                        <span>Lecturette</span>
+                        <span>GPE</span>
+                    </div>
+                </div>
+                <div class="card-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                </div>
+            </a>
             
-            if (user) {
-                handleAuthenticatedUser(user);
-            } else {
-                handleNoUser();
-            }
-        });
+             <!-- My Performance Card -->
+            <a href="performance.html" class="test-card performance">
+                 <div class="card-content">
+                    <h2>My Performance</h2>
+                    <p>Track your progress, review past tests, and identify areas for improvement.</p>
+                </div>
+                <div class="card-icon">
+                   <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>
+                </div>
+            </a>
 
-    } catch (error) {
-        console.error("Failed to start the application.", error);
-        // Handle failure to initialize Firebase (e.g., show a persistent error message)
-    }
-}
+        </section>
 
-// --- START THE APP ---
-main();
+    </main>
+
+    <script type="module" src="js/main.js"></script>
+</body>
+</html>
 
