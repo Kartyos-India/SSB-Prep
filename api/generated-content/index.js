@@ -1,83 +1,54 @@
 import { Buffer } from 'buffer';
 
-// Helper for Groq API (for all text-based tasks)
-async function queryGroqText(prompt, apiKey) {
-  const apiUrl = "https://api.groq.com/openai/v1/chat/completions";
-  const payload = {
-    messages: [{ role: "user", content: prompt }],
-    model: "llama-3.1-8b-instant",
-    temperature: 0.7,
-    response_format: { type: "json_object" },
-  };
-  const response = await fetch(apiUrl, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` },
-    body: JSON.stringify(payload),
-  });
-  if (!response.ok) {
-    const errorBody = await response.json();
-    throw new Error(`Groq API Error: ${errorBody.error.message}`);
-  }
-  const result = await response.json();
-  return JSON.parse(result.choices[0].message.content);
-}
-
-// Helper for Stability AI API (for images)
-async function queryStabilityAIImage(data, apiKey) {
-    const apiUrl = "https://api.stability.ai/v1/generation/stable-diffusion-xl-1024-v1-0/text-to-image";
-    const { prompt } = data;
-    const payload = {
-        text_prompts: [
-            { text: prompt, weight: 1.0 },
-            { text: "blurry, low quality, colored, modern, digital, photograph, watermark, signature", weight: -1.0 }
-        ],
-        cfg_scale: 7,
-        height: 768,
-        width: 1344,
-        samples: 1,
-        steps: 30,
-        sampler: "K_DPM_2_ANCESTRAL",
-    };
-    const response = await fetch(apiUrl, {
-        method: "POST",
-        headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json", "Accept": "image/png" },
-        body: JSON.stringify(payload),
-    });
-    return response;
-}
-
 // --- Main Serverless Function Handler ---
 export default async function handler(request, response) {
-  const { type, prompt, data } = request.body;
-  const STABILITY_AI_API_KEY = process.env.STABILITY_AI_API_KEY;
-  const GROQ_API_KEY = process.env.GROQ_API_KEY;
-  const FIREBASE_CONFIG = process.env.__firebase_config;
+  console.log("Backend function /api/generate-content STARTED.");
+
+  // Set CORS headers
+  response.setHeader('Access-Control-Allow-Credentials', true);
+  response.setHeader('Access-Control-Allow-Origin', '*');
+  response.setHeader('Access-Control-Allow-Methods', 'POST,OPTIONS');
+  response.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
+
+  if (request.method === 'OPTIONS') {
+    console.log("Responding to OPTIONS preflight request.");
+    response.status(200).end();
+    return;
+  }
 
   try {
-    switch (type) {
-      case 'get-config':
-        if (!FIREBASE_CONFIG) {
-          return response.status(500).json({ error: 'Firebase configuration is not set on the server.' });
-        }
-        try {
-            const config = JSON.parse(FIREBASE_CONFIG);
-            return response.status(200).json(config);
-        } catch (error) {
-            return response.status(500).json({ error: 'Server-side Firebase configuration is not valid JSON.' });
-        }
-      case 'image':
-        // Image generation logic...
-        break;
-      case 'wat':
-        // WAT logic...
-        break;
-      // Add other cases as needed
-      default:
-        return response.status(400).json({ error: 'Invalid request type' });
+    const { type } = request.body;
+    console.log(`Request received for type: '${type}'`);
+
+    const FIREBASE_CONFIG = process.env.__firebase_config;
+
+    if (type === 'get-config') {
+      if (!FIREBASE_CONFIG) {
+        console.error("CRITICAL ERROR: '__firebase_config' environment variable not found on server.");
+        return response.status(500).json({ error: 'Firebase configuration environment variable is not set on the server.' });
+      }
+      
+      console.log("Found FIREBASE_CONFIG variable. Attempting to parse...");
+      // Log only the first few characters for security
+      console.log("Variable starts with:", FIREBASE_CONFIG.substring(0, 30) + "...");
+
+      try {
+        const config = JSON.parse(FIREBASE_CONFIG);
+        console.log("Successfully parsed Firebase config. Sending to client.");
+        return response.status(200).json(config);
+      } catch (error) {
+        console.error("CRITICAL ERROR: Failed to parse FIREBASE_CONFIG. It is not valid JSON.", error.message);
+        return response.status(500).json({ error: 'Server-side Firebase configuration is malformed. Make sure it is a single line with no line breaks.' });
+      }
     }
+
+    // --- Placeholder for other API types ---
+    console.warn(`Request type '${type}' is not a valid API endpoint.`);
+    return response.status(400).json({ error: `Invalid request type: ${type}` });
+
   } catch (error) {
-    console.error("Server-side error:", error);
-    return response.status(500).json({ error: `An internal server error occurred: ${error.message}` });
+      console.error("An unexpected error occurred in the handler:", error);
+      return response.status(500).json({ error: 'An internal server error occurred.' });
   }
 }
 
