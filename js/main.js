@@ -1,20 +1,13 @@
 // js/main.js
-import { 
-    onAuthStateChanged, 
-    signInWithPopup, 
-    GoogleAuthProvider, 
-    signOut,
-    getAuth,
-    initializeApp
-} from './firebase-init.js';
+import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut } from './firebase-init.js';
+// Import the initialized auth instance from our new central module
+import { firebasePromise, auth } from './firebase-app.js';
 
 // --- DOM ELEMENTS ---
 const headerRight = document.getElementById('header-right');
 const headerCenter = document.getElementById('header-center');
 const pageContent = document.getElementById('page-content');
 const authLoader = document.getElementById('auth-loader');
-
-let auth; // Firebase Auth instance
 
 // --- RENDER FUNCTIONS ---
 function renderAuthenticatedNav() {
@@ -42,14 +35,12 @@ function handleNoUser() {
     const loginBtn = document.getElementById('login-btn');
     if (loginBtn) {
         loginBtn.addEventListener('click', () => {
-            if (!auth) {
-                alert("Firebase not initialized. Please refresh the page.");
-                return;
-            }
             const provider = new GoogleAuthProvider();
             signInWithPopup(auth, provider).catch(error => {
                 console.error("Auth Error:", error);
-                alert("Login failed. Please check console for details.");
+                // Non-blocking error indication
+                loginBtn.textContent = "Login Failed";
+                setTimeout(() => { loginBtn.textContent = "Login"; }, 2000);
             });
         });
     }
@@ -58,69 +49,26 @@ function handleNoUser() {
 }
 
 // --- INITIALIZATION ---
-async function initializeFirebaseApp() {
-    try {
-        console.log("🚀 Initializing Firebase...");
-        
-        // Get config from Vercel serverless function
-        const response = await fetch('/api/get-firebase-config');
-        
-        if (!response.ok) {
-            throw new Error(`API returned ${response.status}: ${response.statusText}. Make sure the API route exists and environment variable is set.`);
-        }
-        
-        const firebaseConfig = await response.json();
-        
-        if (!firebaseConfig || !firebaseConfig.apiKey) {
-            throw new Error("Invalid Firebase config received from server");
-        }
-
-        console.log("✅ Firebase config loaded successfully from environment variables");
-        const app = initializeApp(firebaseConfig);
-        auth = getAuth(app);
-        return true;
-
-    } catch (error) {
-        console.error("❌ Firebase Initialization Failed:", error);
-        
-        if (authLoader) {
-            authLoader.innerHTML = `
-                <div style="text-align: center;">
-                    <div>Firebase Configuration Error</div>
-                    <div style="font-size: 0.8rem; color: #ffb8b8; margin-top: 0.5rem;">
-                        ${error.message}<br>
-                        <small>Check Vercel environment variables and API route</small>
-                    </div>
-                </div>
-            `;
-        }
-        return false;
-    }
-}
-
 async function main() {
     try {
-        const firebaseInitialized = await initializeFirebaseApp();
+        // Wait for our central Firebase initialization to complete
+        await firebasePromise;
         
-        if (firebaseInitialized) {
-            // Firebase initialized successfully
-            onAuthStateChanged(auth, (user) => {
-                if (authLoader) authLoader.classList.add('hidden');
-                if (user) {
-                    handleAuthenticatedUser(user);
-                } else {
-                    handleNoUser();
-                }
-            });
-        } else {
-            // Firebase failed to initialize
+        // Now that we're sure Firebase is ready, we set up the auth listener.
+        onAuthStateChanged(auth, (user) => {
             if (authLoader) authLoader.classList.add('hidden');
-            if (pageContent) pageContent.classList.remove('hidden');
-            handleNoUser();
-        }
+            if (user) {
+                handleAuthenticatedUser(user);
+            } else {
+                handleNoUser();
+            }
+        });
+
     } catch (error) {
         console.error("💥 Failed to start application:", error);
-        if (authLoader) authLoader.classList.add('hidden');
+        if (authLoader) {
+             authLoader.innerHTML = `<span class="text-red-400 text-sm">Firebase Failed</span>`;
+        }
         if (pageContent) pageContent.classList.remove('hidden');
         handleNoUser();
     }
