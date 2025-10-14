@@ -1,9 +1,8 @@
 // This script ONLY runs on screening.html
 import { getAuth, onAuthStateChanged, getFirestore, collection, addDoc, serverTimestamp } from './firebase-init.js';
 
-const pageContent = document.getElementById('page-content');
-const genderModal = document.getElementById('genderModal');
-const testTypeModal = document.getElementById('testTypeModal');
+// --- DOM ELEMENTS (declared globally) ---
+let pageContent, genderModal, testTypeModal;
 
 let auth, db; // Firebase instances
 let ppdtSettings = {}; // To store user's PPDT choices
@@ -54,7 +53,7 @@ async function initializeOIRTest() {
         renderOIRQuestion(); // Initial question render
     } catch (error) {
         console.error("OIR Initialization Error:", error);
-        pageContent.innerHTML = `<div class="text-center text-red-500"><h2 class="text-2xl font-bold">Error</h2><p>Could not generate the OIR test. Please try again later.</p><p class="text-sm mt-2">${error.message}</p></div>`;
+        renderErrorPage("Could not generate the OIR test.", error.message);
     }
 }
 
@@ -62,7 +61,6 @@ function startOIRTimer() {
     let timeLeft = 1800; // 30 minutes
     const timerContainer = document.getElementById('oir-timer-container');
     
-    // Initial display
     if (timerContainer) {
         timerContainer.innerHTML = `Time Left: <span class="text-yellow-400">${formatTime(timeLeft)}</span>`;
     }
@@ -132,7 +130,7 @@ function handleOIRNavigation(direction) {
 }
 
 async function submitOIRTest() {
-    clearInterval(oirTimerInterval); // Stop the timer
+    clearInterval(oirTimerInterval);
     const selectedOption = document.querySelector('input[name="oir_q_option"]:checked');
     if (selectedOption) oirResponses[currentOIRIndex] = selectedOption.value;
 
@@ -239,7 +237,7 @@ async function startPPDTTest(settings) {
 
     } catch (error) {
         console.error("PPDT Image Generation Error:", error);
-        pageContent.innerHTML = `<div class="text-center text-red-500"><h2 class="text-2xl font-bold">Error</h2><p>Could not generate the PPDT image. Please try again.</p><p class="text-sm mt-2">${error.message}</p></div>`;
+        renderErrorPage("Could not generate the PPDT image.", error.message);
     }
 }
 
@@ -349,17 +347,7 @@ async function startNarrationPhase(imageUrl) {
 
     } catch (err) {
         console.error("Error accessing media devices.", err);
-        pageContent.innerHTML = `
-            <div class="text-center text-red-500 max-w-xl mx-auto">
-                <h2 class="text-2xl font-bold mt-8">Camera/Microphone Permission Denied</h2>
-                <p class="mt-4">This feature requires access to your camera and microphone.</p>
-                <p class="text-sm mt-2 text-gray-400">Please grant the necessary permissions in your browser's site settings and refresh the page to try again.</p>
-                <div class="mt-8">
-                    <button id="back-to-menu-btn" class="primary-btn">Back to Screening Menu</button>
-                </div>
-            </div>
-        `;
-        document.getElementById('back-to-menu-btn').addEventListener('click', renderScreeningMenu);
+        renderErrorPage("Camera/Microphone Permission Denied.", "Please grant permissions in your browser's site settings and refresh the page to try again.");
     }
 }
 
@@ -410,7 +398,7 @@ function renderPPDTReview(videoBlob, imageUrl) {
         video.play();
     });
     video.addEventListener('play', () => {
-        if (!video.muted) { // If playing with audio, ensure it's visible
+        if (!video.muted) {
              video.style.visibility = 'visible';
              video.style.height = 'auto';
         }
@@ -425,29 +413,27 @@ function renderPPDTReview(videoBlob, imageUrl) {
         const user = auth.currentUser;
         if (user && db) {
             try {
-                // For now, we save the image URL and a placeholder for the video.
-                // A full implementation would upload the video to Firebase Storage.
                 await addDoc(collection(db, 'users', user.uid, 'tests'), {
                     testType: 'PPDT',
-                    imageUrl: imageUrl.substring(0, 150) + '...', // Store a truncated data URL
+                    imageUrl: imageUrl.substring(0, 150) + '...',
                     timestamp: serverTimestamp()
                 });
                 
                 saveButton.textContent = 'Saved!';
                 saveButton.className = 'success-btn py-3 px-8 text-lg';
-
                 setTimeout(() => renderScreeningMenu(), 1500);
 
             } catch(error) {
                 console.error("Error saving PPDT result:", error);
                 saveButton.textContent = 'Save Failed!';
                 saveButton.className = 'error-btn py-3 px-8 text-lg';
-                saveButton.disabled = false; // Allow user to try again
+                saveButton.disabled = false;
             }
         }
     });
 }
 
+// --- UTILITY AND RENDER FUNCTIONS ---
 
 function formatTime(seconds) {
     if (seconds < 0) seconds = 0;
@@ -456,7 +442,18 @@ function formatTime(seconds) {
     return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
 }
 
-// --- MAIN MENU for Screening Page ---
+function renderErrorPage(title, message) {
+    pageContent.innerHTML = `
+        <div class="text-center text-red-500 max-w-xl mx-auto">
+            <h2 class="text-2xl font-bold mt-8">${title}</h2>
+            <p class="mt-4 text-gray-400">${message}</p>
+            <div class="mt-8">
+                <button id="back-to-menu-btn" class="primary-btn">Back to Screening Menu</button>
+            </div>
+        </div>
+    `;
+    document.getElementById('back-to-menu-btn').addEventListener('click', renderScreeningMenu);
+}
 
 function renderScreeningMenu() {
     pageContent.innerHTML = `
@@ -482,13 +479,15 @@ function renderScreeningMenu() {
 }
 
 // --- Initial Execution ---
-// We wrap the entire initial logic in a DOMContentLoaded listener
-// to ensure the HTML is fully loaded before the script runs.
 document.addEventListener('DOMContentLoaded', () => {
+    // Assign elements after DOM is loaded
+    pageContent = document.getElementById('page-content');
+    genderModal = document.getElementById('genderModal');
+    testTypeModal = document.getElementById('testTypeModal');
+
     auth = getAuth();
     db = getFirestore();
     onAuthStateChanged(auth, (user) => {
-        // Make sure the page content is visible before trying to render anything.
         if (pageContent) {
             pageContent.classList.remove('hidden');
         }
