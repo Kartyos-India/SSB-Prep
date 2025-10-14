@@ -467,4 +467,3 @@ onAuthStateChanged(auth, (user) => {
         pageContent.innerHTML = `<div class="text-center"><p class="text-xl">Please log in to access the screening tests.</p></div>`;
     }
 });
-
