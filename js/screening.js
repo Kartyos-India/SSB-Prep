@@ -36,10 +36,22 @@ async function initializeOIRTest() {
             oirQuestions = oirQuestions.slice(0, 50); // Ensure we only have 50 questions
         }
 
+        // Set up a stable container for the test to prevent the timer from re-rendering
+        pageContent.innerHTML = `
+            <div id="oir-header">
+                <div id="oir-timer-container" class="text-center text-xl font-bold mb-4"></div>
+                <div class="text-center mb-8">
+                    <h2 class="text-3xl font-bold">OFFICER INTELLIGENCE RATING TEST</h2>
+                    <p id="oir-question-progress" class="text-gray-400 mt-2"></p>
+                </div>
+            </div>
+            <div id="oir-question-wrapper"></div>
+        `;
+
         currentOIRIndex = 0;
         oirResponses = {};
-        renderOIRQuestion(); // Initial render
-        startOIRTimer(); // Start timer after first render
+        startOIRTimer(); // Start timer
+        renderOIRQuestion(); // Initial question render
     } catch (error) {
         console.error("OIR Initialization Error:", error);
         pageContent.innerHTML = `<div class="text-center text-red-500"><h2 class="text-2xl font-bold">Error</h2><p>Could not generate the OIR test. Please try again later.</p><p class="text-sm mt-2">${error.message}</p></div>`;
@@ -48,23 +60,18 @@ async function initializeOIRTest() {
 
 function startOIRTimer() {
     let timeLeft = 1800; // 30 minutes
-    const timerContainer = document.createElement('div');
-    timerContainer.id = 'oir-timer-container';
-    timerContainer.className = 'text-center text-xl font-bold mb-4';
+    const timerContainer = document.getElementById('oir-timer-container');
     
     // Initial display
-    timerContainer.innerHTML = `Time Left: <span class="text-yellow-400">${formatTime(timeLeft)}</span>`;
-    
-    // Prepend to page content so it appears above the questions
-    if(!document.getElementById('oir-timer-container')) {
-        pageContent.prepend(timerContainer);
+    if (timerContainer) {
+        timerContainer.innerHTML = `Time Left: <span class="text-yellow-400">${formatTime(timeLeft)}</span>`;
     }
 
     oirTimerInterval = setInterval(() => {
         timeLeft--;
-        const timerDisplay = document.querySelector('#oir-timer-container span');
-        if (timerDisplay) {
-            timerDisplay.textContent = formatTime(timeLeft);
+        if (timerContainer) {
+            const timerDisplay = timerContainer.querySelector('span');
+            if (timerDisplay) timerDisplay.textContent = formatTime(timeLeft);
         }
         if (timeLeft <= 0) {
             clearInterval(oirTimerInterval);
@@ -78,15 +85,14 @@ function renderOIRQuestion() {
     if (currentOIRIndex < 0 || currentOIRIndex >= oirQuestions.length) return;
 
     const question = oirQuestions[currentOIRIndex];
-    // Preserve the timer if it exists
-    const timerHTML = document.getElementById('oir-timer-container')?.outerHTML || '';
+    const questionWrapper = document.getElementById('oir-question-wrapper');
+    const progressIndicator = document.getElementById('oir-question-progress');
+
+    if (!questionWrapper || !progressIndicator) return;
+
+    progressIndicator.textContent = `Question ${currentOIRIndex + 1} of ${oirQuestions.length}`;
     
-    pageContent.innerHTML = `
-        ${timerHTML}
-        <div class="text-center mb-8">
-            <h2 class="text-3xl font-bold">OFFICER INTELLIGENCE RATING TEST</h2>
-            <p class="text-gray-400 mt-2">Question ${currentOIRIndex + 1} of ${oirQuestions.length}</p>
-        </div>
+    questionWrapper.innerHTML = `
         <div class="bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-700 max-w-2xl mx-auto space-y-6">
             <p class="text-lg text-gray-200 font-semibold">${currentOIRIndex + 1}. ${question.q}</p>
             <div class="space-y-3">
@@ -343,8 +349,17 @@ async function startNarrationPhase(imageUrl) {
 
     } catch (err) {
         console.error("Error accessing media devices.", err);
-        document.getElementById('video-container').innerHTML = `<p class="text-red-500">Error: Could not access camera or microphone. Please check browser permissions and refresh.</p>`;
-        document.getElementById('start-narration-btn').disabled = true;
+        pageContent.innerHTML = `
+            <div class="text-center text-red-500 max-w-xl mx-auto">
+                <h2 class="text-2xl font-bold mt-8">Camera/Microphone Permission Denied</h2>
+                <p class="mt-4">This feature requires access to your camera and microphone.</p>
+                <p class="text-sm mt-2 text-gray-400">Please grant the necessary permissions in your browser's site settings and refresh the page to try again.</p>
+                <div class="mt-8">
+                    <button id="back-to-menu-btn" class="primary-btn">Back to Screening Menu</button>
+                </div>
+            </div>
+        `;
+        document.getElementById('back-to-menu-btn').addEventListener('click', renderScreeningMenu);
     }
 }
 
@@ -402,23 +417,32 @@ function renderPPDTReview(videoBlob, imageUrl) {
     });
 
     document.getElementById('redo-ppdt-btn').addEventListener('click', initializePPDTModals);
-    document.getElementById('save-ppdt-btn').addEventListener('click', async () => {
+    document.getElementById('save-ppdt-btn').addEventListener('click', async (event) => {
+        const saveButton = event.currentTarget;
+        saveButton.disabled = true;
+        saveButton.textContent = 'Saving...';
+
         const user = auth.currentUser;
         if (user && db) {
             try {
-                // In a real app, you would upload the image and video to Firebase Storage
-                // For this example, we'll save a placeholder record
+                // For now, we save the image URL and a placeholder for the video.
+                // A full implementation would upload the video to Firebase Storage.
                 await addDoc(collection(db, 'users', user.uid, 'tests'), {
                     testType: 'PPDT',
-                    imageUrl: imageUrl.substring(0,100) + '...', // Store a truncated version for now
-                    // videoUrl: 'placeholder_for_uploaded_video.webm',
+                    imageUrl: imageUrl.substring(0, 150) + '...', // Store a truncated data URL
                     timestamp: serverTimestamp()
                 });
-                alert("PPDT result saved successfully!");
-                renderScreeningMenu();
+                
+                saveButton.textContent = 'Saved!';
+                saveButton.className = 'success-btn py-3 px-8 text-lg';
+
+                setTimeout(() => renderScreeningMenu(), 1500);
+
             } catch(error) {
-                alert("Error saving PPDT result.");
                 console.error("Error saving PPDT result:", error);
+                saveButton.textContent = 'Save Failed!';
+                saveButton.className = 'error-btn py-3 px-8 text-lg';
+                saveButton.disabled = false; // Allow user to try again
             }
         }
     });
@@ -461,9 +485,15 @@ function renderScreeningMenu() {
 auth = getAuth();
 db = getFirestore();
 onAuthStateChanged(auth, (user) => {
+    // Make sure the page content is visible before trying to render anything.
+    if (pageContent) {
+        pageContent.classList.remove('hidden');
+    }
+
     if (user) {
-        if (pageContent) renderScreeningMenu();
+        renderScreeningMenu();
     } else {
         pageContent.innerHTML = `<div class="text-center"><p class="text-xl">Please log in to access the screening tests.</p></div>`;
     }
 });
+
