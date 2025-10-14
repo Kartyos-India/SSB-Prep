@@ -482,18 +482,22 @@ function renderScreeningMenu() {
 }
 
 // --- Initial Execution ---
-auth = getAuth();
-db = getFirestore();
-onAuthStateChanged(auth, (user) => {
-    // Make sure the page content is visible before trying to render anything.
-    if (pageContent) {
-        pageContent.classList.remove('hidden');
-    }
+// We wrap the entire initial logic in a DOMContentLoaded listener
+// to ensure the HTML is fully loaded before the script runs.
+document.addEventListener('DOMContentLoaded', () => {
+    auth = getAuth();
+    db = getFirestore();
+    onAuthStateChanged(auth, (user) => {
+        // Make sure the page content is visible before trying to render anything.
+        if (pageContent) {
+            pageContent.classList.remove('hidden');
+        }
 
-    if (user) {
-        renderScreeningMenu();
-    } else {
-        pageContent.innerHTML = `<div class="text-center"><p class="text-xl">Please log in to access the screening tests.</p></div>`;
-    }
+        if (user) {
+            renderScreeningMenu();
+        } else {
+            pageContent.innerHTML = `<div class="text-center"><p class="text-xl">Please log in to access the screening tests.</p></div>`;
+        }
+    });
 });
 
