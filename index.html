@@ -3,25 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SSB Test Modules</title>
-    <!-- A direct link to our custom stylesheet -->
+    <title>SSB Preparation Platform</title>
+    <!-- Direct link to our custom stylesheet -->
     <link rel="stylesheet" href="css/style.css">
-    <!-- Google Fonts link remains the same -->
+    <!-- Google Fonts link -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
 
-    <!-- Main container for the app UI -->
+    <!-- Main container for the full-screen app UI -->
     <div class="app-container">
         
         <!-- Header Section -->
         <header id="header-bar" class="app-header">
             <div class="header-top">
                 <div id="header-left" class="header-logo">
-                    <svg width="40" height="40" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10 44H38V24C38 17.3726 32.6274 12 26 12H22C15.3726 12 10 17.3726 10 24V44Z" fill="#FBBF24" stroke="#4A5568" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path d="M18 4H30" stroke="#4A5568" stroke-width="3" stroke-linecap="round"/><path d="M24 12V4" stroke="#4A5568" stroke-width="3" stroke-linecap="round"/></svg>
-                    <h1>SSB TEST MODULES</h1>
+                    <!-- Updated SVG to be visible on a dark background -->
+                    <svg width="40" height="40" viewBox="0 0 24 24"><path fill="#3b82f6" d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                    <h1>SSB Preparation Platform</h1>
                 </div>
                 <div id="header-right">
                     <div id="auth-loader">...</div>
@@ -38,9 +39,9 @@
             <div class="module-grid">
 
                 <!-- Screening Card -->
-                <a href="screening.html" data-requires-auth="false" class="test-card card-screening">
+                <a href="screening.html" data-requires-auth="false" class="test-card">
                     <div class="card-icon-wrapper">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                     </div>
                     <div class="card-content">
                         <h2>Screening</h2>
@@ -49,9 +50,9 @@
                 </a>
 
                 <!-- Psychology Card -->
-                <a href="psychology.html" data-requires-auth="false" class="test-card card-psychology">
-                    <div class="card-icon-wrapper small-icon">
-                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#F97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 0 0-7.53 16.58A10 10 0 0 0 12 22a10 10 0 0 0 7.53-3.42A10 10 0 0 0 12 2z"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><circle cx="9" cy="9" r="1"/><circle cx="15" cy="9" r="1"/></svg>
+                <a href="psychology.html" data-requires-auth="false" class="test-card">
+                    <div class="card-icon-wrapper">
+                         <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#F97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 0 0-7.53 16.58A10 10 0 0 0 12 22a10 10 0 0 0 7.53-3.42A10 10 0 0 0 12 2z"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><circle cx="9" cy="9" r="1"/><circle cx="15" cy="9" r="1"/></svg>
                     </div>
                     <div class="card-content">
                         <h2>Psychology</h2>
@@ -60,9 +61,9 @@
                 </a>
                 
                 <!-- GTO Card -->
-                <a href="gto.html" data-requires-auth="false" class="test-card card-dark">
-                    <div class="card-icon-wrapper small-icon dark-icon">
-                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                <a href="gto.html" data-requires-auth="false" class="test-card">
+                    <div class="card-icon-wrapper dark-icon">
+                         <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                     </div>
                     <div class="card-content">
                         <h2>GTO Tasks</h2>
@@ -71,9 +72,9 @@
                 </a>
                 
                  <!-- Performance Card -->
-                <a href="performance.html" data-requires-auth="true" class="test-card card-dark card-performance">
+                <a href="performance.html" data-requires-auth="true" class="test-card">
                     <div class="card-icon-wrapper dark-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
                     </div>
                     <div class="card-content">
                         <h2>My Performance</h2>
@@ -84,7 +85,7 @@
         </main>
     </div>
 
-    <!-- The JS files remain the same, but you no longer need Vite to handle them. -->
+    <!-- The JS file can now correctly interact with this HTML structure -->
     <script type="module" src="js/main.js"></script>
 </body>
 </html>
