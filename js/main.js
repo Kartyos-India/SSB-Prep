@@ -15,7 +15,6 @@ const authLoader = document.getElementById('auth-loader');
 function renderNavMenu(isAuthenticated) {
     const currentPage = window.location.pathname.split('/').pop() || 'index.html';
     
-    // Define all navigation links with their properties
     const navLinks = [
         { href: 'index.html', text: 'Home', requiresAuth: false },
         { href: 'screening.html', text: 'Screening', requiresAuth: true },
@@ -26,10 +25,8 @@ function renderNavMenu(isAuthenticated) {
 
     headerCenter.innerHTML = navLinks.map(link => {
         const isActive = currentPage === link.href;
-        // A link is disabled if it requires auth and the user is not logged in
         const isDisabled = link.requiresAuth && !isAuthenticated;
         
-        // Use a <span class="nav-link disabled"> for disabled links to prevent navigation
         if (isDisabled) {
             return `<span class="nav-link disabled" title="Please log in to access">${link.text}</span>`;
         }
@@ -44,18 +41,20 @@ function renderNavMenu(isAuthenticated) {
  * @param {object} user - The Firebase user object.
  */
 function handleAuthenticatedUser(user) {
+    // New structure with a .user-menu container
     headerRight.innerHTML = `
-        <div class="user-profile">
-            <img src="${user.photoURL}" alt="${user.displayName}" class="user-avatar">
-            <span class="user-name">${user.displayName}</span>
+        <div class="user-menu">
+            <div class="user-info">
+                <span class="user-name">${user.displayName}</span>
+                <img src="${user.photoURL}" alt="User Avatar" class="user-avatar">
+            </div>
+            <button id="logout-btn" class="action-btn logout-btn">Logout</button>
         </div>
-        <button id="logout-btn" class="action-btn logout-btn">Logout</button>
     `;
     document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
 
-    renderNavMenu(true); // Render nav for an authenticated user
+    renderNavMenu(true);
 
-    // Re-enable all cards on the homepage just in case they were disabled
     document.querySelectorAll('.test-card').forEach(card => {
         card.classList.remove('disabled');
         if (card.dataset.href) {
@@ -82,9 +81,8 @@ function handleNoUser() {
         });
     }
 
-    renderNavMenu(false); // Render nav for a logged-out user
+    renderNavMenu(false);
 
-    // We still disable the cards on the homepage for a clear visual cue
     document.querySelectorAll('.test-card').forEach(card => {
         if (card.dataset.requiresAuth === 'true') {
             card.classList.add('disabled');
