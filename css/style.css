@@ -110,6 +110,39 @@ body {
 .start-btn:hover:not(:disabled) { background-color: #2563eb; }
 .start-btn:disabled { background-color: var(--light-dark-bg); opacity: 0.6; cursor: not-allowed; }
 
+/* New styles for the OIR/PPDT choice cards */
+.test-choice-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    max-width: 900px;
+    margin: 0 auto;
+}
+.choice-card {
+    background-color: var(--medium-dark-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: transform 0.2s, border-color 0.2s;
+}
+.choice-card:hover {
+    transform: translateY(-5px);
+    border-color: var(--primary-blue);
+}
+.choice-card h3 {
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 0.5rem 0;
+}
+.choice-card p {
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+
 /* --- RESPONSIVE DESIGN --- */
 @media (min-width: 640px) { .user-name { display: block; } }
 @media (max-width: 768px) {
