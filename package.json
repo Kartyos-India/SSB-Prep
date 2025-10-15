@@ -1,6 +1,7 @@
-{
-  "name": "ssb-prep-platform",
-  "version": "1.0.0",
-  "description": "SSB Preparation Platform",
-  "type": "module"
-}
+    {
+      "name": "ssb-prep-platform",
+      "version": "1.0.0",
+      "description": "SSB Preparation Platform",
+      "type": "module"
+    }
+    
