@@ -1,14 +1,22 @@
 // js/screening.js - Manages the entire screening test flow.
+import { auth, db } from './firebase-app.js';
+import { collection, addDoc, serverTimestamp } from './firebase-init.js';
 
-// Get the main content area of the page where we will render our content.
+
+// Get the main content area of the page.
 const pageContent = document.getElementById('page-content');
+
+// --- STATE MANAGEMENT ---
+// These variables will hold the state of the OIR test while it's active.
+let oirQuestions = [];
+let currentOIRIndex = 0;
+let oirResponses = {};
+let oirTimerInterval;
 
 /**
  * Renders the initial menu where the user chooses between OIR and PPDT tests.
- * This function builds the HTML for the choice cards and injects it into the page.
  */
 function renderScreeningMenu() {
-    // Note: It is crucial that this HTML string is perfectly formed.
     pageContent.innerHTML = `
         <div class="page-title-section">
             <h1>Screening Tests</h1>
@@ -25,26 +33,237 @@ function renderScreeningMenu() {
             </div>
         </div>
     `;
-
-    // After creating the HTML, we must attach event listeners to make the buttons clickable.
     document.getElementById('start-oir-test').addEventListener('click', initializeOIRTest);
     document.getElementById('setup-ppdt-test').addEventListener('click', renderPPDTSetup);
 }
 
+
+// --- OIR TEST LOGIC ---
+
 /**
- * Renders the configuration screen for the PPDT test.
- * This is called when the user clicks the "PPDT" choice from the main menu.
+ * Starts the OIR test by fetching questions from our serverless function.
  */
+async function initializeOIRTest() {
+    pageContent.innerHTML = `
+        <div class="page-title-section">
+            <h1>OIR Test</h1>
+            <div class="loader"></div>
+            <p style="margin-top: 1rem;">Generating your test questions... Please wait.</p>
+        </div>
+    `;
+
+    try {
+        const response = await fetch('/api/generate-oir-questions');
+        if (!response.ok) {
+            throw new Error(`API Error: ${response.statusText}`);
+        }
+        oirQuestions = await response.json();
+
+        if (!Array.isArray(oirQuestions) || oirQuestions.length === 0) {
+             throw new Error('Invalid question format received from API.');
+        }
+
+        // Reset state and start the test
+        currentOIRIndex = 0;
+        oirResponses = {};
+        startOIRTimer();
+        renderOIRQuestion();
+
+    } catch (error) {
+        console.error("Failed to initialize OIR test:", error);
+        pageContent.innerHTML = `
+            <div class="page-title-section">
+                <h1>Error</h1>
+                <p>Could not load the OIR test questions. Please try again later.</p>
+                <button id="back-to-menu" class="start-btn" style="margin-top: 2rem;">Back to Menu</button>
+            </div>
+        `;
+        document.getElementById('back-to-menu').addEventListener('click', renderScreeningMenu);
+    }
+}
+
+/**
+ * Starts the 30-minute countdown timer for the OIR test.
+ */
+function startOIRTimer() {
+    let timeLeft = 1800; // 30 minutes in seconds
+    const timerDisplay = document.getElementById('oir-timer');
+
+    oirTimerInterval = setInterval(() => {
+        timeLeft--;
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        if (document.getElementById('oir-timer')) {
+             document.getElementById('oir-timer').textContent = 
+                `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        if (timeLeft <= 0) {
+            clearInterval(oirTimerInterval);
+            submitOIRTest();
+        }
+    }, 1000);
+}
+
+/**
+ * Renders the current OIR question, options, and navigation.
+ */
+function renderOIRQuestion() {
+    const question = oirQuestions[currentOIRIndex];
+    
+    // The main test UI is rendered only once, then its content is updated.
+    if (!document.getElementById('oir-test-container')) {
+        pageContent.innerHTML = `
+            <div id="oir-test-container">
+                <div class="oir-header">
+                    <div class="oir-progress">Question ${currentOIRIndex + 1} of ${oirQuestions.length}</div>
+                    <div class="oir-timer-box">
+                        Time Left: <span id="oir-timer">30:00</span>
+                    </div>
+                </div>
+                <div id="oir-question-content"></div>
+            </div>
+        `;
+    }
+
+    // Update the progress indicator
+    document.querySelector('.oir-progress').textContent = `Question ${currentOIRIndex + 1} of ${oirQuestions.length}`;
+
+    // Render the question content
+    const questionContent = document.getElementById('oir-question-content');
+    questionContent.innerHTML = `
+        <div class="oir-question-card">
+            <p class="oir-question-text">${currentOIRIndex + 1}. ${question.q}</p>
+            <div class="oir-options">
+                ${question.options.map((option, index) => `
+                    <label>
+                        <input type="radio" name="oir_option" value="${option}" ${oirResponses[currentOIRIndex] === option ? 'checked' : ''}>
+                        <div class="oir-option-button">
+                           <span class="option-letter">${String.fromCharCode(65 + index)}</span> ${option}
+                        </div>
+                    </label>
+                `).join('')}
+            </div>
+        </div>
+        <div class="oir-navigation">
+            <button id="oir-prev-btn" class="oir-nav-btn" ${currentOIRIndex === 0 ? 'disabled' : ''}>Previous</button>
+            ${currentOIRIndex === oirQuestions.length - 1 
+                ? `<button id="oir-finish-btn" class="oir-finish-btn">Finish Test</button>`
+                : `<button id="oir-next-btn" class="oir-nav-btn">Next</button>`
+            }
+        </div>
+    `;
+    
+    // Add event listeners for navigation
+    if (document.getElementById('oir-prev-btn')) {
+        document.getElementById('oir-prev-btn').addEventListener('click', () => navigateOIR('prev'));
+    }
+    if (document.getElementById('oir-next-btn')) {
+        document.getElementById('oir-next-btn').addEventListener('click', () => navigateOIR('next'));
+    }
+    if (document.getElementById('oir-finish-btn')) {
+        document.getElementById('oir-finish-btn').addEventListener('click', submitOIRTest);
+    }
+}
+
+/**
+ * Handles navigation between OIR questions.
+ * @param {'prev' | 'next'} direction The direction to navigate.
+ */
+function navigateOIR(direction) {
+    // Save the current answer before moving
+    const selectedOption = document.querySelector('input[name="oir_option"]:checked');
+    if (selectedOption) {
+        oirResponses[currentOIRIndex] = selectedOption.value;
+    }
+
+    if (direction === 'next' && currentOIRIndex < oirQuestions.length - 1) {
+        currentOIRIndex++;
+    } else if (direction === 'prev' && currentOIRIndex > 0) {
+        currentOIRIndex--;
+    }
+    renderOIRQuestion();
+}
+
+/**
+ * Submits the test, calculates the score, and displays the review screen.
+ */
+async function submitOIRTest() {
+    clearInterval(oirTimerInterval);
+    // Save the very last answer
+    const selectedOption = document.querySelector('input[name="oir_option"]:checked');
+    if (selectedOption) {
+        oirResponses[currentOIRIndex] = selectedOption.value;
+    }
+
+    let score = 0;
+    oirQuestions.forEach((q, index) => {
+        if (oirResponses[index] === q.answer) {
+            score++;
+        }
+    });
+
+    // Save the result to Firebase
+    const user = auth.currentUser;
+    if (user && db) {
+        try {
+            await addDoc(collection(db, 'users', user.uid, 'tests'), {
+                testType: 'OIR Test',
+                score: score,
+                total: oirQuestions.length,
+                timestamp: serverTimestamp(),
+                responses: oirResponses // Optionally save all responses
+            });
+        } catch (error) {
+            console.error("Error saving OIR results to Firestore:", error);
+        }
+    }
+
+    renderOIRReview(score);
+}
+
+/**
+ * Renders the final review screen with the score and answer breakdown.
+ * @param {number} score The user's final score.
+ */
+function renderOIRReview(score) {
+    pageContent.innerHTML = `
+        <div class="page-title-section">
+            <h1>OIR Test Complete</h1>
+            <p>Your Score: <span class="oir-final-score">${score} / ${oirQuestions.length}</span></p>
+        </div>
+        <div class="oir-review-container">
+            <h2>Answer Review</h2>
+            ${oirQuestions.map((q, index) => {
+                const userAnswer = oirResponses[index] || "Not Answered";
+                const isCorrect = userAnswer === q.answer;
+                return `
+                    <div class="oir-review-item ${isCorrect ? 'correct' : 'incorrect'}">
+                        <p class="review-question-text"><b>${index + 1}. ${q.q}</b></p>
+                        <p>Your Answer: <span class="user-answer">${userAnswer}</span></p>
+                        ${!isCorrect ? `<p>Correct Answer: <span class="correct-answer">${q.answer}</span></p>` : ''}
+                    </div>
+                `;
+            }).join('')}
+        </div>
+        <div style="text-align: center; margin-top: 2rem;">
+            <button id="back-to-menu" class="start-btn">Back to Screening Menu</button>
+        </div>
+    `;
+    document.getElementById('back-to-menu').addEventListener('click', renderScreeningMenu);
+}
+
+
+// --- PPDT SETUP LOGIC (remains the same as before) ---
+
 function renderPPDTSetup() {
-    // The entire HTML for the PPDT setup form.
     pageContent.innerHTML = `
         <div class="page-title-section">
             <h1>PPDT Configuration</h1>
             <p>Set up your Picture Perception & Discussion Test practice session.</p>
         </div>
         <div class="test-setup-card">
-            <!-- Step 1: Gender Selection -->
-            <div class="setup-step">
+             <div class="setup-step">
                 <h2>Step 1: Select Your Gender</h2>
                 <p>This helps in generating a relevant PPDT image.</p>
                 <div class="option-group">
@@ -64,8 +283,6 @@ function renderPPDTSetup() {
                     </label>
                 </div>
             </div>
-
-            <!-- Step 2: PPDT Mode Selection -->
             <div class="setup-step">
                 <h2>Step 2: Choose PPDT Mode</h2>
                 <p>Select whether you want a timed or untimed experience for the story writing part.</p>
@@ -80,14 +297,12 @@ function renderPPDTSetup() {
                     <label>
                         <input type="radio" name="ppdt-mode" value="untimed" class="setup-option">
                         <div class="option-button">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
                             <span>Untimed</span>
                         </div>
                     </label>
                 </div>
             </div>
-
-            <!-- Step 3: Timer Visibility (Conditional) -->
             <div class="setup-step" id="timer-visibility-step" style="display: none;">
                 <h2>Step 3: Timer Visibility</h2>
                 <p>Choose if the timer should be visible during the timed test.</p>
@@ -95,14 +310,14 @@ function renderPPDTSetup() {
                     <label>
                         <input type="radio" name="timer-visibility" value="visible" class="setup-option">
                         <div class="option-button">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                             <span>Visible</span>
                         </div>
                     </label>
                     <label>
                         <input type="radio" name="timer-visibility" value="invisible" class="setup-option">
                         <div class="option-button">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
                             <span>Invisible</span>
                         </div>
                     </label>
@@ -113,15 +328,9 @@ function renderPPDTSetup() {
             </div>
         </div>
     `;
-
-    // Now that the setup form is on the page, attach the interactive logic to it.
     attachPPDTSetupLogic();
 }
 
-/**
- * Attaches all the necessary event listeners and logic for the PPDT setup form.
- * This is separated so it can be called only when the form is actually on the page.
- */
 function attachPPDTSetupLogic() {
     const ppdtModeRadios = document.querySelectorAll('input[name="ppdt-mode"]');
     const timerVisibilityStep = document.getElementById('timer-visibility-step');
@@ -156,7 +365,6 @@ function attachPPDTSetupLogic() {
     ppdtModeRadios.forEach(radio => radio.addEventListener('change', handlePPDTModeChange));
     allOptions.forEach(option => option.addEventListener('change', validateSelections));
     
-    // Logic for the start button will be added in the next step.
     startTestButton.addEventListener('click', () => {
         alert("Starting PPDT test... (functionality to be added)");
     });
@@ -165,20 +373,6 @@ function attachPPDTSetupLogic() {
     validateSelections();
 }
 
-/**
- * Placeholder function for starting the OIR test.
- */
-function initializeOIRTest() {
-    pageContent.innerHTML = `
-        <div class="page-title-section">
-            <h1>OIR Test</h1>
-            <p>Loading questions...</p>
-        </div>
-    `;
-    alert("Starting OIR test... (functionality to be added)");
-}
-
 // --- INITIAL EXECUTION ---
-// When the screening page loads, the first thing we do is show the main menu.
 renderScreeningMenu();
 
