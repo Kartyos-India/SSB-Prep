@@ -39,7 +39,7 @@ body {
 #header-left, #header-right { flex: 1 0 0; }
 #header-right { display: flex; justify-content: flex-end; align-items: center; }
 
-.app-header .header-logo { display: flex; align-items: center; gap: 12px; }
+.app-header .header-logo { display: flex; align-items: center; gap: 12px; text-decoration: none; }
 .app-header .header-logo h1 { font-size: 1.25rem; font-weight: 700; color: var(--text-primary); margin: 0; }
 
 /* --- NAVIGATION --- */
@@ -82,23 +82,33 @@ body {
 .action-btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.9rem; transition: background-color 0.2s ease, box-shadow 0.2s ease; }
 .login-btn { background-color: var(--primary-blue); color: white; box-shadow: 0 4px 14px 0 rgba(59, 130, 246, 0.39); }
 .login-btn:hover { background-color: #2563eb; }
-.logout-btn { background-color: var(--light-dark-bg); color: var(--text-primary); margin-top: 0.5rem; width: 100%; justify-content: center; } /* Make button full-width of its container */
+.logout-btn { background-color: var(--light-dark-bg); color: var(--text-primary); margin-top: 0.5rem; width: 100%; justify-content: center; }
 .logout-btn:hover { background-color: #4b5563; }
 
-.user-menu {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end; /* Align children (user-info, logout-btn) to the right */
-}
-
-.user-info {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-}
-
+.user-menu { display: flex; flex-direction: column; align-items: flex-end; }
+.user-info { display: flex; align-items: center; gap: 0.75rem; }
 .user-avatar { width: 32px; height: 32px; border-radius: 50%; }
 .user-name { font-weight: 500; color: var(--text-secondary); display: none; }
+
+/* --- SCREENING PAGE STYLES --- */
+.page-title-section { text-align: center; margin-bottom: 3rem; }
+.page-title-section h1 { font-size: 2.5rem; font-weight: 700; color: var(--text-primary); margin: 0 0 0.5rem 0; }
+.test-setup-card { max-width: 800px; margin: 0 auto; background-color: var(--medium-dark-bg); border: 1px solid var(--border-color); border-radius: 16px; padding: 2.5rem; }
+.setup-step { margin-bottom: 2.5rem; }
+.setup-step:last-child { margin-bottom: 0; }
+.setup-step h2 { font-size: 1.5rem; font-weight: 600; color: var(--text-primary); margin: 0 0 0.25rem 0; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; margin-bottom: 0.75rem; }
+.setup-step p { margin: 0 0 1.5rem 0; color: var(--text-secondary); }
+.option-group { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.option-group label { display: block; position: relative; }
+.option-group input[type="radio"] { position: absolute; opacity: 0; width: 0; height: 0; }
+.option-button { padding: 1rem; background-color: var(--dark-bg); border: 2px solid var(--border-color); border-radius: 12px; cursor: pointer; transition: all 0.2s ease-in-out; text-align: center; font-weight: 500; color: var(--text-secondary); display: flex; align-items: center; justify-content: center; gap: 0.75rem; }
+.option-group input[type="radio"]:checked + .option-button { border-color: var(--primary-blue); background-color: rgba(59, 130, 246, 0.1); color: var(--text-primary); box-shadow: 0 0 15px rgba(59, 130, 246, 0.3); }
+.option-button:hover { border-color: var(--light-dark-bg); color: var(--text-primary); }
+.option-button svg { width: 24px; height: 24px; }
+.start-test-container { text-align: center; margin-top: 2.5rem; border-top: 1px solid var(--border-color); padding-top: 2rem; }
+.start-btn { background-color: var(--primary-blue); color: white; padding: 0.8rem 2.5rem; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 1.1rem; border: none; cursor: pointer; transition: background-color 0.2s, opacity 0.2s; }
+.start-btn:hover:not(:disabled) { background-color: #2563eb; }
+.start-btn:disabled { background-color: var(--light-dark-bg); opacity: 0.6; cursor: not-allowed; }
 
 /* --- RESPONSIVE DESIGN --- */
 @media (min-width: 640px) { .user-name { display: block; } }
@@ -107,5 +117,6 @@ body {
     .hero-content h2 { font-size: 2.25rem; }
     .half-width-container { flex-direction: column; }
     .app-nav { display: none; }
+    .option-group { grid-template-columns: 1fr; }
 }
 
