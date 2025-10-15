@@ -12,9 +12,6 @@ body {
 }
 
 /* --- APP CONTAINER --- */
-/* DOCUMENTATION: This container no longer acts as a small card. 
-   It now serves as a full-width wrapper to hold the content, 
-   centered with a max-width for readability on large screens. */
 .app-container {
     width: 100%;
     max-width: 1280px; /* Standard max-width for large screens */
@@ -51,13 +48,13 @@ body {
 /* --- NAVIGATION --- */
 .app-nav {
     margin-top: 1.5rem;
-    padding-bottom: 0; /* No extra padding needed */
-    border-bottom: none; /* Removed the inner border */
+    padding-bottom: 0;
+    border-bottom: none;
     display: flex;
     gap: 24px;
-    font-size: 1rem; /* Larger nav links */
+    font-size: 1rem;
     font-weight: 500;
-    color: #9ca3af; /* Muted gray for inactive links */
+    color: #9ca3af;
 }
 
 .app-nav a {
@@ -73,10 +70,43 @@ body {
 }
 
 .app-nav a.active {
-    color: #ffffff; /* White for active link */
+    color: #ffffff;
     font-weight: 600;
-    border-bottom: 2px solid #3b82f6; /* Blue accent for active link */
+    border-bottom: 2px solid #3b82f6;
 }
+
+/* --- AUTH BUTTONS (Login/Logout) --- */
+.action-btn {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+    font-size: 0.9rem;
+    text-decoration: none;
+    display: inline-block;
+    text-align: center;
+}
+
+.login-btn { 
+    background-color: #3b82f6; /* Blue accent */
+    color: white; 
+}
+.login-btn:hover { 
+    background-color: #2563eb; /* Darker blue */
+}
+
+.logout-btn { 
+    background-color: transparent; 
+    border: 1px solid #374151; /* Darker border */
+    color: #9ca3af; /* Muted gray text */
+}
+.logout-btn:hover { 
+    background-color: #374151; 
+    color: #ffffff; 
+}
+
 
 /* --- MODULE GRID --- */
 #page-content {
@@ -86,15 +116,14 @@ body {
 .module-grid {
     margin-top: 1.5rem;
     display: grid;
-    /* This will create responsive columns */
     grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
     gap: 1.5rem;
 }
 
 /* --- TEST CARDS --- */
 .test-card {
-    background-color: #1f2937; /* Lighter dark shade for cards */
-    border: 1px solid #374151; /* Card border */
+    background-color: #1f2937;
+    border: 1px solid #374151;
     border-radius: 16px;
     padding: 1.5rem;
     text-decoration: none;
@@ -105,25 +134,20 @@ body {
 }
 
 .test-card:hover {
-    border-color: #3b82f6; /* Blue accent on hover */
+    border-color: #3b82f6;
 }
 
 .test-card .card-content h2 {
     font-weight: 700;
     font-size: 1.25rem;
-    color: #ffffff; /* White heading */
+    color: #ffffff;
     margin: 0 0 4px 0;
 }
 
 .test-card .card-content p {
     font-size: 1rem;
-    color: #9ca3af; /* Muted gray text */
+    color: #9ca3af;
     margin: 0;
-}
-
-/* The .card-dark class is no longer needed as all cards are dark by default */
-.card-dark h2, .card-dark p {
-    color: inherit; /* Inherit from .test-card styles */
 }
 
 /* Card Icons */
@@ -137,13 +161,6 @@ body {
     flex-shrink: 0;
 }
 
-/* Updated icon backgrounds for the dark theme */
-.card-screening .card-icon-wrapper { background-color: rgba(59, 130, 246, 0.1); }
-.card-psychology .card-icon-wrapper { background-color: rgba(249, 115, 22, 0.1); }
+.card-icon-wrapper { background-color: rgba(59, 130, 246, 0.1); }
 .dark-icon { background-color: rgba(255, 255, 255, 0.1); }
-
-.small-icon {
-    width: 48px;
-    height: 48px;
-}
 
