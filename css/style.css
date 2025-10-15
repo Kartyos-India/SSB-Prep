@@ -1,10 +1,21 @@
 /* --- GLOBAL STYLES & FONTS --- */
+:root {
+    --dark-bg: #111827;
+    --medium-dark-bg: #1f2937;
+    --light-dark-bg: #374151;
+    --primary-blue: #3b82f6;
+    --text-primary: #f9fafb;
+    --text-secondary: #9ca3af;
+    --border-color: #374151;
+}
+
 body {
     font-family: 'Inter', sans-serif;
-    background-color: #111827; /* Dark blue-gray background */
-    color: #d1d5db; /* Light gray text for readability */
+    background-color: var(--dark-bg);
+    color: var(--text-secondary);
     margin: 0;
     padding: 0;
+    line-height: 1.6;
 }
 
 * {
@@ -14,22 +25,34 @@ body {
 /* --- APP CONTAINER --- */
 .app-container {
     width: 100%;
-    max-width: 1280px; /* Standard max-width for large screens */
-    margin: 0 auto; /* Centers the container */
-    padding: 1rem 2rem; /* Provides horizontal spacing */
+    margin: 0 auto;
 }
 
 /* --- HEADER --- */
 .app-header {
-    padding-bottom: 1.5rem;
-    border-bottom: 1px solid #374151; /* Darker border */
-    margin-bottom: 2rem;
+    background-color: rgba(17, 24, 39, 0.8); /* Semi-transparent background */
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border-color);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    width: 100%;
 }
 
-.app-header .header-top {
+.header-content {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 1rem 2rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
+}
+
+.app-header .header-logo h1 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
 }
 
 .app-header .header-logo {
@@ -38,129 +61,205 @@ body {
     gap: 12px;
 }
 
-.app-header h1 {
-    font-size: 1.5rem; /* Slightly larger title */
-    font-weight: 700;
-    color: #ffffff; /* White title */
-    margin: 0;
-}
-
 /* --- NAVIGATION --- */
 .app-nav {
-    margin-top: 1.5rem;
-    padding-bottom: 0;
-    border-bottom: none;
     display: flex;
     gap: 24px;
     font-size: 1rem;
     font-weight: 500;
-    color: #9ca3af;
+    color: var(--text-secondary);
 }
 
 .app-nav a {
     text-decoration: none;
     color: inherit;
-    padding-bottom: 0.5rem;
+    padding: 0.5rem 0;
     border-bottom: 2px solid transparent;
-    transition: color 0.2s, border-color 0.2s;
+    transition: color 0.2s;
 }
 
 .app-nav a:hover {
-    color: #ffffff;
+    color: var(--text-primary);
 }
 
 .app-nav a.active {
-    color: #ffffff;
+    color: var(--primary-blue);
     font-weight: 600;
-    border-bottom: 2px solid #3b82f6;
 }
 
-/* --- AUTH BUTTONS (Login/Logout) --- */
+
+/* --- MAIN CONTENT & SECTIONS --- */
+#page-content {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 2rem;
+    display: block !important;
+}
+
+.section-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    text-align: center;
+    margin: 0 0 3rem 0;
+}
+
+/* --- HERO SECTION --- */
+.hero-section {
+    text-align: center;
+    padding: 5rem 1rem;
+    border-radius: 16px;
+    background-color: var(--medium-dark-bg);
+    margin-bottom: 4rem;
+}
+
+.hero-content h2 {
+    font-size: 3rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    margin: 0 0 1rem 0;
+}
+
+.hero-content p {
+    font-size: 1.125rem;
+    max-width: 600px;
+    margin: 0 auto 2rem auto;
+}
+
+.hero-cta {
+    background-color: var(--primary-blue);
+    color: white;
+    padding: 0.75rem 2rem;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: background-color 0.2s;
+}
+
+.hero-cta:hover {
+    background-color: #2563eb;
+}
+
+/* --- INFO SECTION --- */
+.info-section {
+    text-align: center;
+    max-width: 800px;
+    margin: 0 auto 5rem auto;
+}
+
+.info-section h3 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+}
+
+/* --- MODULES SECTION --- */
+.modules-section {
+    margin-bottom: 5rem;
+}
+
+.module-layout {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+}
+
+.test-card {
+    background-color: var(--medium-dark-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 1.5rem;
+    text-decoration: none;
+    transition: transform 0.2s, border-color 0.2s;
+}
+
+.test-card:hover {
+    transform: translateY(-5px);
+    border-color: var(--primary-blue);
+}
+
+.large-card {
+    grid-column: 1 / -1; /* Span full width */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.card-text h4 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 0.5rem 0;
+}
+
+.card-text p {
+    margin: 0;
+    color: var(--text-secondary);
+}
+
+/* --- FEATURES SECTION --- */
+.features-section {
+    margin-bottom: 4rem;
+}
+
+.features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.feature-item {
+    background-color: var(--medium-dark-bg);
+    padding: 1.5rem;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+}
+
+.feature-item h5 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 0.5rem 0;
+}
+
+.feature-item p {
+    margin: 0;
+}
+
+/* --- FOOTER --- */
+.app-footer {
+    text-align: center;
+    padding: 2rem;
+    border-top: 1px solid var(--border-color);
+    color: var(--text-secondary);
+}
+
+/* --- AUTH BUTTONS --- */
 .action-btn {
     padding: 0.5rem 1rem;
     border: none;
     border-radius: 8px;
     font-weight: 600;
     cursor: pointer;
-    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
     font-size: 0.9rem;
-    text-decoration: none;
-    display: inline-block;
-    text-align: center;
 }
+.login-btn { background-color: var(--primary-blue); color: white; }
+.logout-btn { background-color: transparent; border: 1px solid var(--border-color); color: var(--text-secondary); }
 
-.login-btn { 
-    background-color: #3b82f6; /* Blue accent */
-    color: white; 
+/* --- RESPONSIVE DESIGN --- */
+@media (max-width: 768px) {
+    .header-content, #page-content {
+        padding: 1rem;
+    }
+    .hero-content h2 {
+        font-size: 2.25rem;
+    }
+    .module-layout {
+        grid-template-columns: 1fr;
+    }
+    .app-header .header-logo h1 {
+        display: none; /* Hide text on mobile */
+    }
 }
-.login-btn:hover { 
-    background-color: #2563eb; /* Darker blue */
-}
-
-.logout-btn { 
-    background-color: transparent; 
-    border: 1px solid #374151; /* Darker border */
-    color: #9ca3af; /* Muted gray text */
-}
-.logout-btn:hover { 
-    background-color: #374151; 
-    color: #ffffff; 
-}
-
-
-/* --- MODULE GRID --- */
-#page-content {
-    display: block !important;
-}
-
-.module-grid {
-    margin-top: 1.5rem;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-    gap: 1.5rem;
-}
-
-/* --- TEST CARDS --- */
-.test-card {
-    background-color: #1f2937;
-    border: 1px solid #374151;
-    border-radius: 16px;
-    padding: 1.5rem;
-    text-decoration: none;
-    display: flex;
-    align-items: center;
-    gap: 1.5rem;
-    transition: border-color 0.2s ease-in-out;
-}
-
-.test-card:hover {
-    border-color: #3b82f6;
-}
-
-.test-card .card-content h2 {
-    font-weight: 700;
-    font-size: 1.25rem;
-    color: #ffffff;
-    margin: 0 0 4px 0;
-}
-
-.test-card .card-content p {
-    font-size: 1rem;
-    color: #9ca3af;
-    margin: 0;
-}
-
-/* Card Icons */
-.card-icon-wrapper {
-    width: 64px;
-    height: 64px;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-}
-
-.card-icon-wrapper { background-color: rgba(59, 130, 246, 0.1); }
-.dark-icon { background-color: rgba(255, 255, 255, 0.1); }
 
