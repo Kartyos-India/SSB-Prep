@@ -36,6 +36,17 @@ body {
     display: flex; justify-content: space-between; align-items: center;
 }
 
+#header-left, #header-right {
+    flex: 1 0 0; /* Distribute space evenly */
+}
+
+#header-right {
+    display: flex;
+    justify-content: flex-end; /* Align items to the right */
+    align-items: center;
+}
+
+
 .app-header .header-logo { display: flex; align-items: center; gap: 12px; }
 .app-header .header-logo h1 { font-size: 1.25rem; font-weight: 700; color: var(--text-primary); margin: 0; }
 
@@ -43,20 +54,37 @@ body {
 .app-nav {
     display: flex; gap: 24px; font-size: 1rem;
     font-weight: 500; color: var(--text-secondary);
-    flex-grow: 1; justify-content: center;
-}
-/* New style for the logged-out message */
-.nav-message {
-    color: var(--text-secondary);
-    font-style: italic;
+    justify-content: center;
+    flex-grow: 2; /* Give nav more space */
 }
 
-.app-nav a {
+.app-nav a, .app-nav .nav-link {
     text-decoration: none; color: inherit; padding: 0.5rem 0;
     border-bottom: 2px solid transparent; transition: color 0.2s;
 }
 .app-nav a:hover { color: var(--text-primary); }
 .app-nav a.active { color: var(--primary-blue); font-weight: 600; }
+
+/* Style for disabled nav links */
+.app-nav .nav-link.disabled {
+    color: var(--light-dark-bg);
+    cursor: not-allowed;
+    position: relative;
+}
+.app-nav .nav-link.disabled:hover::after {
+    content: attr(title);
+    position: absolute;
+    bottom: -35px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: var(--light-dark-bg);
+    color: var(--text-primary);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    white-space: nowrap;
+}
+
 
 /* --- MAIN CONTENT & SECTIONS --- */
 #page-content { max-width: 1280px; margin: 0 auto; padding: 2rem; display: block !important; }
@@ -86,19 +114,8 @@ body {
     display: flex; align-items: center; gap: 1rem;
 }
 .test-card:hover { transform: translateY(-5px); border-color: var(--primary-blue); }
-
-/* New style for disabled cards */
-.test-card.disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none;
-    border-color: var(--border-color);
-}
-.test-card.disabled:hover {
-    transform: none;
-    border-color: var(--border-color);
-}
-
+.test-card.disabled { opacity: 0.5; cursor: not-allowed; }
+.test-card.disabled:hover { transform: none; border-color: var(--border-color); }
 
 .card-text h4 { font-size: 1.25rem; font-weight: 600; color: var(--text-primary); margin: 0 0 0.25rem 0; }
 .card-text p { margin: 0; color: var(--text-secondary); }
@@ -127,25 +144,17 @@ body {
     font-weight: 600; cursor: pointer; font-size: 0.9rem;
     transition: background-color 0.2s ease, box-shadow 0.2s ease;
 }
-.login-btn {
-    background-color: var(--primary-blue); color: white;
-    box-shadow: 0 4px 14px 0 rgba(59, 130, 246, 0.39);
-}
+.login-btn { background-color: var(--primary-blue); color: white; box-shadow: 0 4px 14px 0 rgba(59, 130, 246, 0.39); }
 .login-btn:hover { background-color: #2563eb; }
-
-.logout-btn {
-    background-color: var(--light-dark-bg); color: var(--text-primary);
-}
+.logout-btn { background-color: var(--light-dark-bg); color: var(--text-primary); }
 .logout-btn:hover { background-color: #4b5563; }
 
 .user-profile { display: flex; align-items: center; gap: 0.75rem; }
 .user-avatar { width: 32px; height: 32px; border-radius: 50%; }
-.user-name { font-weight: 500; color: var(--text-secondary); display: none; } /* Hide name on small screens */
+.user-name { font-weight: 500; color: var(--text-secondary); display: none; }
 
 /* --- RESPONSIVE DESIGN --- */
-@media (min-width: 640px) {
-    .user-name { display: block; } /* Show user name on larger screens */
-}
+@media (min-width: 640px) { .user-name { display: block; } }
 @media (max-width: 768px) {
     .header-content, #page-content { padding: 1rem; }
     .hero-content h2 { font-size: 2.25rem; }
