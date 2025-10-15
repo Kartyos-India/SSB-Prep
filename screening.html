@@ -3,81 +3,117 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Screening Tests - SSB Prep</title>
+    <title>Screening Test Setup - SSB Prep Platform</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
     <link rel="stylesheet" href="css/style.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
-    <!-- Font Awesome for modal icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-
-    <header id="header-bar">
-        <div id="header-left">
-            <a href="index.html" class="logo-link">
-                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><path fill="white" d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
-                <span>SSB Prep</span>
-            </a>
-        </div>
-        <nav id="header-center"></nav>
-        <div id="header-right">
-            <div id="auth-loader">Loading...</div>
-        </div>
-    </header>
-
-    <main id="page-content" class="page-container hidden">
-        <!-- Screening.js will populate this area -->
-    </main>
-
-    <!-- Gender Selection Modal -->
-    <div id="genderModal" class="modal hidden">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>PPDT Test Setup</h3>
-                <span class="close-modal">&times;</span>
-            </div>
-            <div class="modal-body">
-                <p>Please select your gender for personalized image generation:</p>
-                <div class="gender-options">
-                    <button class="gender-btn male" data-gender="male">
-                        <i class="fas fa-mars"></i> Male
-                    </button>
-                    <button class="gender-btn female" data-gender="female">
-                        <i class="fas fa-venus"></i> Female
-                    </button>
+    <div class="app-container">
+        <!-- The header will be dynamically injected by main.js -->
+        <header class="app-header">
+            <div class="header-content">
+                <div id="header-left">
+                    <a href="index.html" class="header-logo">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 22C12 22 20 18 20 12V5L12 2L4 5V12C4 18 12 22 12 22Z" stroke="#3B82F6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        <h1>SSB Prep Platform</h1>
+                    </a>
+                </div>
+                <nav id="header-center" class="app-nav"></nav>
+                <div id="header-right">
+                    <div id="auth-loader"></div>
                 </div>
             </div>
-        </div>
-    </div>
+        </header>
 
-    <!-- Test Type Selection Modal -->
-    <div id="testTypeModal" class="modal hidden">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Select PPDT Test Type</h3>
-                <span class="close-modal">&times;</span>
+        <main id="page-content">
+            <div class="page-title-section">
+                <h1>Screening Test Configuration</h1>
+                <p>Set up your Officer Intelligence Rating (OIR) & PPDT practice test.</p>
             </div>
-            <div class="modal-body">
-                <div class="test-type-options">
-                    <button class="test-type-btn" data-type="timed-visible">
-                        <i class="fas fa-clock"></i> Timed (Visible Timer)
-                    </button>
-                    <button class="test-type-btn" data-type="timed-invisible">
-                        <i class="fas fa-eye-slash"></i> Timed (Invisible Timer)
-                    </button>
-                    <button class="test-type-btn" data-type="untimed">
-                        <i class="fas fa-infinity"></i> Untimed
-                    </button>
+
+            <!-- Main card for test setup -->
+            <div class="test-setup-card">
+                <!-- Step 1: Gender Selection -->
+                <div class="setup-step">
+                    <h2>Step 1: Select Your Gender</h2>
+                    <p>This helps in generating a relevant PPDT image.</p>
+                    <div class="option-group">
+                        <label>
+                            <input type="radio" name="gender" value="male" class="setup-option">
+                            <div class="option-button">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                                <span>Male</span>
+                            </div>
+                        </label>
+                        <label>
+                            <input type="radio" name="gender" value="female" class="setup-option">
+                            <div class="option-button">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="12" x2="12" y2="12"/></svg>
+                                <span>Female</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Step 2: PPDT Mode Selection -->
+                <div class="setup-step">
+                    <h2>Step 2: Choose PPDT Mode</h2>
+                    <p>Select whether you want a timed or untimed experience for the story writing part.</p>
+                    <div class="option-group">
+                        <label>
+                            <input type="radio" name="ppdt-mode" value="timed" class="setup-option">
+                            <div class="option-button">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                                <span>Timed</span>
+                            </div>
+                        </label>
+                        <label>
+                            <input type="radio" name="ppdt-mode" value="untimed" class="setup-option">
+                            <div class="option-button">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                                <span>Untimed</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Step 3: Timer Visibility (Conditional) -->
+                <div class="setup-step" id="timer-visibility-step" style="display: none;">
+                    <h2>Step 3: Timer Visibility</h2>
+                    <p>Choose if the timer should be visible during the timed test.</p>
+                    <div class="option-group">
+                        <label>
+                            <input type="radio" name="timer-visibility" value="visible" class="setup-option">
+                            <div class="option-button">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                <span>Visible</span>
+                            </div>
+                        </label>
+                        <label>
+                            <input type="radio" name="timer-visibility" value="invisible" class="setup-option">
+                            <div class="option-button">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                                <span>Invisible</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Start Button -->
+                <div class="start-test-container">
+                    <button id="start-screening-test" class="start-btn" disabled>Start Screening Test</button>
                 </div>
             </div>
-        </div>
+        </main>
+        
+        <footer class="app-footer">
+            <p>&copy; 2024 SSB Prep Platform. All rights reserved.</p>
+        </footer>
     </div>
 
     <script type="module" src="js/firebase-init.js"></script>
+    <script type="module" src="js/firebase-app.js"></script>
     <script type="module" src="js/main.js"></script>
     <script type="module" src="js/screening.js"></script>
-
 </body>
 </html>
-
