@@ -1,13 +1,14 @@
 // js/screening.js - Manages the entire screening test flow.
 
-// Get the main content area of the page.
+// Get the main content area of the page where we will render our content.
 const pageContent = document.getElementById('page-content');
 
 /**
  * Renders the initial menu where the user chooses between OIR and PPDT tests.
+ * This function builds the HTML for the choice cards and injects it into the page.
  */
 function renderScreeningMenu() {
-    // Set the HTML for the main menu.
+    // Note: It is crucial that this HTML string is perfectly formed.
     pageContent.innerHTML = `
         <div class="page-title-section">
             <h1>Screening Tests</h1>
@@ -25,7 +26,7 @@ function renderScreeningMenu() {
         </div>
     `;
 
-    // Add event listeners to the new menu buttons.
+    // After creating the HTML, we must attach event listeners to make the buttons clickable.
     document.getElementById('start-oir-test').addEventListener('click', initializeOIRTest);
     document.getElementById('setup-ppdt-test').addEventListener('click', renderPPDTSetup);
 }
@@ -50,14 +51,14 @@ function renderPPDTSetup() {
                     <label>
                         <input type="radio" name="gender" value="male" class="setup-option">
                         <div class="option-button">
-                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0zM12 14a7 7 0 0 0-7 7h14a7 7 0 0 0-7-7z"/></svg>
                             <span>Male</span>
                         </div>
                     </label>
                     <label>
                         <input type="radio" name="gender" value="female" class="setup-option">
                         <div class="option-button">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="12" x2="12" y2="12"/></svg>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/></svg>
                             <span>Female</span>
                         </div>
                     </label>
@@ -173,7 +174,6 @@ function initializeOIRTest() {
             <h1>OIR Test</h1>
             <p>Loading questions...</p>
         </div>
-        
     `;
     alert("Starting OIR test... (functionality to be added)");
 }
