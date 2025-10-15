@@ -1,13 +1,10 @@
 /* --- GLOBAL STYLES & FONTS --- */
 body {
     font-family: 'Inter', sans-serif;
-    background-color: #FDFBF7;
+    background-color: #111827; /* Dark blue-gray background */
+    color: #d1d5db; /* Light gray text for readability */
     margin: 0;
-    padding: 2rem 1rem; /* Added padding to center the container on smaller screens */
-    display: flex;
-    justify-content: center;
-    align-items: flex-start; /* Align to top */
-    min-height: 100vh;
+    padding: 0;
 }
 
 * {
@@ -16,15 +13,19 @@ body {
 
 /* --- APP CONTAINER --- */
 .app-container {
-    background-color: white;
-    max-width: 480px; /* Equivalent to max-w-md */
     width: 100%;
-    border-radius: 24px; /* rounded-3xl */
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* shadow-lg */
-    padding: 24px; /* p-6 */
+    max-width: 1280px; /* Standard max-width for large screens */
+    margin: 0 auto; /* Centers the container */
+    padding: 1rem 2rem; /* Provides horizontal spacing */
 }
 
 /* --- HEADER --- */
+.app-header {
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid #374151; /* Darker border */
+    margin-bottom: 2rem;
+}
+
 .app-header .header-top {
     display: flex;
     justify-content: space-between;
@@ -38,99 +39,115 @@ body {
 }
 
 .app-header h1 {
-    font-size: 1.25rem; /* text-xl */
-    font-weight: 700; /* font-bold */
-    color: #1f2937; /* text-gray-800 */
+    font-size: 1.5rem; /* Slightly larger title */
+    font-weight: 700;
+    color: #ffffff; /* White title */
     margin: 0;
 }
 
 /* --- NAVIGATION --- */
 .app-nav {
-    margin-top: 1rem;
-    padding-bottom: 0.5rem;
-    border-bottom: 1px solid #e5e7eb; /* border-gray-200 */
+    margin-top: 1.5rem;
+    padding-bottom: 0;
+    border-bottom: none;
     display: flex;
     gap: 24px;
-    font-size: 0.875rem; /* text-sm */
-    font-weight: 500; /* font-medium */
-    color: #6b7280; /* text-gray-500 */
+    font-size: 1rem;
+    font-weight: 500;
+    color: #9ca3af;
 }
 
 .app-nav a {
     text-decoration: none;
     color: inherit;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid transparent;
+    transition: color 0.2s, border-color 0.2s;
+}
+
+.app-nav a:hover {
+    color: #ffffff;
 }
 
 .app-nav a.active {
-    color: #2563eb; /* text-blue-600 */
-    font-weight: 700; /* font-bold */
+    color: #ffffff;
+    font-weight: 600;
+    border-bottom: 2px solid #3b82f6;
 }
+
+/* --- AUTH BUTTONS (Login/Logout) --- */
+.action-btn {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+    font-size: 0.9rem;
+    text-decoration: none;
+    display: inline-block;
+    text-align: center;
+}
+
+.login-btn { 
+    background-color: #3b82f6; /* Blue accent */
+    color: white; 
+}
+.login-btn:hover { 
+    background-color: #2563eb; /* Darker blue */
+}
+
+.logout-btn { 
+    background-color: transparent; 
+    border: 1px solid #374151; /* Darker border */
+    color: #9ca3af; /* Muted gray text */
+}
+.logout-btn:hover { 
+    background-color: #374151; 
+    color: #ffffff; 
+}
+
 
 /* --- MODULE GRID --- */
 #page-content {
-    display: block !important; /* Override the 'hidden' class from JS */
+    display: block !important;
 }
 
 .module-grid {
     margin-top: 1.5rem;
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 1.5rem;
 }
 
 /* --- TEST CARDS --- */
 .test-card {
-    border: 1px solid #e5e7eb; /* border-gray-200 */
-    border-radius: 16px; /* rounded-2xl */
-    padding: 1rem;
+    background-color: #1f2937;
+    border: 1px solid #374151;
+    border-radius: 16px;
+    padding: 1.5rem;
     text-decoration: none;
     display: flex;
     align-items: center;
-    gap: 1rem;
-    transition: transform 0.2s ease-in-out;
+    gap: 1.5rem;
+    transition: border-color 0.2s ease-in-out;
 }
 
 .test-card:hover {
-    transform: scale(1.03);
+    border-color: #3b82f6;
 }
 
 .test-card .card-content h2 {
     font-weight: 700;
-    font-size: 1.125rem; /* text-lg */
-    color: #1f2937; /* text-gray-800 */
+    font-size: 1.25rem;
+    color: #ffffff;
     margin: 0 0 4px 0;
 }
 
 .test-card .card-content p {
-    font-size: 0.875rem; /* text-sm */
-    color: #6b7280; /* text-gray-500 */
+    font-size: 1rem;
+    color: #9ca3af;
     margin: 0;
-}
-
-/* Specific card styles */
-.card-screening {
-    grid-column: span 2 / span 2; /* col-span-2 */
-}
-
-.card-performance {
-    grid-column: span 2 / span 2; /* col-span-2 */
-}
-
-.card-psychology, .card-gto {
-    flex-direction: column;
-    align-items: flex-start;
-}
-
-.card-dark {
-    background-color: #2E3A52;
-    color: white;
-}
-
-.card-dark h2 {
-    color: white;
-}
-.card-dark p {
-    color: #d1d5db; /* text-gray-300 */
 }
 
 /* Card Icons */
@@ -144,12 +161,6 @@ body {
     flex-shrink: 0;
 }
 
-.card-screening .card-icon-wrapper { background-color: #dbeafe; } /* blue-100 */
-.card-psychology .card-icon-wrapper { background-color: #ffedd5; } /* orange-100 */
-.dark-icon { background-color: rgba(255, 255, 255, 0.2); }
-
-.small-icon {
-    width: 48px;
-    height: 48px;
-}
+.card-icon-wrapper { background-color: rgba(59, 130, 246, 0.1); }
+.dark-icon { background-color: rgba(255, 255, 255, 0.1); }
 
