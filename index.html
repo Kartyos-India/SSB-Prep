@@ -4,37 +4,31 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SSB Preparation Platform - Ace Your Interview</title>
-    <!-- Direct link to our custom stylesheet -->
     <link rel="stylesheet" href="css/style.css">
-    <!-- Google Fonts link -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
 
-    <!-- Main container for the full-screen app UI -->
     <div class="app-container">
         
-        <!-- Header Section -->
         <header id="header-bar" class="app-header">
             <div class="header-content">
                 <div id="header-left" class="header-logo">
                     <svg width="40" height="40" viewBox="0 0 24 24"><path fill="#3b82f6" d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
                     <h1>SSB Prep Platform</h1>
                 </div>
+                <!-- Navigation is now a direct child for better centering control -->
+                <nav id="header-center" class="app-nav"></nav>
                 <div id="header-right">
                     <div id="auth-loader">...</div>
                 </div>
             </div>
-            <!-- Navigation bar will be populated by main.js -->
-            <nav id="header-center" class="app-nav"></nav>
         </header>
 
-        <!-- Main Content Area -->
         <main id="page-content">
             
-            <!-- Hero Section -->
             <section class="hero-section">
                 <div class="hero-content">
                     <h2>Prepare, Practice, Prevail.</h2>
@@ -43,70 +37,66 @@
                 </div>
             </section>
 
-            <!-- About the SSB Section -->
             <section class="info-section">
                 <h3>What is the SSB Interview?</h3>
-                <p>The Services Selection Board (SSB) is a rigorous 5-day evaluation process that assesses candidates for their suitability to become officers in the Indian Armed Forces. It's not just a test of knowledge, but a deep analysis of personality, leadership potential, and psychological fitness through a series of specialized tests.</p>
+                <p>The Services Selection Board (SSB) is a rigorous 5-day evaluation process that assesses candidates for their suitability to become officers in the Indian Armed Forces. It's not just a test of knowledge, but a deep analysis of personality, leadership potential, and psychological fitness.</p>
             </section>
 
-            <!-- Test Modules Section -->
             <section id="test-modules-section" class="modules-section">
                 <h3 class="section-title">Interactive Test Modules</h3>
                 <div class="module-layout">
 
-                    <!-- Screening Card -->
-                    <a href="screening.html" data-requires-auth="false" class="test-card large-card">
+                    <!-- Full-width card -->
+                    <a href="screening.html" data-requires-auth="false" class="test-card full-width-card">
+                        <div class="card-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                        </div>
                         <div class="card-text">
                             <h4>Stage I: Screening Test</h4>
-                            <p>The first hurdle. Master the Officer Intelligence Rating (OIR) test and Picture Perception & Discussion Test (PPDT) to ensure you make it to Stage II.</p>
-                        </div>
-                        <div class="card-icon">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                            <p>Master the OIR test and PPDT to ensure you make it to Stage II.</p>
                         </div>
                     </a>
 
-                    <!-- Psychology Card -->
-                    <a href="psychology.html" data-requires-auth="false" class="test-card">
-                        <div class="card-text">
-                            <h4>Psychology Tests</h4>
-                            <p>Dive deep into TAT, WAT, and SRT to understand and refine your psychological responses under pressure.</p>
-                        </div>
-                    </a>
+                    <!-- Half-width cards container -->
+                    <div class="half-width-container">
+                        <a href="psychology.html" data-requires-auth="false" class="test-card">
+                            <div class="card-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 0 0-7.53 16.58A10 10 0 0 0 12 22a10 10 0 0 0 7.53-3.42A10 10 0 0 0 12 2z"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><circle cx="9" cy="9" r="1"/><circle cx="15" cy="9" r="1"/></svg>
+                            </div>
+                            <div class="card-text">
+                                <h4>Psychology Tests</h4>
+                                <p>Dive deep into TAT, WAT, and SRT.</p>
+                            </div>
+                        </a>
+                        <a href="gto.html" data-requires-auth="false" class="test-card">
+                             <div class="card-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                            </div>
+                            <div class="card-text">
+                                <h4>GTO Tasks</h4>
+                                <p>Learn the dynamics of group tasks.</p>
+                            </div>
+                        </a>
+                    </div>
                     
-                    <!-- GTO Card -->
-                    <a href="gto.html" data-requires-auth="false" class="test-card">
-                         <div class="card-text">
-                            <h4>GTO Tasks</h4>
-                            <p>Learn the dynamics of Group Discussions, Command Tasks, and other outdoor challenges.</p>
+                    <a href="performance.html" data-requires-auth="true" class="test-card full-width-card">
+                        <div class="card-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
                         </div>
-                    </a>
-                    
-                     <!-- Performance Card -->
-                    <a href="performance.html" data-requires-auth="true" class="test-card">
                         <div class="card-text">
                             <h4>My Performance</h4>
-                            <p>Track your progress, review past attempts, and identify areas for improvement.</p>
+                            <p>Track your progress and identify areas for improvement.</p>
                         </div>
                     </a>
                 </div>
             </section>
             
-            <!-- Features Section -->
             <section class="features-section">
                  <h3 class="section-title">Why Practice With Us?</h3>
                  <div class="features-grid">
-                     <div class="feature-item">
-                         <h5>AI-Powered PPDT</h5>
-                         <p>Generate unique, ambiguous scenes for PPDT practice, ensuring you're ready for any picture shown.</p>
-                     </div>
-                     <div class="feature-item">
-                         <h5>Realistic Simulations</h5>
-                         <p>Experience timed tests that mimic the exact pressure and environment of the actual SSB interview.</p>
-                     </div>
-                     <div class="feature-item">
-                         <h5>Data-Driven Feedback</h5>
-                         <p>Our "My Performance" tracker helps you see your strengths and weaknesses clearly over time.</p>
-                     </div>
+                     <div class="feature-item"><h5>AI-Powered PPDT</h5><p>Generate unique, ambiguous scenes for PPDT practice.</p></div>
+                     <div class="feature-item"><h5>Realistic Simulations</h5><p>Experience timed tests that mimic the actual SSB pressure.</p></div>
+                     <div class="feature-item"><h5>Data-Driven Feedback</h5><p>Track your performance to see your strengths and weaknesses.</p></div>
                  </div>
             </section>
 
@@ -117,7 +107,6 @@
         </footer>
     </div>
 
-    <!-- The JS file can now correctly interact with this HTML structure -->
     <script type="module" src="js/main.js"></script>
 </body>
 </html>
