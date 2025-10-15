@@ -8,17 +8,42 @@ const headerCenter = document.getElementById('header-center');
 const pageContent = document.getElementById('page-content');
 const authLoader = document.getElementById('auth-loader');
 
-// --- RENDER FUNCTIONS ---
+/**
+ * Renders the main navigation menu.
+ * @param {boolean} isAuthenticated - Whether the user is logged in or not.
+ */
+function renderNavMenu(isAuthenticated) {
+    const currentPage = window.location.pathname.split('/').pop() || 'index.html';
+    
+    // Define all navigation links with their properties
+    const navLinks = [
+        { href: 'index.html', text: 'Home', requiresAuth: false },
+        { href: 'screening.html', text: 'Screening', requiresAuth: true },
+        { href: 'psychology.html', text: 'Psychology', requiresAuth: true },
+        { href: 'gto.html', text: 'GTO', requiresAuth: true },
+        { href: 'performance.html', text: 'My Performance', requiresAuth: true }
+    ];
+
+    headerCenter.innerHTML = navLinks.map(link => {
+        const isActive = currentPage === link.href;
+        // A link is disabled if it requires auth and the user is not logged in
+        const isDisabled = link.requiresAuth && !isAuthenticated;
+        
+        // Use a <span class="nav-link disabled"> for disabled links to prevent navigation
+        if (isDisabled) {
+            return `<span class="nav-link disabled" title="Please log in to access">${link.text}</span>`;
+        }
+
+        return `<a href="${link.href}" class="nav-link ${isActive ? 'active' : ''}">${link.text}</a>`;
+    }).join('');
+}
+
 
 /**
  * Updates the UI for an authenticated (logged-in) user.
- * - Renders the full navigation menu.
- * - Shows a personalized logout button.
- * - Enables all test module cards on the page.
  * @param {object} user - The Firebase user object.
  */
 function handleAuthenticatedUser(user) {
-    // 1. Render the Logout button with user's photo
     headerRight.innerHTML = `
         <div class="user-profile">
             <img src="${user.photoURL}" alt="${user.displayName}" class="user-avatar">
@@ -28,31 +53,21 @@ function handleAuthenticatedUser(user) {
     `;
     document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
 
-    // 2. Render the main navigation
-    const currentPage = window.location.pathname.split('/').pop() || 'index.html';
-    headerCenter.innerHTML = `
-        <a href="index.html" class="nav-link ${currentPage === 'index.html' ? 'active' : ''}">Home</a>
-        <a href="screening.html" class="nav-link ${currentPage === 'screening.html' ? 'active' : ''}">Screening</a>
-        <a href="psychology.html" class="nav-link ${currentPage === 'psychology.html' ? 'active' : ''}">Psychology</a>
-        <a href="gto.html" class="nav-link ${currentPage === 'gto.html' ? 'active' : ''}">GTO</a>
-        <a href="performance.html" class="nav-link ${currentPage === 'performance.html' ? 'active' : ''}">My Performance</a>
-    `;
+    renderNavMenu(true); // Render nav for an authenticated user
 
-    // 3. Enable all module cards
+    // Re-enable all cards on the homepage just in case they were disabled
     document.querySelectorAll('.test-card').forEach(card => {
         card.classList.remove('disabled');
-        card.href = card.dataset.href; // Restore the original link
+        if (card.dataset.href) {
+            card.href = card.dataset.href;
+        }
     });
 }
 
 /**
  * Updates the UI for a non-authenticated (logged-out) user.
- * - Shows an attractive login button.
- * - Displays a message in the nav area.
- * - Disables module cards that require a login.
  */
 function handleNoUser() {
-    // 1. Render the Login button
     headerRight.innerHTML = `
         <button id="login-btn" class="action-btn login-btn">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
@@ -67,15 +82,14 @@ function handleNoUser() {
         });
     }
 
-    // 2. Display a message in the navigation area to maintain layout
-    headerCenter.innerHTML = `<span class="nav-message">Login to access all modules</span>`;
-    
-    // 3. Disable cards that require authentication
+    renderNavMenu(false); // Render nav for a logged-out user
+
+    // We still disable the cards on the homepage for a clear visual cue
     document.querySelectorAll('.test-card').forEach(card => {
         if (card.dataset.requiresAuth === 'true') {
             card.classList.add('disabled');
-            card.dataset.href = card.href; // Store the original link
-            card.removeAttribute('href'); // Disable the link
+            card.dataset.href = card.href;
+            card.removeAttribute('href');
         }
     });
 }
@@ -102,7 +116,6 @@ async function main() {
     }
 }
 
-// Add a pre-load state to prevent content flash
 if (pageContent) pageContent.style.visibility = 'hidden';
 main();
 
