@@ -14,13 +14,11 @@ import {
     query, 
     getDocs, 
     doc, 
-    getDoc,
-    setDoc,
+    getDoc, 
     orderBy,
-    Timestamp
+    serverTimestamp // <-- IMPORT ADDED HERE
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-// Export all the functions so they can be used across the app
 export {
     initializeApp,
     getAuth,
@@ -35,7 +33,6 @@ export {
     getDocs,
     doc,
     getDoc,
-    setDoc,
     orderBy,
-    Timestamp
+    serverTimestamp // <-- EXPORT ADDED HERE
 };

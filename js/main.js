@@ -7,120 +7,113 @@ const headerRight = document.getElementById('header-right');
 const headerCenter = document.getElementById('header-center');
 const pageContent = document.getElementById('page-content');
 const authLoader = document.getElementById('auth-loader');
-const testCards = document.querySelectorAll('.test-card');
-
-// --- RENDER FUNCTIONS ---
 
 /**
- * DOCUMENTATION:
- * Renders the main navigation links for an authenticated user.
- * The styling is updated to match the new, simpler design.
+ * Renders the main navigation menu.
+ * @param {boolean} isAuthenticated - Whether the user is logged in or not.
  */
-function renderAuthenticatedNav() {
+function renderNavMenu(isAuthenticated) {
     const currentPage = window.location.pathname.split('/').pop() || 'index.html';
-    // The links are simpler now, with a bold blue color for the active link.
-    headerCenter.innerHTML = `
-        <a href="/index.html" class="${currentPage === 'index.html' ? 'text-blue-600 font-bold' : ''}">Home</a>
-        <a href="/screening.html" class="${currentPage === 'screening.html' ? 'text-blue-600 font-bold' : ''}">Screening</a>
-        <a href="/psychology.html" class="${currentPage === 'psychology.html' ? 'text-blue-600 font-bold' : ''}">Psychology</a>
-        <a href="/gto.html" class="${currentPage === 'gto.html' ? 'text-blue-600 font-bold' : ''}">GTO</a>
-        <a href="/performance.html" class="${currentPage === 'performance.html' ? 'text-blue-600 font-bold' : ''}">Performance</a>
-    `;
-}
-
-/**
- * DOCUMENTATION:
- * Configures the UI for a logged-in user.
- */
-function handleAuthenticatedUser(user) {
-    headerRight.innerHTML = `
-        <button id="logout-btn" class="px-3 py-1.5 border border-gray-300 text-xs font-medium rounded-md text-gray-700 bg-gray-50 hover:bg-gray-100">Logout</button>
-    `;
-    document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
     
-    renderAuthenticatedNav();
-    updateCardAccess(true);
-    if (pageContent) pageContent.classList.remove('hidden');
-}
+    const navLinks = [
+        { href: 'index.html', text: 'Home', requiresAuth: false },
+        { href: 'screening.html', text: 'Screening', requiresAuth: true },
+        { href: 'psychology.html', text: 'Psychology', requiresAuth: true },
+        { href: 'gto.html', text: 'GTO', requiresAuth: true },
+        { href: 'performance.html', text: 'My Performance', requiresAuth: true }
+    ];
 
-/**
- * DOCUMENTATION:
- * Configures the UI for a logged-out user.
- */
-function handleNoUser() {
-    headerRight.innerHTML = `<button id="login-btn" class="px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">Login</button>`;
-    const loginBtn = document.getElementById('login-btn');
-    if (loginBtn) {
-        loginBtn.addEventListener('click', () => {
-            const provider = new GoogleAuthProvider();
-            signInWithPopup(auth, provider).catch(error => {
-                console.error("Authentication Error:", error);
-                loginBtn.textContent = "Failed";
-                setTimeout(() => { loginBtn.textContent = "Login"; }, 2000);
-            });
-        });
-    }
-    headerCenter.innerHTML = `
-        <a href="/index.html" class="text-blue-600 font-bold">Home</a>
-        <p class="text-gray-400">Login to access all modules</p>
-    `;
-    updateCardAccess(false); 
-    if (pageContent) pageContent.classList.remove('hidden');
-}
-
-/**
- * DOCUMENTATION:
- * Updates the clickable state of test cards based on login status.
- * It checks for the `data-requires-auth` attribute we added in the HTML.
- * @param {boolean} isLoggedIn - True if the user is authenticated, false otherwise.
- */
-function updateCardAccess(isLoggedIn) {
-    testCards.forEach(card => {
-        const requiresAuth = card.dataset.requiresAuth === 'true';
-
-        // Store original href if it doesn't exist
-        if (!card.dataset.originalHref) {
-            card.dataset.originalHref = card.getAttribute('href');
+    headerCenter.innerHTML = navLinks.map(link => {
+        const isActive = currentPage === link.href;
+        const isDisabled = link.requiresAuth && !isAuthenticated;
+        
+        if (isDisabled) {
+            return `<span class="nav-link disabled" title="Please log in to access">${link.text}</span>`;
         }
 
-        if (requiresAuth && !isLoggedIn) {
-            card.setAttribute('href', '#'); // Prevent navigation
-            card.style.cursor = 'not-allowed';
-            card.classList.add('opacity-60');
-            card.title = 'You must be logged in to access this module.'; // Tooltip on hover
-        } else {
-            // Restore original properties if the user logs in
-            card.setAttribute('href', card.dataset.originalHref);
-            card.style.cursor = 'pointer';
-            card.classList.remove('opacity-60');
-            card.title = '';
+        return `<a href="${link.href}" class="nav-link ${isActive ? 'active' : ''}">${link.text}</a>`;
+    }).join('');
+}
+
+
+/**
+ * Updates the UI for an authenticated (logged-in) user.
+ * @param {object} user - The Firebase user object.
+ */
+function handleAuthenticatedUser(user) {
+    // New structure with a .user-menu container
+    headerRight.innerHTML = `
+        <div class="user-menu">
+            <div class="user-info">
+                <span class="user-name">${user.displayName}</span>
+                <img src="${user.photoURL}" alt="User Avatar" class="user-avatar">
+            </div>
+            <button id="logout-btn" class="action-btn logout-btn">Logout</button>
+        </div>
+    `;
+    document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
+
+    renderNavMenu(true);
+
+    document.querySelectorAll('.test-card').forEach(card => {
+        card.classList.remove('disabled');
+        if (card.dataset.href) {
+            card.href = card.dataset.href;
         }
     });
 }
 
+/**
+ * Updates the UI for a non-authenticated (logged-out) user.
+ */
+function handleNoUser() {
+    headerRight.innerHTML = `
+        <button id="login-btn" class="action-btn login-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+            <span>Login</span>
+        </button>
+    `;
+    const loginBtn = document.getElementById('login-btn');
+    if (loginBtn) {
+        loginBtn.addEventListener('click', () => {
+            const provider = new GoogleAuthProvider();
+            signInWithPopup(auth, provider).catch(error => console.error("Auth Error:", error));
+        });
+    }
+
+    renderNavMenu(false);
+
+    document.querySelectorAll('.test-card').forEach(card => {
+        if (card.dataset.requiresAuth === 'true') {
+            card.classList.add('disabled');
+            card.dataset.href = card.href;
+            card.removeAttribute('href');
+        }
+    });
+}
 
 // --- INITIALIZATION ---
 async function main() {
     try {
         await firebaseReady;
+        
         onAuthStateChanged(auth, (user) => {
             if (authLoader) authLoader.style.display = 'none';
+            if (pageContent) pageContent.style.visibility = 'visible';
+
             if (user) {
                 handleAuthenticatedUser(user);
             } else {
                 handleNoUser();
             }
         });
+
     } catch (error) {
-        console.error("💥 Failed to initialize application:", error);
-        if (authLoader) {
-             authLoader.innerHTML = `<span class="text-red-500 text-xs font-semibold">Error</span>`;
-        }
-        if (pageContent) pageContent.classList.remove('hidden');
-        handleNoUser();
+        console.error("💥 Failed to start application:", error);
+        if (authLoader) authLoader.innerHTML = `<span class="error-text">App failed to load</span>`;
     }
 }
 
-// Start the application.
+if (pageContent) pageContent.style.visibility = 'hidden';
 main();
 

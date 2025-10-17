@@ -3,80 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Screening Tests - SSB Prep</title>
+    <title>Screening Tests - SSB Prep Platform</title>
     <link rel="stylesheet" href="css/style.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
-    <!-- Font Awesome for modal icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- SheetJS Library for reading Excel files -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
+    <div class="app-container">
+        <!-- Header will be rendered by main.js -->
+        <header id="header-bar"></header>
 
-    <header id="header-bar">
-        <div id="header-left">
-            <a href="index.html" class="logo-link">
-                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><path fill="white" d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
-                <span>SSB Prep</span>
-            </a>
-        </div>
-        <nav id="header-center"></nav>
-        <div id="header-right">
-            <div id="auth-loader">Loading...</div>
-        </div>
-    </header>
+        <!-- Main content area -->
+        <main id="page-content">
+            <!-- Content will be rendered by screening.js -->
+        </main>
 
-    <main id="page-content" class="page-container hidden">
-        <!-- Screening.js will populate this area -->
-    </main>
-
-    <!-- Gender Selection Modal -->
-    <div id="genderModal" class="modal hidden">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>PPDT Test Setup</h3>
-                <span class="close-modal">&times;</span>
-            </div>
-            <div class="modal-body">
-                <p>Please select your gender for personalized image generation:</p>
-                <div class="gender-options">
-                    <button class="gender-btn male" data-gender="male">
-                        <i class="fas fa-mars"></i> Male
-                    </button>
-                    <button class="gender-btn female" data-gender="female">
-                        <i class="fas fa-venus"></i> Female
-                    </button>
-                </div>
-            </div>
-        </div>
+        <!-- Footer -->
+        <footer class="app-footer">
+            © 2024 SSB Prep Platform. All rights reserved.
+        </footer>
     </div>
 
-    <!-- Test Type Selection Modal -->
-    <div id="testTypeModal" class="modal hidden">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Select PPDT Test Type</h3>
-                <span class="close-modal">&times;</span>
-            </div>
-            <div class="modal-body">
-                <div class="test-type-options">
-                    <button class="test-type-btn" data-type="timed-visible">
-                        <i class="fas fa-clock"></i> Timed (Visible Timer)
-                    </button>
-                    <button class="test-type-btn" data-type="timed-invisible">
-                        <i class="fas fa-eye-slash"></i> Timed (Invisible Timer)
-                    </button>
-                    <button class="test-type-btn" data-type="untimed">
-                        <i class="fas fa-infinity"></i> Untimed
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script type="module" src="js/firebase-init.js"></script>
+    <!-- Main application scripts -->
+    <script type="module" src="js/firebase-app.js"></script>
     <script type="module" src="js/main.js"></script>
     <script type="module" src="js/screening.js"></script>
-
 </body>
 </html>
+
