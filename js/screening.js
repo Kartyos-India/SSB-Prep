@@ -1,6 +1,6 @@
 // js/screening.js - Manages the entire screening test flow, including custom question uploads.
 
-// Import Firebase services for saving results
+// Import Firebase services, including the firebaseReady promise
 import { firebaseReady, auth, db } from './firebase-app.js';
 import { collection, addDoc, serverTimestamp } from './firebase-init.js';
 
@@ -31,7 +31,7 @@ function renderScreeningMenu() {
             </div>
         </div>
 
-        <!-- New Custom Question Bank Section -->
+        <!-- Custom Question Bank Section -->
         <div class="custom-questions-section">
              <div class="section-title-bar">
                 <h2>Custom Question Bank</h2>
@@ -90,7 +90,6 @@ function handleExcelUpload(file) {
                 throw new Error("The Excel file is empty.");
             }
 
-            // Remove header row if it exists by checking the first cell
             if (json[0][0] && typeof json[0][0] === 'string' && json[0][0].toLowerCase().includes('question')) {
                 json.shift();
             }
@@ -341,10 +340,27 @@ function renderErrorPage(title, message) {
     document.getElementById('back-to-menu-btn').addEventListener('click', renderScreeningMenu);
 }
 
-// Initial execution when the page loads
-document.addEventListener('DOMContentLoaded', () => {
-    if (pageContent) {
-        renderScreeningMenu();
+// *** THE FIX IS HERE ***
+// We create an async function to initialize the page.
+async function initializePage() {
+    try {
+        // First, we wait for the main app (and Firebase) to be ready.
+        // This ensures main.js has finished rendering the header.
+        await firebaseReady;
+
+        // Now that the header is definitely on the page, we can safely
+        // render our screening menu.
+        if (pageContent) {
+            renderScreeningMenu();
+        }
+    } catch (error) {
+        console.error("Failed to initialize the screening page:", error);
+        if(pageContent){
+            pageContent.innerHTML = `<p>Error loading page. Please try again.</p>`;
+        }
     }
-});
+}
+
+// We call our new initialization function instead of using a DOMContentLoaded listener.
+initializePage();
 
