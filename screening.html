@@ -5,20 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Screening Tests - SSB Prep Platform</title>
     <link rel="stylesheet" href="css/style.css">
-    <!-- SheetJS Library for reading Excel files -->
+    <!-- SheetJS Library for reading Excel files, loaded from a CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
     <div class="app-container">
-        <!-- Header will be rendered by main.js -->
-        <header id="header-bar"></header>
+        <!-- The header is dynamically rendered by js/main.js -->
+        <header id="header-bar" class="app-header"></header>
 
-        <!-- Main content area -->
+        <!-- Main content area for the screening page -->
         <main id="page-content">
-            <!-- Content will be rendered by screening.js -->
+            <!-- All screening page content will be dynamically rendered here by js/screening.js -->
         </main>
 
-        <!-- Footer -->
+        <!-- The footer is static and part of the page structure -->
         <footer class="app-footer">
             © 2024 SSB Prep Platform. All rights reserved.
         </footer>

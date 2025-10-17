@@ -86,42 +86,46 @@ function handleExcelUpload(file) {
             const worksheet = workbook.Sheets[firstSheetName];
             const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
-            // Remove header row if it exists
-            if (json.length > 0 && json[0][0].toLowerCase().includes('question')) {
+            if (json.length < 1) {
+                throw new Error("The Excel file is empty.");
+            }
+
+            // Remove header row if it exists by checking the first cell
+            if (json[0][0] && typeof json[0][0] === 'string' && json[0][0].toLowerCase().includes('question')) {
                 json.shift();
             }
 
-            const customQuestions = json.map(row => {
-                if (row.length < 6 || row.some(cell => cell === null || cell === undefined)) {
-                    return null; // Skip incomplete rows
+            const customQuestions = json.map((row, index) => {
+                if (row.length < 6 || row.slice(0, 6).some(cell => cell === null || cell === undefined || String(cell).trim() === '')) {
+                    console.warn(`Skipping incomplete row ${index + 1}:`, row);
+                    return null; 
                 }
                 return {
-                    q: row[0],
-                    options: [row[1], row[2], row[3], row[4]],
-                    answer: row[5]
+                    q: String(row[0]).trim(),
+                    options: [String(row[1]).trim(), String(row[2]).trim(), String(row[3]).trim(), String(row[4]).trim()],
+                    answer: String(row[5]).trim()
                 };
-            }).filter(q => q !== null); // Filter out any null (skipped) rows
+            }).filter(q => q !== null); 
 
             if (customQuestions.length === 0) {
-                 throw new Error("No valid questions found. Please check the file format and content.");
+                 throw new Error("No valid questions found. Please check the file format: 6 columns are required per question.");
             }
 
-            // Save to localStorage
             localStorage.setItem('customOIRQuestions', JSON.stringify(customQuestions));
             
             statusDiv.textContent = `Successfully loaded ${customQuestions.length} custom questions! They will be included in your next OIR test.`;
-            statusDiv.className = 'upload-status success';
+            statusDiv.className = 'upload-status success visible';
 
         } catch (error) {
             console.error("Error processing Excel file:", error);
             statusDiv.textContent = `Error: ${error.message}`;
-            statusDiv.className = 'upload-status error';
+            statusDiv.className = 'upload-status error visible';
         }
     };
     
     reader.onerror = () => {
         statusDiv.textContent = 'Error reading the file.';
-        statusDiv.className = 'upload-status error';
+        statusDiv.className = 'upload-status error visible';
     };
 
     reader.readAsArrayBuffer(file);
@@ -140,38 +144,32 @@ async function initializeOIRTest() {
         </div>
     `;
     try {
-        // Step 1: Fetch default questions from the API
         const response = await fetch('/api/generate-oir-questions');
         if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || 'The server returned an error.');
+            const errorText = await response.text();
+            throw new Error(`Failed to fetch questions: ${response.status} ${errorText}`);
         }
         let defaultQuestions = await response.json();
 
-        // Step 2: Get custom questions from localStorage
         let customQuestions = [];
         const customQuestionsJSON = localStorage.getItem('customOIRQuestions');
         if (customQuestionsJSON) {
             customQuestions = JSON.parse(customQuestionsJSON);
         }
 
-        // Step 3: Merge and shuffle the question pools
         const combinedPool = [...defaultQuestions, ...customQuestions];
 
-        // Fisher-Yates shuffle algorithm
         for (let i = combinedPool.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [combinedPool[i], combinedPool[j]] = [combinedPool[j], combinedPool[i]];
         }
 
-        // Step 4: Select the final 50 questions for the test
         oirQuestions = combinedPool.slice(0, 50);
         
-        if (oirQuestions.length < 50) {
-            console.warn(`Warning: Only ${oirQuestions.length} questions available for the test.`);
+        if (oirQuestions.length === 0) {
+            throw new Error("No questions available to start the test. Please check the API or upload a custom file.");
         }
 
-        // Reset test state and render the first question
         currentOIRIndex = 0;
         oirResponses = {};
         renderOIRQuestion();
@@ -183,100 +181,77 @@ async function initializeOIRTest() {
 }
 
 
-// --- All other functions (renderOIRQuestion, startOIRTimer, renderPPDTSetup, etc.) remain the same ---
-// (Paste the existing functions from the previous version of screening.js here)
-// ...
-
-// --- UTILITY AND RENDER FUNCTIONS ---
-function renderErrorPage(title, message) {
-    pageContent.innerHTML = `
-        <div class="page-title-section text-center">
-            <h1 class="error-title">${title}</h1>
-            <p>${message}</p>
-            <button id="back-to-menu-btn" class="oir-nav-btn">Back to Menu</button>
-        </div>
-    `;
-    document.getElementById('back-to-menu-btn').addEventListener('click', renderScreeningMenu);
-}
-
-// Ensure this file is loaded after the DOM is ready
-document.addEventListener('DOMContentLoaded', () => {
-    // Initial render of the screening page menu.
-    if (pageContent) {
-        renderScreeningMenu();
-    }
-});
-
-            </div>
-            <div class="choice-card" id="setup-ppdt-test">
-                <h3>PPDT</h3>
-                <p>Observe a picture, write a story, and prepare for the group discussion.</p>
-            </div>
-        </div>
-    `;
-    document.getElementById('start-oir-test').addEventListener('click', initializeOIRTest);
-    document.getElementById('setup-ppdt-test').addEventListener('click', renderPPDTSetup);
-}
-
-
-// --- OIR TEST LOGIC ---
-
 /**
- * Starts the OIR test by fetching questions from our serverless function.
+ * Renders the current OIR question on the page.
  */
-async function initializeOIRTest() {
+function renderOIRQuestion() {
+    const question = oirQuestions[currentOIRIndex];
+
     pageContent.innerHTML = `
-        <div class="page-title-section">
-            <h1>OIR Test</h1>
-            <div class="loader"></div>
-            <p style="margin-top: 1rem;">Generating your test questions... Please wait.</p>
+        <div class="oir-test-container">
+            <div class="oir-header">
+                <div class="oir-progress">Question ${currentOIRIndex + 1} of ${oirQuestions.length}</div>
+                <div class="oir-timer">Time Left: <span id="timer-display">30:00</span></div>
+            </div>
+            <div class="oir-question-card">
+                <p class="oir-question-text">${question.q}</p>
+                <div class="oir-options">
+                    ${question.options.map((opt, index) => `
+                        <label class="oir-option-label">
+                            <input type="radio" name="oir-option" value="${opt}" ${oirResponses[currentOIRIndex] === opt ? 'checked' : ''}>
+                            ${opt}
+                        </label>
+                    `).join('')}
+                </div>
+                <div class="oir-navigation">
+                    <button id="oir-prev-btn" class="oir-nav-btn">Previous</button>
+                    <button id="oir-next-btn" class="oir-nav-btn">Next</button>
+                    <button id="oir-finish-btn" class="oir-nav-btn finish">Finish Test</button>
+                </div>
+            </div>
         </div>
     `;
 
-    try {
-        const response = await fetch('/api/generate-oir-questions');
-        if (!response.ok) {
-            throw new Error(`API Error: ${response.statusText}`);
-        }
-        oirQuestions = await response.json();
+    document.getElementById('oir-prev-btn').style.visibility = (currentOIRIndex === 0) ? 'hidden' : 'visible';
+    document.getElementById('oir-next-btn').style.display = (currentOIRIndex === oirQuestions.length - 1) ? 'none' : 'block';
+    document.getElementById('oir-finish-btn').style.display = (currentOIRIndex === oirQuestions.length - 1) ? 'block' : 'none';
 
-        if (!Array.isArray(oirQuestions) || oirQuestions.length === 0) {
-             throw new Error('Invalid question format received from API.');
-        }
+    document.getElementById('oir-prev-btn').addEventListener('click', () => navigateOIR('prev'));
+    document.getElementById('oir-next-btn').addEventListener('click', () => navigateOIR('next'));
+    document.getElementById('oir-finish-btn').addEventListener('click', submitOIRTest);
 
-        // Reset state and start the test
-        currentOIRIndex = 0;
-        oirResponses = {};
-        startOIRTimer();
+    const options = document.querySelectorAll('input[name="oir-option"]');
+    options.forEach(option => option.addEventListener('change', saveOIRResponse));
+}
+
+function saveOIRResponse() {
+    const selected = document.querySelector('input[name="oir-option"]:checked');
+    if (selected) {
+        oirResponses[currentOIRIndex] = selected.value;
+    }
+}
+
+function navigateOIR(direction) {
+    saveOIRResponse();
+    if (direction === 'next' && currentOIRIndex < oirQuestions.length - 1) {
+        currentOIRIndex++;
         renderOIRQuestion();
-
-    } catch (error) {
-        console.error("Failed to initialize OIR test:", error);
-        pageContent.innerHTML = `
-            <div class="page-title-section">
-                <h1>Error</h1>
-                <p>Could not load the OIR test questions. Please try again later.</p>
-                <button id="back-to-menu" class="start-btn" style="margin-top: 2rem;">Back to Menu</button>
-            </div>
-        `;
-        document.getElementById('back-to-menu').addEventListener('click', renderScreeningMenu);
+    } else if (direction === 'prev' && currentOIRIndex > 0) {
+        currentOIRIndex--;
+        renderOIRQuestion();
     }
 }
 
-/**
- * Starts the 30-minute countdown timer for the OIR test.
- */
 function startOIRTimer() {
     let timeLeft = 1800; // 30 minutes in seconds
-    const timerDisplay = document.getElementById('oir-timer');
-
+    const timerDisplay = document.getElementById('timer-display');
+    
     oirTimerInterval = setInterval(() => {
         timeLeft--;
         const minutes = Math.floor(timeLeft / 60);
         const seconds = timeLeft % 60;
-        if (document.getElementById('oir-timer')) {
-             document.getElementById('oir-timer').textContent = 
-                `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        if (timerDisplay) {
+            timerDisplay.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
         }
 
         if (timeLeft <= 0) {
@@ -286,274 +261,90 @@ function startOIRTimer() {
     }, 1000);
 }
 
-/**
- * Renders the current OIR question, options, and navigation.
- */
-function renderOIRQuestion() {
-    const question = oirQuestions[currentOIRIndex];
-    
-    // The main test UI is rendered only once, then its content is updated.
-    if (!document.getElementById('oir-test-container')) {
-        pageContent.innerHTML = `
-            <div id="oir-test-container">
-                <div class="oir-header">
-                    <div class="oir-progress">Question ${currentOIRIndex + 1} of ${oirQuestions.length}</div>
-                    <div class="oir-timer-box">
-                        Time Left: <span id="oir-timer">30:00</span>
-                    </div>
-                </div>
-                <div id="oir-question-content"></div>
-            </div>
-        `;
-    }
-
-    // Update the progress indicator
-    document.querySelector('.oir-progress').textContent = `Question ${currentOIRIndex + 1} of ${oirQuestions.length}`;
-
-    // Render the question content
-    const questionContent = document.getElementById('oir-question-content');
-    questionContent.innerHTML = `
-        <div class="oir-question-card">
-            <p class="oir-question-text">${currentOIRIndex + 1}. ${question.q}</p>
-            <div class="oir-options">
-                ${question.options.map((option, index) => `
-                    <label>
-                        <input type="radio" name="oir_option" value="${option}" ${oirResponses[currentOIRIndex] === option ? 'checked' : ''}>
-                        <div class="oir-option-button">
-                           <span class="option-letter">${String.fromCharCode(65 + index)}</span> ${option}
-                        </div>
-                    </label>
-                `).join('')}
-            </div>
-        </div>
-        <div class="oir-navigation">
-            <button id="oir-prev-btn" class="oir-nav-btn" ${currentOIRIndex === 0 ? 'disabled' : ''}>Previous</button>
-            ${currentOIRIndex === oirQuestions.length - 1 
-                ? `<button id="oir-finish-btn" class="oir-finish-btn">Finish Test</button>`
-                : `<button id="oir-next-btn" class="oir-nav-btn">Next</button>`
-            }
-        </div>
-    `;
-    
-    // Add event listeners for navigation
-    if (document.getElementById('oir-prev-btn')) {
-        document.getElementById('oir-prev-btn').addEventListener('click', () => navigateOIR('prev'));
-    }
-    if (document.getElementById('oir-next-btn')) {
-        document.getElementById('oir-next-btn').addEventListener('click', () => navigateOIR('next'));
-    }
-    if (document.getElementById('oir-finish-btn')) {
-        document.getElementById('oir-finish-btn').addEventListener('click', submitOIRTest);
-    }
-}
-
-/**
- * Handles navigation between OIR questions.
- * @param {'prev' | 'next'} direction The direction to navigate.
- */
-function navigateOIR(direction) {
-    // Save the current answer before moving
-    const selectedOption = document.querySelector('input[name="oir_option"]:checked');
-    if (selectedOption) {
-        oirResponses[currentOIRIndex] = selectedOption.value;
-    }
-
-    if (direction === 'next' && currentOIRIndex < oirQuestions.length - 1) {
-        currentOIRIndex++;
-    } else if (direction === 'prev' && currentOIRIndex > 0) {
-        currentOIRIndex--;
-    }
-    renderOIRQuestion();
-}
-
-/**
- * Submits the test, calculates the score, and displays the review screen.
- */
 async function submitOIRTest() {
     clearInterval(oirTimerInterval);
-    // Save the very last answer
-    const selectedOption = document.querySelector('input[name="oir_option"]:checked');
-    if (selectedOption) {
-        oirResponses[currentOIRIndex] = selectedOption.value;
-    }
+    saveOIRResponse();
 
     let score = 0;
-    oirQuestions.forEach((q, index) => {
-        if (oirResponses[index] === q.answer) {
+    for (let i = 0; i < oirQuestions.length; i++) {
+        if (oirResponses[i] === oirQuestions[i].answer) {
             score++;
         }
-    });
+    }
 
-    // Save the result to Firebase
-    const user = auth.currentUser;
-    if (user && db) {
-        try {
+    try {
+        await firebaseReady;
+        const user = auth.currentUser;
+        if (user && db) {
             await addDoc(collection(db, 'users', user.uid, 'tests'), {
                 testType: 'OIR Test',
                 score: score,
                 total: oirQuestions.length,
-                timestamp: serverTimestamp(),
-                responses: oirResponses // Optionally save all responses
+                timestamp: serverTimestamp()
             });
-        } catch (error) {
-            console.error("Error saving OIR results to Firestore:", error);
         }
+    } catch (error) {
+        console.error("Error saving OIR results:", error);
     }
-
-    renderOIRReview(score);
+    
+    renderOIRResults(score);
 }
 
-/**
- * Renders the final review screen with the score and answer breakdown.
- * @param {number} score The user's final score.
- */
-function renderOIRReview(score) {
+function renderOIRResults(score) {
     pageContent.innerHTML = `
         <div class="page-title-section">
-            <h1>OIR Test Complete</h1>
-            <p>Your Score: <span class="oir-final-score">${score} / ${oirQuestions.length}</span></p>
+            <h1>OIR Test Results</h1>
         </div>
-        <div class="oir-review-container">
-            <h2>Answer Review</h2>
-            ${oirQuestions.map((q, index) => {
-                const userAnswer = oirResponses[index] || "Not Answered";
-                const isCorrect = userAnswer === q.answer;
-                return `
-                    <div class="oir-review-item ${isCorrect ? 'correct' : 'incorrect'}">
-                        <p class="review-question-text"><b>${index + 1}. ${q.q}</b></p>
-                        <p>Your Answer: <span class="user-answer">${userAnswer}</span></p>
-                        ${!isCorrect ? `<p>Correct Answer: <span class="correct-answer">${q.answer}</span></p>` : ''}
-                    </div>
-                `;
-            }).join('')}
+        <div class="oir-results-summary">
+            <h2>Your Score</h2>
+            <p class="score">${score} / ${oirQuestions.length}</p>
         </div>
-        <div style="text-align: center; margin-top: 2rem;">
-            <button id="back-to-menu" class="start-btn">Back to Screening Menu</button>
+        <div class="oir-answer-review">
+            ${oirQuestions.map((q, index) => `
+                <div class="review-item ${oirResponses[index] === q.answer ? 'correct' : 'incorrect'}">
+                    <p><strong>Q${index + 1}:</strong> ${q.q}</p>
+                    <p>Your Answer: ${oirResponses[index] || 'No Answer'}</p>
+                    ${oirResponses[index] !== q.answer ? `<p>Correct Answer: ${q.answer}</p>` : ''}
+                </div>
+            `).join('')}
+        </div>
+         <div class="start-test-container">
+            <button id="back-to-menu-btn" class="oir-nav-btn">Back to Screening Menu</button>
         </div>
     `;
-    document.getElementById('back-to-menu').addEventListener('click', renderScreeningMenu);
+    document.getElementById('back-to-menu-btn').addEventListener('click', renderScreeningMenu);
 }
-
-
-// --- PPDT SETUP LOGIC (remains the same as before) ---
 
 function renderPPDTSetup() {
     pageContent.innerHTML = `
         <div class="page-title-section">
-            <h1>PPDT Configuration</h1>
-            <p>Set up your Picture Perception & Discussion Test practice session.</p>
-        </div>
-        <div class="test-setup-card">
-             <div class="setup-step">
-                <h2>Step 1: Select Your Gender</h2>
-                <p>This helps in generating a relevant PPDT image.</p>
-                <div class="option-group">
-                    <label>
-                        <input type="radio" name="gender" value="male" class="setup-option">
-                        <div class="option-button">
-                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0zM12 14a7 7 0 0 0-7 7h14a7 7 0 0 0-7-7z"/></svg>
-                            <span>Male</span>
-                        </div>
-                    </label>
-                    <label>
-                        <input type="radio" name="gender" value="female" class="setup-option">
-                        <div class="option-button">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/></svg>
-                            <span>Female</span>
-                        </div>
-                    </label>
-                </div>
-            </div>
-            <div class="setup-step">
-                <h2>Step 2: Choose PPDT Mode</h2>
-                <p>Select whether you want a timed or untimed experience for the story writing part.</p>
-                <div class="option-group">
-                    <label>
-                        <input type="radio" name="ppdt-mode" value="timed" class="setup-option">
-                        <div class="option-button">
-                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                            <span>Timed</span>
-                        </div>
-                    </label>
-                    <label>
-                        <input type="radio" name="ppdt-mode" value="untimed" class="setup-option">
-                        <div class="option-button">
-                           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                            <span>Untimed</span>
-                        </div>
-                    </label>
-                </div>
-            </div>
-            <div class="setup-step" id="timer-visibility-step" style="display: none;">
-                <h2>Step 3: Timer Visibility</h2>
-                <p>Choose if the timer should be visible during the timed test.</p>
-                <div class="option-group">
-                    <label>
-                        <input type="radio" name="timer-visibility" value="visible" class="setup-option">
-                        <div class="option-button">
-                           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                            <span>Visible</span>
-                        </div>
-                    </label>
-                    <label>
-                        <input type="radio" name="timer-visibility" value="invisible" class="setup-option">
-                        <div class="option-button">
-                           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-                            <span>Invisible</span>
-                        </div>
-                    </label>
-                </div>
-            </div>
-            <div class="start-test-container">
-                <button id="start-screening-test" class="start-btn" disabled>Start PPDT</button>
+            <h1>PPDT Setup</h1>
+            <p>This feature is coming soon!</p>
+             <div class="start-test-container">
+                <button id="back-to-menu-btn" class="oir-nav-btn">Back to Screening Menu</button>
             </div>
         </div>
     `;
-    attachPPDTSetupLogic();
+    document.getElementById('back-to-menu-btn').addEventListener('click', renderScreeningMenu);
 }
 
-function attachPPDTSetupLogic() {
-    const ppdtModeRadios = document.querySelectorAll('input[name="ppdt-mode"]');
-    const timerVisibilityStep = document.getElementById('timer-visibility-step');
-    const startTestButton = document.getElementById('start-screening-test');
-    const allOptions = document.querySelectorAll('.setup-option');
 
-    function validateSelections() {
-        const selectedGender = document.querySelector('input[name="gender"]:checked');
-        const selectedPpdtMode = document.querySelector('input[name="ppdt-mode"]:checked');
-        const selectedTimerVisibility = document.querySelector('input[name="timer-visibility"]:checked');
-
-        let isReady = false;
-        if (selectedGender && selectedPpdtMode) {
-            if (selectedPpdtMode.value === 'untimed') {
-                isReady = true;
-            } else if (selectedPpdtMode.value === 'timed' && selectedTimerVisibility) {
-                isReady = true;
-            }
-        }
-        startTestButton.disabled = !isReady;
-    }
-
-    function handlePPDTModeChange() {
-        const selectedPpdtMode = document.querySelector('input[name="ppdt-mode"]:checked');
-        if (selectedPpdtMode && selectedPpdtMode.value === 'timed') {
-            timerVisibilityStep.style.display = 'block';
-        } else {
-            timerVisibilityStep.style.display = 'none';
-        }
-    }
-
-    ppdtModeRadios.forEach(radio => radio.addEventListener('change', handlePPDTModeChange));
-    allOptions.forEach(option => option.addEventListener('change', validateSelections));
-    
-    startTestButton.addEventListener('click', () => {
-        alert("Starting PPDT test... (functionality to be added)");
-    });
-
-    handlePPDTModeChange();
-    validateSelections();
+function renderErrorPage(title, message) {
+    pageContent.innerHTML = `
+        <div class="page-title-section">
+            <h1 class="error-title">Error</h1>
+            <p>${title}</p>
+            <p>${message}</p>
+            <button id="back-to-menu-btn" class="oir-nav-btn">Back to Menu</button>
+        </div>
+    `;
+    document.getElementById('back-to-menu-btn').addEventListener('click', renderScreeningMenu);
 }
 
-// --- INITIAL EXECUTION ---
-renderScreeningMenu();
+// Initial execution when the page loads
+document.addEventListener('DOMContentLoaded', () => {
+    if (pageContent) {
+        renderScreeningMenu();
+    }
+});
 
