@@ -171,3 +171,206 @@ body {
     .half-width-container { flex-direction: column; }
 }
 
+.app-nav a:hover {
+    color: #ffffff;
+}
+
+.app-nav a.active {
+    color: #ffffff;
+    font-weight: 600;
+    border-bottom: 2px solid #3b82f6;
+}
+
+/* --- AUTH BUTTONS (Login/Logout) --- */
+.action-btn {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+    font-size: 0.9rem;
+    text-decoration: none;
+    display: inline-block;
+    text-align: center;
+}
+
+.login-btn { 
+    background-color: #3b82f6; /* Blue accent */
+    color: white; 
+}
+.login-btn:hover { 
+    background-color: #2563eb; /* Darker blue */
+}
+
+.logout-btn { 
+    background-color: transparent; 
+    border: 1px solid #374151; /* Darker border */
+    color: #9ca3af; /* Muted gray text */
+}
+.logout-btn:hover { 
+    background-color: #374151; 
+    color: #ffffff; 
+}
+
+
+/* --- MODULE GRID --- */
+#page-content {
+    display: block !important;
+}
+
+.module-grid {
+    margin-top: 1.5rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 1.5rem;
+}
+
+/* --- TEST CARDS --- */
+.test-card {
+    background-color: #1f2937;
+    border: 1px solid #374151;
+    border-radius: 16px;
+    padding: 1.5rem;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    transition: border-color 0.2s ease-in-out;
+}
+
+.test-card:hover {
+    border-color: #3b82f6;
+}
+
+.test-card .card-content h2 {
+    font-weight: 700;
+    font-size: 1.25rem;
+    color: #ffffff;
+    margin: 0 0 4px 0;
+}
+
+.test-card .card-content p {
+    font-size: 1rem;
+    color: #9ca3af;
+    margin: 0;
+}
+
+/* Card Icons */
+.card-icon-wrapper {
+    width: 64px;
+    height: 64px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+/* --- Add these new styles to your existing css/style.css file --- */
+
+/* --- Custom Questions Upload Section --- */
+.custom-questions-section {
+    max-width: 900px;
+    margin: 4rem auto 0 auto;
+    background-color: var(--medium-dark-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 2rem;
+}
+
+.section-title-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+}
+
+.section-title-bar h2 {
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.beta-tag {
+    background-color: var(--primary-blue);
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 999px;
+}
+
+.custom-questions-section > p {
+    margin: 0 0 1.5rem 0;
+    color: var(--text-secondary);
+}
+
+.upload-area {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background-color: var(--dark-bg);
+    padding: 0.75rem;
+    border-radius: 12px;
+}
+
+.upload-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1.2rem;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 0.9rem;
+    background-color: var(--light-dark-bg);
+    color: var(--text-primary);
+    transition: background-color 0.2s ease;
+}
+
+.upload-btn:hover {
+    background-color: #4b5563;
+}
+
+.file-name {
+    color: var(--text-secondary);
+    font-style: italic;
+    font-size: 0.9rem;
+}
+
+.upload-status {
+    margin-top: 1rem;
+    font-weight: 500;
+    padding: 0.75rem;
+    border-radius: 8px;
+    display: none; /* Hidden by default */
+}
+
+.upload-status.success {
+    background-color: rgba(16, 185, 129, 0.1);
+    color: var(--success-green);
+    display: block;
+}
+
+.upload-status.error {
+    background-color: rgba(239, 68, 68, 0.1);
+    color: var(--error-red);
+    display: block;
+}
+
+.format-info {
+    margin-top: 1rem;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    background-color: var(--dark-bg);
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+}
+
+
+.card-icon-wrapper { background-color: rgba(59, 130, 246, 0.1); }
+.dark-icon { background-color: rgba(255, 255, 255, 0.1); }
+
+
