@@ -4,38 +4,27 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Screening Tests - SSB Prep Platform</title>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
     <link rel="stylesheet" href="css/style.css">
+    <!-- SheetJS Library for reading Excel files -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
     <div class="app-container">
-        <!-- The header is dynamically injected by main.js -->
-        <header class="app-header">
-            <div class="header-content">
-                <div id="header-left">
-                    <a href="index.html" class="header-logo">
-                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 22C12 22 20 18 20 12V5L12 2L4 5V12C4 18 12 22 12 22Z" stroke="#3B82F6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                        <h1>SSB Prep Platform</h1>
-                    </a>
-                </div>
-                <nav id="header-center" class="app-nav"></nav>
-                <div id="header-right">
-                    <div id="auth-loader"></div>
-                </div>
-            </div>
-        </header>
+        <!-- Header will be rendered by main.js -->
+        <header id="header-bar"></header>
 
-        <!-- Main content area that will be dynamically updated by screening.js -->
+        <!-- Main content area -->
         <main id="page-content">
-            <!-- JavaScript will render the initial menu here -->
+            <!-- Content will be rendered by screening.js -->
         </main>
-        
+
+        <!-- Footer -->
         <footer class="app-footer">
-            <p>&copy; 2024 SSB Prep Platform. All rights reserved.</p>
+            © 2024 SSB Prep Platform. All rights reserved.
         </footer>
     </div>
 
-    <script type="module" src="js/firebase-init.js"></script>
+    <!-- Main application scripts -->
     <script type="module" src="js/firebase-app.js"></script>
     <script type="module" src="js/main.js"></script>
     <script type="module" src="js/screening.js"></script>
