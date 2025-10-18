@@ -3,109 +3,82 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SSB Preparation Platform - Ace Your Interview</title>
+    <title>SSB Prep Platform - Home</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
 
-    <div class="app-container">
-        
-        <header id="header-bar" class="app-header">
-            <div class="header-content">
-                <div id="header-left" class="header-logo">
-                    <svg width="40" height="40" viewBox="0 0 24 24"><path fill="#3b82f6" d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
-                    <h1>SSB Prep Platform</h1>
-                </div>
-                <!-- Navigation is now a direct child for better centering control -->
-                <nav id="header-center" class="app-nav"></nav>
-                <div id="header-right">
-                    <div id="auth-loader">...</div>
+    <header id="header-bar" class="app-header app-container"></header>
+
+    <main>
+        <div class="hero-section">
+            <div class="app-container">
+                <h1>Prepare, Practice, Prevail.</h1>
+                <p>Your comprehensive training ground for the Services Selection Board interview. Master every stage with AI-powered tools and realistic simulations.</p>
+                <a href="#modules" class="cta-button">Start Practicing Now</a>
+            </div>
+        </div>
+
+        <div class="info-section">
+            <div class="app-container">
+                <h2>What is the SSB Interview?</h2>
+                <p>The Services Selection Board (SSB) is a rigorous 5-day evaluation process that assesses candidates for their suitability to become officers in the Indian Armed Forces. It's not just a test of knowledge, but a deep analysis of personality, leadership potential, and psychological fitness.</p>
+            </div>
+        </div>
+
+        <div id="modules" class="modules-section">
+            <div class="app-container">
+                <h2 style="text-align: center;">Interactive Test Modules</h2>
+                <div class="module-grid">
+                    <a href="screening.html" class="module-card full-width">
+                        <div class="card-header">
+                            <div>
+                                <h3>Stage I: Screening Test</h3>
+                                <p>The first hurdle. Master the Officer Intelligence Rating (OIR) test and the Picture Perception & Discussion Test (PPDT) to ensure you make it to Stage II.</p>
+                            </div>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v4"></path><path d="M9 21H5a2 2 0 0 1-2-2v-4"></path><path d="M21 9V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v4"></path><path d="M3 15v4a2 2 0 0 0 2 2h4"></path></svg>
+                        </div>
+                    </a>
+                    <a href="psychology.html" class="module-card">
+                         <div class="card-header">
+                            <div>
+                                <h3>Psychology Tests</h3>
+                                <p>Dive deep into TAT, WAT, and SRT to understand and refine your psychological responses under pressure.</p>
+                            </div>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 0 0-7.53 16.58A10 10 0 0 0 12 22a10 10 0 0 0 7.53-3.42A10 10 0 0 0 12 2z"></path><path d="M8 14s1.5 2 4 2 4-2 4-2"></path><circle cx="9" cy="9" r="1"></circle><circle cx="15" cy="9" r="1"></circle></svg>
+                        </div>
+                    </a>
+                    <a href="gto.html" class="module-card">
+                        <div class="card-header">
+                            <div>
+                                <h3>GTO Tasks</h3>
+                                <p>Learn the dynamics of Group Discussions, Command Tasks, and other outdoor challenges.</p>
+                            </div>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                        </div>
+                    </a>
+                     <a href="performance.html" class="module-card full-width" data-requires-auth="true">
+                        <div class="card-header">
+                            <div>
+                                <h3>My Performance</h3>
+                                <p>Track your progress, review past attempts, and identify areas for improvement.</p>
+                            </div>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                        </div>
+                    </a>
                 </div>
             </div>
-        </header>
-
-        <main id="page-content">
-            
-            <section class="hero-section">
-                <div class="hero-content">
-                    <h2>Prepare, Practice, Prevail.</h2>
-                    <p>Your comprehensive training ground for the Services Selection Board interview. Master every stage with AI-powered tools and realistic simulations.</p>
-                    <a href="#test-modules-section" class="hero-cta">Start Practicing Now</a>
-                </div>
-            </section>
-
-            <section class="info-section">
-                <h3>What is the SSB Interview?</h3>
-                <p>The Services Selection Board (SSB) is a rigorous 5-day evaluation process that assesses candidates for their suitability to become officers in the Indian Armed Forces. It's not just a test of knowledge, but a deep analysis of personality, leadership potential, and psychological fitness.</p>
-            </section>
-
-            <section id="test-modules-section" class="modules-section">
-                <h3 class="section-title">Interactive Test Modules</h3>
-                <div class="module-layout">
-
-                    <!-- Full-width card -->
-                    <a href="screening.html" data-requires-auth="false" class="test-card full-width-card">
-                        <div class="card-icon">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
-                        </div>
-                        <div class="card-text">
-                            <h4>Stage I: Screening Test</h4>
-                            <p>Master the OIR test and PPDT to ensure you make it to Stage II.</p>
-                        </div>
-                    </a>
-
-                    <!-- Half-width cards container -->
-                    <div class="half-width-container">
-                        <a href="psychology.html" data-requires-auth="false" class="test-card">
-                            <div class="card-icon">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 0 0-7.53 16.58A10 10 0 0 0 12 22a10 10 0 0 0 7.53-3.42A10 10 0 0 0 12 2z"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><circle cx="9" cy="9" r="1"/><circle cx="15" cy="9" r="1"/></svg>
-                            </div>
-                            <div class="card-text">
-                                <h4>Psychology Tests</h4>
-                                <p>Dive deep into TAT, WAT, and SRT.</p>
-                            </div>
-                        </a>
-                        <a href="gto.html" data-requires-auth="false" class="test-card">
-                             <div class="card-icon">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                            </div>
-                            <div class="card-text">
-                                <h4>GTO Tasks</h4>
-                                <p>Learn the dynamics of group tasks.</p>
-                            </div>
-                        </a>
-                    </div>
-                    
-                    <a href="performance.html" data-requires-auth="true" class="test-card full-width-card">
-                        <div class="card-icon">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-                        </div>
-                        <div class="card-text">
-                            <h4>My Performance</h4>
-                            <p>Track your progress and identify areas for improvement.</p>
-                        </div>
-                    </a>
-                </div>
-            </section>
-            
-            <section class="features-section">
-                 <h3 class="section-title">Why Practice With Us?</h3>
-                 <div class="features-grid">
-                     <div class="feature-item"><h5>AI-Powered PPDT</h5><p>Generate unique, ambiguous scenes for PPDT practice.</p></div>
-                     <div class="feature-item"><h5>Realistic Simulations</h5><p>Experience timed tests that mimic the actual SSB pressure.</p></div>
-                     <div class="feature-item"><h5>Data-Driven Feedback</h5><p>Track your performance to see your strengths and weaknesses.</p></div>
-                 </div>
-            </section>
-
-        </main>
-
-        <footer class="app-footer">
-            <p>&copy; 2024 SSB Prep Platform. All rights reserved.</p>
-        </footer>
-    </div>
+        </div>
+    </main>
+    
+    <footer class="app-footer">
+        <div class="app-container">
+            <p>© 2024 SSB Prep Platform. All rights reserved.</p>
+        </div>
+    </footer>
 
     <script type="module" src="js/main.js"></script>
 </body>
