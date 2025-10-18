@@ -1,119 +1,80 @@
-// js/main.js
+// js/main.js - Handles global logic like header rendering and authentication.
+
 import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut } from './firebase-init.js';
 import { firebaseReady, auth } from './firebase-app.js';
 
-// --- DOM ELEMENTS ---
-const headerRight = document.getElementById('header-right');
-const headerCenter = document.getElementById('header-center');
-const pageContent = document.getElementById('page-content');
-const authLoader = document.getElementById('auth-loader');
+const headerBar = document.getElementById('header-bar');
+let headerRenderPromise;
 
-/**
- * Renders the main navigation menu.
- * @param {boolean} isAuthenticated - Whether the user is logged in or not.
- */
-function renderNavMenu(isAuthenticated) {
+function renderHeader(user) {
+    if (!headerBar) return;
+
     const currentPage = window.location.pathname.split('/').pop() || 'index.html';
-    
-    const navLinks = [
-        { href: 'index.html', text: 'Home', requiresAuth: false },
-        { href: 'screening.html', text: 'Screening', requiresAuth: true },
-        { href: 'psychology.html', text: 'Psychology', requiresAuth: true },
-        { href: 'gto.html', text: 'GTO', requiresAuth: true },
-        { href: 'performance.html', text: 'My Performance', requiresAuth: true }
-    ];
+    const isPerformanceDisabled = !user ? 'disabled' : '';
 
-    headerCenter.innerHTML = navLinks.map(link => {
-        const isActive = currentPage === link.href;
-        const isDisabled = link.requiresAuth && !isAuthenticated;
-        
-        if (isDisabled) {
-            return `<span class="nav-link disabled" title="Please log in to access">${link.text}</span>`;
-        }
+    const navHTML = `
+        <nav class="header-nav">
+            <a href="index.html" class="${currentPage === 'index.html' ? 'active' : ''}">Home</a>
+            <a href="screening.html" class="${currentPage === 'screening.html' ? 'active' : ''}">Screening</a>
+            <a href="psychology.html" class="${currentPage === 'psychology.html' ? 'active' : ''}">Psychology</a>
+            <a href="gto.html" class="${currentPage === 'gto.html' ? 'active' : ''}">GTO</a>
+            <a href="performance.html" class="${currentPage === 'performance.html' ? 'active' : ''} ${isPerformanceDisabled}">My Performance</a>
+        </nav>
+    `;
 
-        return `<a href="${link.href}" class="nav-link ${isActive ? 'active' : ''}">${link.text}</a>`;
-    }).join('');
-}
-
-
-/**
- * Updates the UI for an authenticated (logged-in) user.
- * @param {object} user - The Firebase user object.
- */
-function handleAuthenticatedUser(user) {
-    // New structure with a .user-menu container
-    headerRight.innerHTML = `
+    const authHTML = user ? `
         <div class="user-menu">
             <div class="user-info">
-                <span class="user-name">${user.displayName}</span>
-                <img src="${user.photoURL}" alt="User Avatar" class="user-avatar">
+                <img src="${user.photoURL || `https://ui-avatars.com/api/?name=${user.email}&background=0D1117&color=E6EDF3`}" alt="User Avatar">
+                <span>${user.displayName || user.email}</span>
             </div>
-            <button id="logout-btn" class="action-btn logout-btn">Logout</button>
+            <button id="logout-btn" class="auth-btn">Logout</button>
         </div>
+    ` : `<button id="login-btn" class="auth-btn">Login</button>`;
+
+    headerBar.innerHTML = `
+        <a href="index.html" class="header-logo">
+            <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+            <span>SSB Prep Platform</span>
+        </a>
+        ${navHTML}
+        <div class="header-auth">${authHTML}</div>
     `;
-    document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
 
-    renderNavMenu(true);
-
-    document.querySelectorAll('.test-card').forEach(card => {
-        card.classList.remove('disabled');
-        if (card.dataset.href) {
-            card.href = card.dataset.href;
-        }
-    });
-}
-
-/**
- * Updates the UI for a non-authenticated (logged-out) user.
- */
-function handleNoUser() {
-    headerRight.innerHTML = `
-        <button id="login-btn" class="action-btn login-btn">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
-            <span>Login</span>
-        </button>
-    `;
-    const loginBtn = document.getElementById('login-btn');
-    if (loginBtn) {
-        loginBtn.addEventListener('click', () => {
+    if (user) {
+        document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
+    } else {
+        document.getElementById('login-btn').addEventListener('click', () => {
             const provider = new GoogleAuthProvider();
             signInWithPopup(auth, provider).catch(error => console.error("Auth Error:", error));
         });
+        if (currentPage === 'index.html') {
+             document.querySelectorAll('a[data-requires-auth="true"]').forEach(link => {
+                link.style.pointerEvents = 'none';
+                link.style.opacity = '0.6';
+                link.title = 'Please log in to access this feature.';
+            });
+        }
     }
+}
 
-    renderNavMenu(false);
-
-    document.querySelectorAll('.test-card').forEach(card => {
-        if (card.dataset.requiresAuth === 'true') {
-            card.classList.add('disabled');
-            card.dataset.href = card.href;
-            card.removeAttribute('href');
+async function main() {
+    if (headerRenderPromise) return headerRenderPromise;
+    headerRenderPromise = new Promise(async (resolve) => {
+        try {
+            await firebaseReady;
+            onAuthStateChanged(auth, (user) => {
+                renderHeader(user);
+                resolve(); 
+            });
+        } catch (error) {
+            console.error("Firebase initialization failed:", error);
+            renderHeader(null); 
+            resolve();
         }
     });
+    return headerRenderPromise;
 }
 
-// --- INITIALIZATION ---
-async function main() {
-    try {
-        await firebaseReady;
-        
-        onAuthStateChanged(auth, (user) => {
-            if (authLoader) authLoader.style.display = 'none';
-            if (pageContent) pageContent.style.visibility = 'visible';
-
-            if (user) {
-                handleAuthenticatedUser(user);
-            } else {
-                handleNoUser();
-            }
-        });
-
-    } catch (error) {
-        console.error("💥 Failed to start application:", error);
-        if (authLoader) authLoader.innerHTML = `<span class="error-text">App failed to load</span>`;
-    }
-}
-
-if (pageContent) pageContent.style.visibility = 'hidden';
-main();
+export const appInitialized = main();
 
