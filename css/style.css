@@ -32,6 +32,12 @@ body {
     line-height: 1.6;
 }
 
+/* --- TEST IN PROGRESS STYLES --- */
+body.test-in-progress .app-header,
+body.test-in-progress .app-footer {
+    display: none;
+}
+
 .app-container {
     max-width: 1200px;
     margin: 0 auto;
@@ -357,7 +363,7 @@ body {
 /* --- OIR Test Interface --- */
 .oir-test-container {
     max-width: 900px;
-    margin: 0 auto;
+    margin: 2rem auto; /* Adjusted margin for fullscreen */
 }
 
 .oir-header {
@@ -436,6 +442,16 @@ body {
     border-color: var(--success-green);
     color: var(--dark-bg);
 }
+.oir-nav-btn.abort {
+    background-color: transparent;
+    border-color: var(--error-red);
+    color: var(--error-red);
+}
+.oir-nav-btn.abort:hover {
+    background-color: var(--error-red);
+    color: var(--text-primary);
+}
+
 
 /* --- OIR Results Page --- */
 .oir-results-summary {
