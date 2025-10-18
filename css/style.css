@@ -553,8 +553,8 @@ body {
     font-weight: 500;
     padding: 0.75rem;
     border-radius: 8px;
-    display: block; /* Make it visible for text content */
-    opacity: 0; /* But hide it initially */
+    display: block;
+    opacity: 0;
     transition: opacity 0.3s ease;
 }
 
