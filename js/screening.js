@@ -35,6 +35,7 @@ function renderScreeningMenu() {
             </div>
         </div>
 
+        <!-- Custom Question Bank Section -->
         <div class="custom-questions-section">
              <div class="section-title-bar">
                 <h2>Custom Question Bank</h2>
@@ -282,6 +283,16 @@ async function initializePage() {
         await appInitialized;
 
         // Now that the header is guaranteed to be on the page, we can safely render our content.
+// *** THE FIX IS HERE ***
+// We create an async function to initialize the page.
+async function initializePage() {
+    try {
+        // First, we wait for the main app (and Firebase) to be ready.
+        // This ensures main.js has finished rendering the header.
+        await firebaseReady;
+
+        // Now that the header is definitely on the page, we can safely
+        // render our screening menu.
         if (pageContent) {
             renderScreeningMenu();
         }
