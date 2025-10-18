@@ -1,7 +1,9 @@
-// js/screening.js - Manages the entire screening test flow, including custom question uploads.
+// js/screening.js - Manages the entire screening test flow.
 
+// Import the appInitialized promise from main.js
+import { appInitialized } from './main.js'; 
 // Import Firebase services for saving results
-import { firebaseReady, auth, db } from './firebase-app.js';
+import { auth, db } from './firebase-app.js';
 import { collection, addDoc, serverTimestamp } from './firebase-init.js';
 
 const pageContent = document.getElementById('page-content');
@@ -12,7 +14,9 @@ let currentOIRIndex = 0;
 let oirResponses = {};
 let oirTimerInterval;
 
-// --- INITIAL RENDER ---
+// --- ALL RENDERING AND LOGIC FUNCTIONS (No changes needed in these) ---
+// (renderScreeningMenu, handleExcelUpload, initializeOIRTest, etc. remain the same)
+
 function renderScreeningMenu() {
     pageContent.innerHTML = `
         <div class="page-title-section">
@@ -31,7 +35,6 @@ function renderScreeningMenu() {
             </div>
         </div>
 
-        <!-- New Custom Question Bank Section -->
         <div class="custom-questions-section">
              <div class="section-title-bar">
                 <h2>Custom Question Bank</h2>
@@ -54,7 +57,6 @@ function renderScreeningMenu() {
     document.getElementById('start-oir-test').addEventListener('click', initializeOIRTest);
     document.getElementById('setup-ppdt-test').addEventListener('click', renderPPDTSetup);
     
-    // Logic for the new upload feature
     const fileInput = document.getElementById('excel-file-input');
     const uploadButton = document.getElementById('upload-excel-btn');
     const fileNameDisplay = document.getElementById('file-name-display');
@@ -69,11 +71,6 @@ function renderScreeningMenu() {
     });
 }
 
-
-/**
- * Handles the Excel file upload, parsing, and storage.
- * @param {File} file The Excel file selected by the user.
- */
 function handleExcelUpload(file) {
     const reader = new FileReader();
     const statusDiv = document.getElementById('upload-status');
@@ -86,20 +83,14 @@ function handleExcelUpload(file) {
             const worksheet = workbook.Sheets[firstSheetName];
             const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
-            if (json.length < 1) {
-                throw new Error("The Excel file is empty.");
-            }
+            if (json.length < 1) throw new Error("The Excel file is empty.");
 
-            // Remove header row if it exists by checking the first cell
             if (json[0][0] && typeof json[0][0] === 'string' && json[0][0].toLowerCase().includes('question')) {
                 json.shift();
             }
 
-            const customQuestions = json.map((row, index) => {
-                if (row.length < 6 || row.slice(0, 6).some(cell => cell === null || cell === undefined || String(cell).trim() === '')) {
-                    console.warn(`Skipping incomplete row ${index + 1}:`, row);
-                    return null; 
-                }
+            const customQuestions = json.map((row) => {
+                if (row.length < 6 || row.slice(0, 6).some(cell => cell === null || cell === undefined || String(cell).trim() === '')) return null; 
                 return {
                     q: String(row[0]).trim(),
                     options: [String(row[1]).trim(), String(row[2]).trim(), String(row[3]).trim(), String(row[4]).trim()],
@@ -107,17 +98,14 @@ function handleExcelUpload(file) {
                 };
             }).filter(q => q !== null); 
 
-            if (customQuestions.length === 0) {
-                 throw new Error("No valid questions found. Please check the file format: 6 columns are required per question.");
-            }
+            if (customQuestions.length === 0) throw new Error("No valid questions found. Please check file format.");
 
             localStorage.setItem('customOIRQuestions', JSON.stringify(customQuestions));
             
-            statusDiv.textContent = `Successfully loaded ${customQuestions.length} custom questions! They will be included in your next OIR test.`;
+            statusDiv.textContent = `Successfully loaded ${customQuestions.length} custom questions!`;
             statusDiv.className = 'upload-status success visible';
 
         } catch (error) {
-            console.error("Error processing Excel file:", error);
             statusDiv.textContent = `Error: ${error.message}`;
             statusDiv.className = 'upload-status error visible';
         }
@@ -131,32 +119,14 @@ function handleExcelUpload(file) {
     reader.readAsArrayBuffer(file);
 }
 
-
-/**
- * Initializes the OIR test. Fetches default questions, merges with custom ones, and starts the test.
- */
 async function initializeOIRTest() {
-    pageContent.innerHTML = `
-        <div class="page-title-section">
-            <h1>OIR Test</h1>
-            <div class="loader"></div>
-            <p>Generating your unique test... Please wait.</p>
-        </div>
-    `;
+    pageContent.innerHTML = `<div class="page-title-section"><div class="loader"></div><p>Generating your test...</p></div>`;
     try {
         const response = await fetch('/api/generate-oir-questions');
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`Failed to fetch questions: ${response.status} ${errorText}`);
-        }
+        if (!response.ok) throw new Error(`API error: ${response.status}`);
         let defaultQuestions = await response.json();
 
-        let customQuestions = [];
-        const customQuestionsJSON = localStorage.getItem('customOIRQuestions');
-        if (customQuestionsJSON) {
-            customQuestions = JSON.parse(customQuestionsJSON);
-        }
-
+        let customQuestions = JSON.parse(localStorage.getItem('customOIRQuestions') || '[]');
         const combinedPool = [...defaultQuestions, ...customQuestions];
 
         for (let i = combinedPool.length - 1; i > 0; i--) {
@@ -166,27 +136,19 @@ async function initializeOIRTest() {
 
         oirQuestions = combinedPool.slice(0, 50);
         
-        if (oirQuestions.length === 0) {
-            throw new Error("No questions available to start the test. Please check the API or upload a custom file.");
-        }
+        if (oirQuestions.length === 0) throw new Error("No questions available.");
 
         currentOIRIndex = 0;
         oirResponses = {};
         renderOIRQuestion();
         startOIRTimer();
     } catch (error) {
-        console.error("Failed to initialize OIR Test:", error);
-        renderErrorPage("Could not load the OIR test questions.", error.message);
+        renderErrorPage("Could not load OIR questions.", error.message);
     }
 }
 
-
-/**
- * Renders the current OIR question on the page.
- */
 function renderOIRQuestion() {
     const question = oirQuestions[currentOIRIndex];
-
     pageContent.innerHTML = `
         <div class="oir-test-container">
             <div class="oir-header">
@@ -196,7 +158,7 @@ function renderOIRQuestion() {
             <div class="oir-question-card">
                 <p class="oir-question-text">${question.q}</p>
                 <div class="oir-options">
-                    ${question.options.map((opt, index) => `
+                    ${question.options.map(opt => `
                         <label class="oir-option-label">
                             <input type="radio" name="oir-option" value="${opt}" ${oirResponses[currentOIRIndex] === opt ? 'checked' : ''}>
                             ${opt}
@@ -219,33 +181,27 @@ function renderOIRQuestion() {
     document.getElementById('oir-prev-btn').addEventListener('click', () => navigateOIR('prev'));
     document.getElementById('oir-next-btn').addEventListener('click', () => navigateOIR('next'));
     document.getElementById('oir-finish-btn').addEventListener('click', submitOIRTest);
-
-    const options = document.querySelectorAll('input[name="oir-option"]');
-    options.forEach(option => option.addEventListener('change', saveOIRResponse));
+    document.querySelectorAll('input[name="oir-option"]').forEach(opt => opt.addEventListener('change', saveOIRResponse));
 }
 
 function saveOIRResponse() {
     const selected = document.querySelector('input[name="oir-option"]:checked');
-    if (selected) {
-        oirResponses[currentOIRIndex] = selected.value;
-    }
+    if (selected) oirResponses[currentOIRIndex] = selected.value;
 }
 
 function navigateOIR(direction) {
     saveOIRResponse();
     if (direction === 'next' && currentOIRIndex < oirQuestions.length - 1) {
         currentOIRIndex++;
-        renderOIRQuestion();
     } else if (direction === 'prev' && currentOIRIndex > 0) {
         currentOIRIndex--;
-        renderOIRQuestion();
     }
+    renderOIRQuestion();
 }
 
 function startOIRTimer() {
-    let timeLeft = 1800; // 30 minutes in seconds
+    let timeLeft = 1800;
     const timerDisplay = document.getElementById('timer-display');
-    
     oirTimerInterval = setInterval(() => {
         timeLeft--;
         const minutes = Math.floor(timeLeft / 60);
@@ -253,7 +209,6 @@ function startOIRTimer() {
         if (timerDisplay) {
             timerDisplay.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
         }
-
         if (timeLeft <= 0) {
             clearInterval(oirTimerInterval);
             submitOIRTest();
@@ -264,37 +219,24 @@ function startOIRTimer() {
 async function submitOIRTest() {
     clearInterval(oirTimerInterval);
     saveOIRResponse();
-
-    let score = 0;
-    for (let i = 0; i < oirQuestions.length; i++) {
-        if (oirResponses[i] === oirQuestions[i].answer) {
-            score++;
-        }
-    }
-
+    let score = oirQuestions.reduce((acc, q, i) => acc + (oirResponses[i] === q.answer ? 1 : 0), 0);
+    
     try {
-        await firebaseReady;
         const user = auth.currentUser;
-        if (user && db) {
+        if (user) {
             await addDoc(collection(db, 'users', user.uid, 'tests'), {
-                testType: 'OIR Test',
-                score: score,
-                total: oirQuestions.length,
-                timestamp: serverTimestamp()
+                testType: 'OIR Test', score, total: oirQuestions.length, timestamp: serverTimestamp()
             });
         }
     } catch (error) {
         console.error("Error saving OIR results:", error);
     }
-    
     renderOIRResults(score);
 }
 
 function renderOIRResults(score) {
     pageContent.innerHTML = `
-        <div class="page-title-section">
-            <h1>OIR Test Results</h1>
-        </div>
+        <div class="page-title-section"><h1>OIR Test Results</h1></div>
         <div class="oir-results-summary">
             <h2>Your Score</h2>
             <p class="score">${score} / ${oirQuestions.length}</p>
@@ -308,9 +250,7 @@ function renderOIRResults(score) {
                 </div>
             `).join('')}
         </div>
-         <div class="start-test-container">
-            <button id="back-to-menu-btn" class="oir-nav-btn">Back to Screening Menu</button>
-        </div>
+         <div class="start-test-container"><button id="back-to-menu-btn" class="oir-nav-btn">Back to Screening Menu</button></div>
     `;
     document.getElementById('back-to-menu-btn').addEventListener('click', renderScreeningMenu);
 }
@@ -318,33 +258,40 @@ function renderOIRResults(score) {
 function renderPPDTSetup() {
     pageContent.innerHTML = `
         <div class="page-title-section">
-            <h1>PPDT Setup</h1>
-            <p>This feature is coming soon!</p>
-             <div class="start-test-container">
-                <button id="back-to-menu-btn" class="oir-nav-btn">Back to Screening Menu</button>
-            </div>
+            <h1>PPDT Setup</h1><p>This feature is coming soon!</p>
+            <div class="start-test-container"><button id="back-to-menu-btn" class="oir-nav-btn">Back to Screening Menu</button></div>
         </div>
     `;
     document.getElementById('back-to-menu-btn').addEventListener('click', renderScreeningMenu);
 }
 
-
 function renderErrorPage(title, message) {
     pageContent.innerHTML = `
         <div class="page-title-section">
-            <h1 class="error-title">Error</h1>
-            <p>${title}</p>
-            <p>${message}</p>
+            <h1>Error</h1><p>${title}</p><p>${message}</p>
             <button id="back-to-menu-btn" class="oir-nav-btn">Back to Menu</button>
         </div>
     `;
     document.getElementById('back-to-menu-btn').addEventListener('click', renderScreeningMenu);
 }
 
-// Initial execution when the page loads
-document.addEventListener('DOMContentLoaded', () => {
-    if (pageContent) {
-        renderScreeningMenu();
+// --- CORRECTED INITIALIZATION LOGIC ---
+async function initializePage() {
+    try {
+        // This is the key: we wait for the main app to finish initializing the header.
+        await appInitialized;
+
+        // Now that the header is guaranteed to be on the page, we can safely render our content.
+        if (pageContent) {
+            renderScreeningMenu();
+        }
+    } catch (error) {
+        console.error("Failed to initialize the screening page:", error);
+        if(pageContent){
+            pageContent.innerHTML = `<p style="text-align: center; color: var(--error-red);">Error loading page. Please try refreshing.</p>`;
+        }
     }
-});
+}
+
+initializePage();
 
