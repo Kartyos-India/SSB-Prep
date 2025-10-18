@@ -1,6 +1,6 @@
 // js/screening.js - Manages the entire screening test flow.
 
-// Import the appInitialized promise from main.js
+// Import the appInitialized promise from main.js, which is the correct pattern.
 import { appInitialized } from './main.js'; 
 // Import Firebase services for saving results
 import { auth, db } from './firebase-app.js';
@@ -14,8 +14,6 @@ let currentOIRIndex = 0;
 let oirResponses = {};
 let oirTimerInterval;
 
-// --- ALL RENDERING AND LOGIC FUNCTIONS (No changes needed in these) ---
-// (renderScreeningMenu, handleExcelUpload, initializeOIRTest, etc. remain the same)
 
 function renderScreeningMenu() {
     pageContent.innerHTML = `
@@ -35,7 +33,6 @@ function renderScreeningMenu() {
             </div>
         </div>
 
-        <!-- Custom Question Bank Section -->
         <div class="custom-questions-section">
              <div class="section-title-bar">
                 <h2>Custom Question Bank</h2>
@@ -283,16 +280,6 @@ async function initializePage() {
         await appInitialized;
 
         // Now that the header is guaranteed to be on the page, we can safely render our content.
-// *** THE FIX IS HERE ***
-// We create an async function to initialize the page.
-async function initializePage() {
-    try {
-        // First, we wait for the main app (and Firebase) to be ready.
-        // This ensures main.js has finished rendering the header.
-        await firebaseReady;
-
-        // Now that the header is definitely on the page, we can safely
-        // render our screening menu.
         if (pageContent) {
             renderScreeningMenu();
         }
