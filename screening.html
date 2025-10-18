@@ -3,29 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Screening Tests - SSB Prep Platform</title>
+    <title>Screening Tests - SSB Prep</title>
     <link rel="stylesheet" href="css/style.css">
-    <!-- SheetJS Library for reading Excel files, loaded from a CDN -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- SheetJS Library for Excel parsing -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
-    <div class="app-container">
-        <!-- The header is dynamically rendered by js/main.js -->
-        <header id="header-bar" class="app-header"></header>
 
-        <!-- Main content area for the screening page -->
-        <main id="page-content">
-            <!-- All screening page content will be dynamically rendered here by js/screening.js -->
-        </main>
+    <header id="header-bar" class="app-header app-container"></header>
 
-        <!-- The footer is static and part of the page structure -->
-        <footer class="app-footer">
-            © 2024 SSB Prep Platform. All rights reserved.
-        </footer>
-    </div>
+    <main id="page-content" class="app-container">
+        <!-- Screening.js will dynamically render content here -->
+    </main>
 
-    <!-- Main application scripts -->
-    <script type="module" src="js/firebase-app.js"></script>
+    <footer class="app-footer">
+        <div class="app-container">
+            <p>© 2024 SSB Prep Platform. All rights reserved.</p>
+        </div>
+    </footer>
+
     <script type="module" src="js/main.js"></script>
     <script type="module" src="js/screening.js"></script>
 </body>
