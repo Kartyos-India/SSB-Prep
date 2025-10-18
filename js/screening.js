@@ -1,6 +1,6 @@
 // js/screening.js - Manages the entire screening test flow.
 
-// Import the appInitialized promise from main.js
+// Import the appInitialized promise from main.js, which is the correct pattern.
 import { appInitialized } from './main.js'; 
 // Import Firebase services for saving results
 import { auth, db } from './firebase-app.js';
@@ -14,8 +14,6 @@ let currentOIRIndex = 0;
 let oirResponses = {};
 let oirTimerInterval;
 
-// --- ALL RENDERING AND LOGIC FUNCTIONS (No changes needed in these) ---
-// (renderScreeningMenu, handleExcelUpload, initializeOIRTest, etc. remain the same)
 
 function renderScreeningMenu() {
     pageContent.innerHTML = `
@@ -35,7 +33,6 @@ function renderScreeningMenu() {
             </div>
         </div>
 
-        <!-- Custom Question Bank Section -->
         <div class="custom-questions-section">
              <div class="section-title-bar">
                 <h2>Custom Question Bank</h2>
@@ -124,10 +121,17 @@ async function initializeOIRTest() {
     pageContent.innerHTML = `<div class="page-title-section"><div class="loader"></div><p>Generating your test...</p></div>`;
     try {
         const response = await fetch('/api/generate-oir-questions');
-        if (!response.ok) throw new Error(`API error: ${response.status}`);
-        let defaultQuestions = await response.json();
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`API failed with status ${response.status}: ${errorText}`);
+        }
+        
+        const defaultQuestions = await response.json();
+        if (!Array.isArray(defaultQuestions)) {
+            throw new Error("The question generator returned an invalid format.");
+        }
 
-        let customQuestions = JSON.parse(localStorage.getItem('customOIRQuestions') || '[]');
+        const customQuestions = JSON.parse(localStorage.getItem('customOIRQuestions') || '[]');
         const combinedPool = [...defaultQuestions, ...customQuestions];
 
         for (let i = combinedPool.length - 1; i > 0; i--) {
@@ -137,19 +141,31 @@ async function initializeOIRTest() {
 
         oirQuestions = combinedPool.slice(0, 50);
         
-        if (oirQuestions.length === 0) throw new Error("No questions available.");
+        if (!oirQuestions || oirQuestions.length === 0) {
+            throw new Error("No questions are available to start the test.");
+        }
 
         currentOIRIndex = 0;
         oirResponses = {};
         renderOIRQuestion();
         startOIRTimer();
     } catch (error) {
-        renderErrorPage("Could not load OIR questions.", error.message);
+        console.error("Error during OIR Test initialization:", error);
+        renderErrorPage("Could not load the OIR test.", error.message);
     }
 }
 
 function renderOIRQuestion() {
+    if (!oirQuestions || !oirQuestions[currentOIRIndex]) {
+        renderErrorPage("An error occurred while loading a question.", "Question data is missing.");
+        return;
+    }
     const question = oirQuestions[currentOIRIndex];
+    if (!question.q || !question.options || !Array.isArray(question.options)) {
+        renderErrorPage("An error occurred while loading a question.", `Question #${currentOIRIndex + 1} is malformed.`);
+        return;
+    }
+
     pageContent.innerHTML = `
         <div class="oir-test-container">
             <div class="oir-header">
@@ -201,18 +217,26 @@ function navigateOIR(direction) {
 }
 
 function startOIRTimer() {
+    if (oirTimerInterval) {
+        clearInterval(oirTimerInterval);
+    }
     let timeLeft = 1800;
-    const timerDisplay = document.getElementById('timer-display');
+    
     oirTimerInterval = setInterval(() => {
         timeLeft--;
+        const timerDisplay = document.getElementById('timer-display');
         const minutes = Math.floor(timeLeft / 60);
         const seconds = timeLeft % 60;
+        
         if (timerDisplay) {
             timerDisplay.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
         }
+        
         if (timeLeft <= 0) {
             clearInterval(oirTimerInterval);
-            submitOIRTest();
+            if (document.querySelector('.oir-test-container')) {
+                submitOIRTest();
+            }
         }
     }, 1000);
 }
@@ -269,7 +293,10 @@ function renderPPDTSetup() {
 function renderErrorPage(title, message) {
     pageContent.innerHTML = `
         <div class="page-title-section">
-            <h1>Error</h1><p>${title}</p><p>${message}</p>
+            <h1>An Error Occurred</h1>
+            <p style="color: var(--error-red);">${title}</p>
+            <p style="font-size: 0.9em; color: var(--text-secondary);">${message}</p>
+            <br>
             <button id="back-to-menu-btn" class="oir-nav-btn">Back to Menu</button>
         </div>
     `;
@@ -283,16 +310,6 @@ async function initializePage() {
         await appInitialized;
 
         // Now that the header is guaranteed to be on the page, we can safely render our content.
-// *** THE FIX IS HERE ***
-// We create an async function to initialize the page.
-async function initializePage() {
-    try {
-        // First, we wait for the main app (and Firebase) to be ready.
-        // This ensures main.js has finished rendering the header.
-        await firebaseReady;
-
-        // Now that the header is definitely on the page, we can safely
-        // render our screening menu.
         if (pageContent) {
             renderScreeningMenu();
         }
