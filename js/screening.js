@@ -14,11 +14,16 @@ let recordedChunks = [];
 let ppdtStoryText = "";
 let ppdtImageUrl = "";
 
+// --- OIR TEST STATE ---
+let oirQuestions = [];
+let currentOIRIndex = 0;
+let oirResponses = {};
+let oirInitialTimeLeft = 1800;
+
 
 // --- MAIN MENU ---
 function renderScreeningMenu() {
     sessionStorage.removeItem('oirTestState');
-    sessionStorage.removeItem('ppdtTestState');
     pageContent.innerHTML = `
         <div class="page-title-section">
             <h1>Screening Tests</h1>
@@ -166,7 +171,8 @@ function runPPDTObservationPhase(settings) {
         </div>`;
     ppdtTimerInterval = setInterval(() => {
         timeLeft--;
-        document.getElementById('ppdt-timer').textContent = `${timeLeft} seconds remaining`;
+        const timerEl = document.getElementById('ppdt-timer');
+        if(timerEl) timerEl.textContent = `${timeLeft} seconds remaining`;
         if (timeLeft <= 0) {
             clearInterval(ppdtTimerInterval);
             runPPDTWritingPhase(settings);
@@ -184,10 +190,9 @@ function runPPDTWritingPhase(settings) {
             <div id="ppdt-writing-controls"></div>
         </div>`;
 
-    let timeLeft = 270; // 4 minutes 30 seconds
+    let timeLeft = 270; 
     const timerDisplay = document.getElementById('ppdt-writing-timer');
     const controls = document.getElementById('ppdt-writing-controls');
-
     const updateTimer = () => {
         const minutes = Math.floor(timeLeft / 60);
         const seconds = timeLeft % 60;
@@ -231,8 +236,10 @@ function runPPDTNarrativePhase() {
             videoEl.srcObject = stream;
             videoEl.muted = true;
             videoEl.autoplay = true;
-            document.getElementById('video-container').innerHTML = '';
-            document.getElementById('video-container').appendChild(videoEl);
+            videoEl.playsInline = true;
+            const videoContainer = document.getElementById('video-container');
+            videoContainer.innerHTML = '';
+            videoContainer.appendChild(videoEl);
 
             recordedChunks = [];
             mediaRecorder = new MediaRecorder(stream);
@@ -260,7 +267,7 @@ function runPPDTNarrativePhase() {
             }, 1000);
 
         } catch (err) {
-            renderErrorPage("Permission Denied", "Camera and microphone access is required for narration. Please enable it in your browser settings and try again.");
+            renderErrorPage("Permission Denied", "Camera and microphone access is required. Please enable it in your browser settings and try again.");
         }
     });
 }
@@ -287,7 +294,7 @@ function renderPPDTReview(videoBlob) {
             ${ppdtStoryText !== "Story written on paper." ? `
             <div class="review-item-card full-width">
                 <h3>Your Story</h3>
-                <div class="story-review-text">${ppdtStoryText}</div>
+                <div class="story-review-text">${ppdtStoryText.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</div>
             </div>` : ''}
         </div>
         <div class="start-test-container">
@@ -297,57 +304,250 @@ function renderPPDTReview(videoBlob) {
     `;
 
     const video = document.getElementById('review-video');
-    document.getElementById('play-audio-btn').addEventListener('click', () => {
-        video.muted = false;
-        video.currentTime = 0;
-        video.play();
-    });
-    document.getElementById('play-muted-btn').addEventListener('click', () => {
-        video.muted = true;
-        video.currentTime = 0;
-        video.play();
-    });
+    document.getElementById('play-audio-btn').addEventListener('click', () => { video.muted = false; video.currentTime = 0; video.play(); });
+    document.getElementById('play-muted-btn').addEventListener('click', () => { video.muted = true; video.currentTime = 0; video.play(); });
 
     if (isUserLoggedIn) {
         document.getElementById('save-ppdt-btn').addEventListener('click', async () => {
             const btn = document.getElementById('save-ppdt-btn');
-            btn.textContent = 'Saving...';
-            btn.disabled = true;
+            btn.textContent = 'Saving...'; btn.disabled = true;
             try {
                 await addDoc(collection(db, 'users', auth.currentUser.uid, 'tests'), {
-                    testType: 'PPDT',
-                    imageUrl: ppdtImageUrl.substring(0, 200) + '...', // Store a snippet
-                    story: ppdtStoryText,
-                    timestamp: serverTimestamp()
+                    testType: 'PPDT', imageUrl: ppdtImageUrl.substring(0, 200) + '...', story: ppdtStoryText, timestamp: serverTimestamp()
                 });
-                btn.textContent = 'Saved!';
-                btn.classList.add('success');
+                btn.textContent = 'Saved!'; btn.classList.add('success');
             } catch (error) {
                 console.error("Error saving PPDT:", error);
-                btn.textContent = 'Save Failed';
-                btn.classList.add('error');
+                btn.textContent = 'Save Failed'; btn.classList.add('error');
             }
         });
     } else {
-        document.getElementById('login-to-save-btn').addEventListener('click', () => {
-            // This is a simplified login prompt. A more robust solution might use a modal.
-            alert("Please log in via the header to save your test results.");
-        });
+        document.getElementById('login-to-save-btn').addEventListener('click', () => alert("Please log in via the header to save your test results."));
     }
-
     document.getElementById('redo-ppdt-btn').addEventListener('click', renderPPDTSetup);
 }
 
-
-// --- OIR & UTILITY FUNCTIONS (No changes needed) ---
-// (initializeOIRTest, handleExcelUpload, renderErrorPage, etc.)
-// Sticking to the file context, the rest of the functions from the previous version would be here.
-// For brevity in this response, they are omitted, but they are still part of this file.
-
-async function initializeOIRTest() {
-    // ... OIR test logic remains here ...
+// --- OIR & UTILITY FUNCTIONS ---
+function handleExcelUpload(file) {
+    const reader = new FileReader();
+    const statusDiv = document.getElementById('upload-status');
+    reader.onload = (event) => {
+        try {
+            const data = new Uint8Array(event.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            const firstSheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[firstSheetName];
+            const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+            if (json.length < 1) throw new Error("File is empty.");
+            if (String(json[0][0]).toLowerCase().includes('question')) json.shift();
+            const customQuestions = json.map(row => {
+                if (row.length < 6 || row.slice(0, 6).some(cell => cell == null || String(cell).trim() === '')) return null;
+                return { q: String(row[0]), options: [String(row[1]), String(row[2]), String(row[3]), String(row[4])], answer: String(row[5]) };
+            }).filter(Boolean);
+            if (customQuestions.length === 0) throw new Error("No valid questions found.");
+            localStorage.setItem('customOIRQuestions', JSON.stringify(customQuestions));
+            statusDiv.textContent = `Loaded ${customQuestions.length} custom questions!`;
+            statusDiv.className = 'upload-status success visible';
+        } catch (error) {
+            statusDiv.textContent = `Error: ${error.message}`;
+            statusDiv.className = 'upload-status error visible';
+        }
+    };
+    reader.onerror = () => {
+        statusDiv.textContent = 'Error reading file.';
+        statusDiv.className = 'upload-status error visible';
+    };
+    reader.readAsArrayBuffer(file);
 }
 
+function enterTestMode() {
+    document.body.classList.add('test-in-progress');
+    if (document.documentElement.requestFullscreen) {
+        document.documentElement.requestFullscreen().catch(err => console.error(`Fullscreen error: ${err.message}`));
+    }
+}
+
+function exitTestMode() {
+    document.body.classList.remove('test-in-progress');
+    if (document.exitFullscreen) document.exitFullscreen();
+    sessionStorage.removeItem('oirTestState');
+    clearInterval(oirTimerInterval);
+}
+
+function saveOIRTestState() {
+    const state = { questions: oirQuestions, responses: oirResponses, currentIndex: currentOIRIndex, timeLeft: oirInitialTimeLeft };
+    sessionStorage.setItem('oirTestState', JSON.stringify(state));
+}
+
+function abortOIRTest() {
+    if (confirm('Are you sure you want to abort this test? Your progress will be lost.')) {
+        exitTestMode();
+        renderScreeningMenu();
+    }
+}
+
+async function initializeOIRTest() {
+    const savedState = sessionStorage.getItem('oirTestState');
+    if (savedState) {
+        const state = JSON.parse(savedState);
+        oirQuestions = state.questions;
+        oirResponses = state.responses;
+        currentOIRIndex = state.currentIndex;
+        oirInitialTimeLeft = state.timeLeft;
+        enterTestMode();
+        renderOIRQuestion();
+        startOIRTimer();
+        return;
+    }
+
+    pageContent.innerHTML = `<div class="page-title-section"><div class="loader"></div><p>Generating your test...</p></div>`;
+    try {
+        const response = await fetch('/api/generate-oir-questions');
+        if (!response.ok) throw new Error(`API error: ${response.status}`);
+        let defaultQuestions = await response.json();
+        if (!Array.isArray(defaultQuestions)) throw new Error("Invalid question format from API.");
+
+        let customQuestions = JSON.parse(localStorage.getItem('customOIRQuestions') || '[]');
+        const combinedPool = [...defaultQuestions, ...customQuestions];
+        for (let i = combinedPool.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [combinedPool[i], combinedPool[j]] = [combinedPool[j], combinedPool[i]];
+        }
+        oirQuestions = combinedPool.slice(0, 50);
+        if (oirQuestions.length === 0) throw new Error("No questions available.");
+
+        currentOIRIndex = 0;
+        oirResponses = {};
+        oirInitialTimeLeft = 1800;
+        
+        saveOIRTestState();
+        enterTestMode();
+        renderOIRQuestion();
+        startOIRTimer();
+    } catch (error) {
+        renderErrorPage("Could not load OIR questions.", error.message);
+    }
+}
+
+function renderOIRQuestion() {
+    if (currentOIRIndex >= oirQuestions.length || !oirQuestions[currentOIRIndex]) {
+        return renderErrorPage("Question Error", "Could not load the current question. The data might be corrupted.");
+    }
+    const question = oirQuestions[currentOIRIndex];
+    pageContent.innerHTML = `
+        <div class="oir-test-container">
+            <div class="oir-header">
+                <div class="oir-progress">Question ${currentOIRIndex + 1} of ${oirQuestions.length}</div>
+                <div class="oir-timer">Time Left: <span id="timer-display">...</span></div>
+                <button id="oir-abort-btn" class="oir-nav-btn abort">Abort Test</button>
+            </div>
+            <div class="oir-question-card">
+                <p class="oir-question-text">${question.q.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</p>
+                <div class="oir-options">
+                    ${question.options.map(opt => `
+                        <label class="oir-option-label">
+                            <input type="radio" name="oir-option" value="${opt}" ${oirResponses[currentOIRIndex] === opt ? 'checked' : ''}>
+                            ${String(opt).replace(/</g, "&lt;").replace(/>/g, "&gt;")}
+                        </label>
+                    `).join('')}
+                </div>
+                <div class="oir-navigation">
+                    <button id="oir-prev-btn" class="oir-nav-btn">Previous</button>
+                    <button id="oir-next-btn" class="oir-nav-btn">Next</button>
+                    <button id="oir-finish-btn" class="oir-nav-btn finish">Finish Test</button>
+                </div>
+            </div>
+        </div>`;
+    document.getElementById('oir-prev-btn').style.visibility = (currentOIRIndex === 0) ? 'hidden' : 'visible';
+    document.getElementById('oir-next-btn').style.display = (currentOIRIndex === oirQuestions.length - 1) ? 'none' : 'block';
+    document.getElementById('oir-finish-btn').style.display = (currentOIRIndex === oirQuestions.length - 1) ? 'block' : 'none';
+    document.getElementById('oir-abort-btn').addEventListener('click', abortOIRTest);
+    document.getElementById('oir-prev-btn').addEventListener('click', () => navigateOIR('prev'));
+    document.getElementById('oir-next-btn').addEventListener('click', () => navigateOIR('next'));
+    document.getElementById('oir-finish-btn').addEventListener('click', submitOIRTest);
+    document.querySelectorAll('input[name="oir-option"]').forEach(opt => opt.addEventListener('change', saveOIRResponse));
+}
+
+function saveOIRResponse() {
+    const selected = document.querySelector('input[name="oir-option"]:checked');
+    if (selected) oirResponses[currentOIRIndex] = selected.value;
+    saveOIRTestState();
+}
+
+function navigateOIR(direction) {
+    saveOIRResponse();
+    if (direction === 'next' && currentOIRIndex < oirQuestions.length - 1) currentOIRIndex++;
+    else if (direction === 'prev' && currentOIRIndex > 0) currentOIRIndex--;
+    saveOIRTestState();
+    renderOIRQuestion();
+}
+
+function startOIRTimer() {
+    let timeLeft = oirInitialTimeLeft;
+    const timerDisplay = document.getElementById('timer-display');
+    const updateTimer = () => {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        if (timerDisplay) timerDisplay.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        oirInitialTimeLeft = timeLeft;
+    };
+    updateTimer();
+    oirTimerInterval = setInterval(() => {
+        timeLeft--;
+        updateTimer();
+        saveOIRTestState();
+        if (timeLeft <= 0) submitOIRTest();
+    }, 1000);
+}
+
+async function submitOIRTest() {
+    saveOIRResponse();
+    let score = oirQuestions.reduce((acc, q, i) => acc + (oirResponses[i] === q.answer ? 1 : 0), 0);
+    try {
+        const user = auth.currentUser;
+        if (user) {
+            await addDoc(collection(db, 'users', user.uid, 'tests'), {
+                testType: 'OIR Test', score, total: oirQuestions.length, timestamp: serverTimestamp()
+            });
+        }
+    } catch (error) { console.error("Error saving OIR results:", error); }
+    exitTestMode();
+    renderOIRResults(score);
+}
+
+function renderOIRResults(score) {
+    pageContent.innerHTML = `
+        <div class="page-title-section"><h1>OIR Test Results</h1></div>
+        <div class="oir-results-summary">
+            <h2>Your Score</h2>
+            <p class="score">${score} / ${oirQuestions.length}</p>
+        </div>
+        <div class="oir-answer-review">
+            ${oirQuestions.map((q, index) => `
+                <div class="review-item ${oirResponses[index] === q.answer ? 'correct' : 'incorrect'}">
+                    <p><strong>Q${index + 1}:</strong> ${q.q}</p>
+                    <p>Your Answer: ${oirResponses[index] || 'No Answer'}</p>
+                    ${oirResponses[index] !== q.answer ? `<p>Correct Answer: ${q.answer}</p>` : ''}
+                </div>
+            `).join('')}
+        </div>
+         <div class="start-test-container"><button id="back-to-menu-btn" class="oir-nav-btn">Back to Screening Menu</button></div>
+    `;
+    document.getElementById('back-to-menu-btn').addEventListener('click', renderScreeningMenu);
+}
+
+// *** THIS FUNCTION IS THE FIX FOR THE SECOND ERROR ***
+function renderErrorPage(title, message) {
+    pageContent.innerHTML = `
+        <div class="page-title-section">
+            <h1>An Error Occurred</h1>
+            <p style="color: var(--error-red);">${title}</p>
+            <p style="font-size: 0.9em; color: var(--text-secondary);">${message}</p><br>
+            <button id="back-to-menu-btn" class="oir-nav-btn">Back to Menu</button>
+        </div>
+    `;
+    document.getElementById('back-to-menu-btn').addEventListener('click', renderScreeningMenu);
+}
 
 // --- INITIALIZATION ---
 async function initializePage() {
@@ -359,10 +559,8 @@ async function initializePage() {
             renderScreeningMenu();
         }
     } catch (error) {
-        console.error("Failed to initialize the screening page:", error);
-        if (pageContent) {
-            pageContent.innerHTML = `<p>Error loading page.</p>`;
-        }
+        console.error("Failed to initialize screening page:", error);
+        if(pageContent) pageContent.innerHTML = `<p>Error loading page. Please refresh.</p>`;
     }
 }
 
