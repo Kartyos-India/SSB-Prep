@@ -1,4 +1,7 @@
 // js/firebase-init.js
+// This file simply imports and re-exports Firebase services
+// to make them available as standard JS modules.
+
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { 
     getAuth, 
@@ -16,7 +19,8 @@ import {
     doc, 
     getDoc, 
     orderBy,
-    serverTimestamp // <-- IMPORT ADDED HERE
+    serverTimestamp,
+    setDoc // <-- IMPORT ADDED HERE
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 export {
@@ -34,5 +38,7 @@ export {
     doc,
     getDoc,
     orderBy,
-    serverTimestamp // <-- EXPORT ADDED HERE
+    serverTimestamp,
+    setDoc // <-- EXPORT ADDED HERE
 };
+
