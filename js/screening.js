@@ -591,5 +591,3 @@ async function initializePage() {
 }
 
 initializePage();
-
-
