@@ -1,59 +1,107 @@
+// api/generate-oir-questions.js
+// Reverted to use the Groq API for dynamic question generation.
+// Requires GROQ_API_KEY environment variable.
+
 export default async function handler(request, response) {
     // Standard CORS and OPTIONS method handling
     response.setHeader('Access-Control-Allow-Credentials', true);
-    response.setHeader('Access-Control-Allow-Origin', '*');
-    response.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
+    response.setHeader('Access-Control-Allow-Origin', '*'); // Adjust for production if needed
+    response.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
     response.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
     if (request.method === 'OPTIONS') {
         response.status(200).end();
         return;
     }
-
-    // --- INTERNAL QUESTION BANK ---
-    const questionBank = [
-        // Verbal Reasoning
-        { "q": "Which word does not belong with the others?", "options": ["Apple", "Banana", "Rose", "Cherry"], "answer": "Rose" },
-        { "q": "Book is to Reading as Fork is to:", "options": ["Drawing", "Writing", "Eating", "Stirring"], "answer": "Eating" },
-        { "q": "Find the two words, one from each group, that are the closest in meaning: (Group A: Talk, Walk, Sing) (Group B: Run, Whisper, Dance)", "options": ["Walk & Run", "Sing & Dance", "Talk & Whisper"], "answer": "Talk & Whisper" },
-        { "q": "If FRIEND is coded as HUMJTK, how is CANDLE written in that code?", "options": ["EDRIRL", "DEQJQM", "ESJFME", "FYOBOC"], "answer": "EDRIRL" },
-        { "q": "Arrange the words in a meaningful sequence: 1. Police 2. Punishment 3. Crime 4. Judge 5. Judgement", "options": ["3, 1, 4, 5, 2", "3, 1, 2, 4, 5", "1, 2, 4, 3, 5", "5, 4, 3, 2, 1"], "answer": "3, 1, 4, 5, 2" },
-        // ... (Many more questions would be here)
-
-        // Numerical Aptitude
-        { "q": "What is the next number in the series: 2, 6, 12, 20, 30, ...?", "options": ["42", "40", "36", "48"], "answer": "42" },
-        { "q": "A man buys an article for Rs. 27.50 and sells it for Rs. 28.60. Find his gain percent.", "options": ["3%", "4%", "5%", "6%"], "answer": "4%" },
-        { "q": "If 3 men or 6 boys can do a piece of work in 10 days, how many days will it take for 6 men and 2 boys to do the same work?", "options": ["4", "5", "6", "8"], "answer": "6" },
-        
-        // Picture-Based Reasoning
-        { "q": "Which figure completes the pattern? [Image: A 2x2 grid with 3 quadrants filled, one is empty]", "options": ["Image Option A", "Image Option B", "Image Option C", "Image Option D"], "answer": "Image Option C" },
-        { "q": "Find the odd one out among the figures. [Image: Four shapes, three are polygons, one is a circle]", "options": ["Figure A", "Figure B", "Figure C", "Figure D"], "answer": "Figure D" }
-    ];
-    
-    // For demonstration, let's create a larger pool by duplicating and slightly modifying questions.
-    // In a real application, you would have 200 unique questions.
-    let fullBank = [];
-    for(let i = 0; i < 20; i++) {
-        fullBank.push(...questionBank);
+     if (request.method !== 'GET') {
+        return response.status(405).json({ error: 'Method Not Allowed' });
     }
-    fullBank = fullBank.slice(0, 200);
 
-
-    // --- RANDOMIZATION LOGIC ---
     try {
-        // Shuffle the entire bank
-        for (let i = fullBank.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [fullBank[i], fullBank[j]] = [fullBank[j], fullBank[i]];
+        const groqApiKey = process.env.GROQ_API_KEY;
+        if (!groqApiKey) {
+            throw new Error("GROQ_API_KEY environment variable not set.");
         }
 
-        // Select the first 50 questions
-        const selectedQuestions = fullBank.slice(0, 50);
+        const prompt = `
+            Generate exactly 50 Officer Intelligence Rating (OIR) test questions suitable for SSB interviews.
+            Include a mix of verbal reasoning (analogies, odd one out), non-verbal/visual reasoning (pattern completion, series), numerical aptitude, and logical deduction.
+            For each question, provide ONLY:
+            - A "q" field for the question text (string). For visual questions, describe the image/pattern clearly.
+            - An "options" field with exactly four possible string answers (array of strings).
+            - An "answer" field with the correct string answer (string), which must exactly match one of the options.
+            Return the result as a single, valid JSON array containing 50 question objects. Do not include any introductory text, closing text, markdown formatting (like \`\`\`json), or anything outside the JSON array itself.
+            Example format: [{"q": "...", "options": ["A", "B", "C", "D"], "answer": "C"}, ...]
+        `;
 
-        // Return the selected questions
-        response.status(200).json(selectedQuestions);
+        const groqResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${groqApiKey}`,
+            },
+            body: JSON.stringify({
+                model: 'llama3-8b-8192', // Or another suitable model
+                messages: [{ role: 'user', content: prompt }],
+                temperature: 1.1, // Increased temperature for variety
+                n: 1, // Generate one response
+                response_format: { type: "json_object" } // Request JSON output if supported
+            }),
+        });
+
+        if (!groqResponse.ok) {
+            const errorBody = await groqResponse.text();
+            console.error("Groq API Error Response:", errorBody);
+            throw new Error(`Groq API error: ${groqResponse.status}`);
+        }
+
+        const data = await groqResponse.json();
+        const content = data.choices[0]?.message?.content;
+
+        if (!content) {
+            throw new Error("Invalid response structure from Groq API (no content).");
+        }
+        
+        // Attempt to parse the content as JSON
+        let questions;
+        try {
+            // Remove potential markdown fences just in case response_format fails
+             const cleanedJsonString = content.replace(/^```json\s*|```$/g, '').trim();
+             const parsedData = JSON.parse(cleanedJsonString);
+             // Groq might wrap the array in an object, e.g., { "questions": [...] }
+             // Adapt based on observed API behavior
+             if (Array.isArray(parsedData)) {
+                 questions = parsedData;
+             } else if (parsedData && Array.isArray(parsedData.questions)) {
+                 questions = parsedData.questions; // Adjust if the key is different
+             } else {
+                 throw new Error("Parsed JSON is not an array or expected object structure.");
+             }
+
+        } catch (parseError) {
+             console.error("Failed to parse Groq response:", content);
+             throw new Error(`Failed to parse Groq response JSON: ${parseError.message}`);
+        }
+
+        // Validate structure and count
+        if (!Array.isArray(questions) || questions.length === 0) {
+             throw new Error("API returned invalid or empty question data.");
+        }
+         if (questions.length !== 50) {
+             console.warn(`Groq API returned ${questions.length} questions instead of 50. Using what was provided.`);
+             // You might choose to pad or truncate here if 50 is critical, but using what's returned is often okay.
+         }
+
+        // Basic validation of the first question structure
+        if (!questions[0] || !questions[0].q || !Array.isArray(questions[0].options) || questions[0].options.length !== 4 || !questions[0].answer) {
+             console.error("First question structure is invalid:", questions[0]);
+             throw new Error("API returned questions with incorrect structure.");
+        }
+
+
+        response.status(200).json(questions);
 
     } catch (error) {
-        console.error("Error generating OIR questions:", error);
+        console.error("Error in generate-oir-questions handler:", error);
         response.status(500).json({ error: 'Failed to generate OIR questions.', details: error.message });
     }
 }
