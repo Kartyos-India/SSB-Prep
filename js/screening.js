@@ -67,7 +67,7 @@ function renderScreeningMenu() {
             handleExcelUpload(file);
         }
     });
-}
+// ... (All functions from renderScreeningMenu to attachPPDTSetupLogic remain the same) ...
 
 
 // --- PPDT TEST FLOW ---
@@ -162,13 +162,20 @@ async function initializePPDTTest(settings) {
 }
 
 function runPPDTObservationPhase(settings) {
+    enterTestMode(); // <-- FIX: Enter distraction-free mode
     let timeLeft = 30;
     pageContent.innerHTML = `
         <div class="ppdt-phase-container">
-            <h2>Observe the Picture</h2>
+            <div class="ppdt-header">
+                <h2>Observe the Picture</h2>
+                <button id="ppdt-abort-btn" class="oir-nav-btn abort">Abort Test</button>
+            </div>
             <p class="timer-display" id="ppdt-timer">${timeLeft} seconds remaining</p>
             <img src="${ppdtImageUrl}" alt="PPDT Image" class="ppdt-image">
         </div>`;
+    
+    document.getElementById('ppdt-abort-btn').addEventListener('click', abortPPDTTest);
+
     ppdtTimerInterval = setInterval(() => {
         timeLeft--;
         const timerEl = document.getElementById('ppdt-timer');
@@ -183,12 +190,17 @@ function runPPDTObservationPhase(settings) {
 function runPPDTWritingPhase(settings) {
     pageContent.innerHTML = `
         <div class="ppdt-phase-container">
-            <h2>Write Your Story</h2>
+            <div class="ppdt-header">
+                <h2>Write Your Story</h2>
+                <button id="ppdt-abort-btn" class="oir-nav-btn abort">Abort Test</button>
+            </div>
             <p>You can type your story below or write it on a piece of paper.</p>
             <div id="ppdt-writing-timer" class="timer-display"></div>
             <textarea id="ppdt-story-textarea" placeholder="Start typing your story here..."></textarea>
             <div id="ppdt-writing-controls"></div>
         </div>`;
+    
+    document.getElementById('ppdt-abort-btn').addEventListener('click', abortPPDTTest);
 
     let timeLeft = 270; 
     const timerDisplay = document.getElementById('ppdt-writing-timer');
@@ -220,13 +232,17 @@ function runPPDTNarrativePhase() {
     ppdtStoryText = document.getElementById('ppdt-story-textarea')?.value || "Story written on paper.";
     pageContent.innerHTML = `
         <div class="ppdt-phase-container">
-            <h2>Narrate Your Story</h2>
+            <div class="ppdt-header">
+                <h2>Narrate Your Story</h2>
+                <button id="ppdt-abort-btn" class="oir-nav-btn abort">Abort Test</button>
+            </div>
             <p>Please allow camera and microphone access. You have 1 minute to narrate.</p>
             <div class="video-container" id="video-container"><p>Waiting for permissions...</p></div>
             <p class="timer-display" id="ppdt-narration-timer"></p>
             <button id="start-narration-btn" class="start-btn">Start Narration</button>
         </div>`;
     
+    document.getElementById('ppdt-abort-btn').addEventListener('click', abortPPDTTest);
     const startBtn = document.getElementById('start-narration-btn');
     startBtn.addEventListener('click', async () => {
         startBtn.disabled = true;
@@ -273,6 +289,7 @@ function runPPDTNarrativePhase() {
 }
 
 function renderPPDTReview(videoBlob) {
+    exitTestMode(); // <-- FIX: Exit distraction-free mode
     const videoUrl = URL.createObjectURL(videoBlob);
     const isUserLoggedIn = !!auth.currentUser;
 
@@ -325,6 +342,15 @@ function renderPPDTReview(videoBlob) {
         document.getElementById('login-to-save-btn').addEventListener('click', () => alert("Please log in via the header to save your test results."));
     }
     document.getElementById('redo-ppdt-btn').addEventListener('click', renderPPDTSetup);
+}
+
+// --- NEW FUNCTION ---
+function abortPPDTTest() {
+    if (confirm('Are you sure you want to abort this test? Your progress will be lost.')) {
+        clearInterval(ppdtTimerInterval);
+        exitTestMode();
+        renderScreeningMenu();
+    }
 }
 
 // --- OIR & UTILITY FUNCTIONS ---
@@ -536,6 +562,7 @@ function renderOIRResults(score) {
     document.getElementById('back-to-menu-btn').addEventListener('click', renderScreeningMenu);
 }
 
+// *** THIS FUNCTION IS THE FIX FOR THE SECOND ERROR ***
 function renderErrorPage(title, message) {
     pageContent.innerHTML = `
         <div class="page-title-section">
@@ -564,4 +591,5 @@ async function initializePage() {
 }
 
 initializePage();
+
 
