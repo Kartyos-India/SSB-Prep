@@ -67,7 +67,7 @@ function renderScreeningMenu() {
             handleExcelUpload(file);
         }
     });
-// ... (All functions from renderScreeningMenu to attachPPDTSetupLogic remain the same) ...
+}
 
 
 // --- PPDT TEST FLOW ---
@@ -339,12 +339,14 @@ function renderPPDTReview(videoBlob) {
             }
         });
     } else {
-        document.getElementById('login-to-save-btn').addEventListener('click', () => alert("Please log in via the header to save your test results."));
+        document.getElementById('login-to-save-btn').addEventListener('click', () => {
+            // A non-blocking alert. A modal would be better in a future iteration.
+            alert("Please log in via the header to save your test results.");
+        });
     }
     document.getElementById('redo-ppdt-btn').addEventListener('click', renderPPDTSetup);
 }
 
-// --- NEW FUNCTION ---
 function abortPPDTTest() {
     if (confirm('Are you sure you want to abort this test? Your progress will be lost.')) {
         clearInterval(ppdtTimerInterval);
@@ -369,7 +371,7 @@ function handleExcelUpload(file) {
             const customQuestions = json.map(row => {
                 if (row.length < 6 || row.slice(0, 6).some(cell => cell == null || String(cell).trim() === '')) return null;
                 return { q: String(row[0]), options: [String(row[1]), String(row[2]), String(row[3]), String(row[4])], answer: String(row[5]) };
-            }).filter(Boolean);
+            }).filter(Boolean); // filter(Boolean) removes null entries
             if (customQuestions.length === 0) throw new Error("No valid questions found.");
             localStorage.setItem('customOIRQuestions', JSON.stringify(customQuestions));
             statusDiv.textContent = `Loaded ${customQuestions.length} custom questions!`;
@@ -562,7 +564,6 @@ function renderOIRResults(score) {
     document.getElementById('back-to-menu-btn').addEventListener('click', renderScreeningMenu);
 }
 
-// *** THIS FUNCTION IS THE FIX FOR THE SECOND ERROR ***
 function renderErrorPage(title, message) {
     pageContent.innerHTML = `
         <div class="page-title-section">
@@ -591,3 +592,4 @@ async function initializePage() {
 }
 
 initializePage();
+
