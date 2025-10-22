@@ -91,7 +91,13 @@ body.test-in-progress .app-footer {
 
 /* --- PPDT Test Flow Styles --- */
 .ppdt-phase-container { max-width: 900px; margin: 2rem auto; text-align: center; }
-.ppdt-phase-container h2 { font-size: 2rem; margin-bottom: 1rem; }
+.ppdt-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+.ppdt-header h2 { font-size: 2rem; margin-bottom: 0; }
 .timer-display { font-size: 1.5rem; color: var(--primary-blue); font-weight: 600; margin-bottom: 1.5rem; }
 .ppdt-image { max-width: 100%; max-height: 70vh; border-radius: 16px; border: 1px solid var(--border-color); }
 #ppdt-story-textarea { width: 100%; min-height: 300px; background-color: var(--medium-dark-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 1rem; color: var(--text-primary); font-family: var(--font-main); font-size: 1rem; resize: vertical; margin-top: 1rem; }
