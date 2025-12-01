@@ -1,86 +1,109 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SSB Prep Platform - Home</title>
-    <link rel="stylesheet" href="css/style.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <meta charset="UTF-8" />
+  <title>SSB Prep Platform</title>
+  <meta name="description" content="SSB preparation practice platform" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Responsive & Mobile fixes injected by assistant -->
+  <style>
+  /* Basic responsive container */
+  .container { max-width:1100px; margin:0 auto; padding:0 16px; box-sizing:border-box; }
+
+  /* Make images responsive */
+  img, picture, svg { max-width:100%; height:auto; display:block; }
+
+  /* Flex utilities */
+  .row { display:flex; flex-wrap:wrap; gap:1rem; }
+  .col { flex:1 1 0; min-width:0; }
+
+  /* Navigation */
+  .site-header { display:flex; align-items:center; justify-content:space-between; padding:12px 0; }
+  .nav-links { display:flex; gap:12px; align-items:center; }
+  .mobile-toggle { display:none; background:transparent; border:0; font-size:18px; cursor:pointer; }
+
+  /* Cards and sections */
+  .section { padding:28px 0; }
+  .hero { display:flex; align-items:center; gap:24px; padding:40px 0; }
+
+  /* Simple card */
+  .card { background:#fff; border-radius:10px; padding:18px; box-shadow:0 6px 18px rgba(0,0,0,0.06); }
+
+  /* Small screens */
+  @media (max-width:800px) {
+    .hero { flex-direction:column; text-align:center; padding:24px 0; }
+    .nav-links { display:none; flex-direction:column; width:100%; margin-top:12px; }
+    .mobile-toggle { display:block; }
+    .nav-links.open { display:flex; background:rgba(0,0,0,0.03); padding:12px; border-radius:8px; }
+  }
+
+  body { font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; color:#111; background:#f6f7fb; margin:0; line-height:1.5; -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; }
+  a { color:#0366d6; text-decoration:none; }
+  header a.logo { font-weight:700; font-size:18px; color:#111; }
+  .cta { display:inline-block; padding:10px 14px; background:#0366d6; color:#fff; border-radius:8px; text-decoration:none; }
+  footer { padding:24px 0; text-align:center; color:#666; font-size:14px; }
+  </style>
+
+  <script>
+  /* Mobile menu toggle */
+  document.addEventListener('DOMContentLoaded', function(){
+    var btn = document.querySelector('.mobile-toggle');
+    var nav = document.querySelector('.nav-links');
+    if(btn && nav){
+      btn.addEventListener('click', function(e){
+        nav.classList.toggle('open');
+        btn.setAttribute('aria-expanded', nav.classList.contains('open'));
+      });
+    }
+  });
+  </script>
 </head>
 <body>
-
-    <header id="header-bar" class="app-header app-container"></header>
+  <div class="container">
+    <header class="site-header" role="banner">
+      <a class="logo" href="index.html">SSB Prep</a>
+      <nav>
+        <button class="mobile-toggle" aria-expanded="false" aria-controls="main-nav">☰</button>
+        <div id="main-nav" class="nav-links" role="navigation">
+          <a href="index.html">Home</a>
+          <a href="practice.html">Practice</a>
+          <a href="#resources">Resources</a>
+          <a class="cta" href="https://github.com/" target="_blank" rel="noopener">Repo</a>
+        </div>
+      </nav>
+    </header>
 
     <main>
-        <div class="hero-section">
-            <div class="app-container">
-                <h1>Prepare, Practice, Prevail.</h1>
-                <p>Your comprehensive training ground for the Services Selection Board interview. Master every stage with AI-powered tools and realistic simulations.</p>
-                <a href="#modules" class="cta-button">Start Practicing Now</a>
-            </div>
+      <section class="hero section">
+        <div class="col">
+          <h1 style="margin:0 0 6px 0;">SSB Preparation Platform</h1>
+          <p style="margin:0 0 12px 0; color:#444;">Practice PPDT, TAT, GPE images and generate OIR/WAT/SRT prompts using free AI tools (Hugging Face & free web tools).</p>
+          <p><a class="cta" href="practice.html">Open Practice Page</a></p>
         </div>
+        <div class="col">
+          <div class="card">
+            <h3 style="margin-top:0">Quick tips</h3>
+            <ul>
+              <li>Use Hugging Face Spaces to generate images quickly and for free (paste prompts from the Practice page).</li>
+              <li>Upload generated images to the Practice page to run PPDT timers or write stories.</li>
+              <li>All tools here are client-side — no account required on the site itself.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
 
-        <div class="info-section">
-            <div class="app-container">
-                <h2>What is the SSB Interview?</h2>
-                <p>The Services Selection Board (SSB) is a rigorous 5-day evaluation process that assesses candidates for their suitability to become officers in the Indian Armed Forces. It's not just a test of knowledge, but a deep analysis of personality, leadership potential, and psychological fitness.</p>
-            </div>
+      <section id="resources" class="section">
+        <div class="card">
+          <h2 style="margin-top:0">Resources & Next Steps</h2>
+          <p>When you're ready I can add: analytics, copy-to-repo patch files, or directly create a Git patch for you to apply. For now you'll paste files to GitHub and Vercel will redeploy automatically.</p>
         </div>
-
-        <div id="modules" class="modules-section">
-            <div class="app-container">
-                <h2 style="text-align: center;">Interactive Test Modules</h2>
-                <div class="module-grid">
-                    <a href="screening.html" class="module-card full-width">
-                        <div class="card-header">
-                            <div>
-                                <h3>Stage I: Screening Test</h3>
-                                <p>The first hurdle. Master the Officer Intelligence Rating (OIR) test and the Picture Perception & Discussion Test (PPDT) to ensure you make it to Stage II.</p>
-                            </div>
-                            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v4"></path><path d="M9 21H5a2 2 0 0 1-2-2v-4"></path><path d="M21 9V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v4"></path><path d="M3 15v4a2 2 0 0 0 2 2h4"></path></svg>
-                        </div>
-                    </a>
-                    <a href="psychology.html" class="module-card">
-                         <div class="card-header">
-                            <div>
-                                <h3>Psychology Tests</h3>
-                                <p>Dive deep into TAT, WAT, and SRT to understand and refine your psychological responses under pressure.</p>
-                            </div>
-                            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 0 0-7.53 16.58A10 10 0 0 0 12 22a10 10 0 0 0 7.53-3.42A10 10 0 0 0 12 2z"></path><path d="M8 14s1.5 2 4 2 4-2 4-2"></path><circle cx="9" cy="9" r="1"></circle><circle cx="15" cy="9" r="1"></circle></svg>
-                        </div>
-                    </a>
-                    <a href="gto.html" class="module-card">
-                        <div class="card-header">
-                            <div>
-                                <h3>GTO Tasks</h3>
-                                <p>Learn the dynamics of Group Discussions, Command Tasks, and other outdoor challenges.</p>
-                            </div>
-                            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-                        </div>
-                    </a>
-                     <a href="performance.html" class="module-card full-width" data-requires-auth="true">
-                        <div class="card-header">
-                            <div>
-                                <h3>My Performance</h3>
-                                <p>Track your progress, review past attempts, and identify areas for improvement.</p>
-                            </div>
-                            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
-                        </div>
-                    </a>
-                </div>
-            </div>
-        </div>
+      </section>
     </main>
-    
-    <footer class="app-footer">
-        <div class="app-container">
-            <p>© 2024 SSB Prep Platform. All rights reserved.</p>
-        </div>
-    </footer>
 
-    <script type="module" src="js/main.js"></script>
+    <footer>
+      © SSB Prep — Personal use. Built for practice and study.
+    </footer>
+  </div>
 </body>
 </html>
-
