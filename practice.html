@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Practice — SSB Prep (Screening: OIR & PPDT)</title>
+  <title>Practice — SSB Prep (Screening)</title>
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="Practice OIR and PPDT workflows with Hugging Face assistance.">
+  <meta name="description" content="SSB screening: OIR & PPDT workflows with optional Hugging Face integration.">
 
   <style>
   :root{--accent:#0366d6;--muted:#6b7280;--card:#fff}
@@ -17,17 +17,17 @@
   @media(max-width:980px){.grid{grid-template-columns:1fr}}
   h1{margin:0 0 6px 0;font-size:20px}
   label{display:block;font-weight:600;margin-bottom:6px}
-  textarea, input[type="text"], input[type="password"]{width:100%;padding:8px;border-radius:8px;border:1px solid #e6e6e9;box-sizing:border-box;font-family:inherit}
+  textarea, input[type="text"], input[type="password"], select{width:100%;padding:8px;border-radius:8px;border:1px solid #e6e6e9;box-sizing:border-box;font-family:inherit}
   .small{font-size:13px;color:var(--muted)}
   .btn{background:var(--accent);color:#fff;padding:8px 12px;border-radius:8px;border:0;cursor:pointer}
-  .btn-muted{background:#6b7280}
+  .btn-muted{background:#6b7280;color:#fff;padding:8px 12px;border-radius:8px;border:0;cursor:pointer}
   .row{display:flex;gap:8px;flex-wrap:wrap}
   .preview{border:1px solid #eee;border-radius:8px;padding:10px;background:#fbfbfe;min-height:150px;display:flex;align-items:center;justify-content:center}
   .timer{font-weight:700;font-size:26px;margin-top:8px}
   .hidden{display:none}
-  .nav-tabs{display:flex;gap:8px;margin-bottom:12px}
-  .tab{padding:8px 12px;border-radius:8px;background:#fff;cursor:pointer;border:1px solid #eef; font-weight:600}
-  .tab.active{background:var(--accent);color:white}
+  .large-option{display:flex;flex-direction:column;gap:10px}
+  .big-btn{padding:18px;border-radius:12px;background:#fff;border:1px solid #e6e6ef;cursor:pointer;text-align:center;font-weight:700}
+  .locked-overlay{position:fixed;left:0;top:0;right:0;bottom:0;background:rgba(255,255,255,0.85);z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px}
   .muted{color:var(--muted)}
   .section{margin-bottom:12px}
   footer{margin-top:18px;text-align:center;color:var(--muted);font-size:13px}
@@ -37,158 +37,223 @@
   <div class="container">
     <header>
       <a class="logo" href="index.html">← SSB Prep Home</a>
-      <div id="authArea">
-        <!-- Login UI inserted by JS -->
-      </div>
+      <div id="authArea"></div>
     </header>
 
     <main>
-
-      <!-- Authentication gated area: if not logged in show login card -->
+      <!-- Auth gate -->
       <div id="authGate" class="card">
-        <h1>Sign in to practice (local)</h1>
-        <p class="small muted">This simple sign-in ensures only authorised persons on this device use the practice tools. (Personal use only — not secure for production.)</p>
-
-        <div style="margin-top:10px;">
+        <h1>Sign in to access Screening</h1>
+        <p class="small muted">Local sign-in for personal use. Credentials are stored in your browser only.</p>
+        <div style="margin-top:10px">
           <label>Username</label>
           <input id="loginUser" type="text" placeholder="your-username" />
         </div>
-        <div style="margin-top:10px;">
+        <div style="margin-top:10px">
           <label>Passphrase</label>
           <input id="loginPass" type="password" placeholder="enter passphrase" />
         </div>
-
-        <div style="margin-top:10px;" class="row">
+        <div style="margin-top:10px" class="row">
           <button id="btnLogin" class="btn">Sign in</button>
           <button id="btnUseDemo" class="btn-muted">Use demo credentials</button>
         </div>
-        <p class="small muted" style="margin-top:8px">If you prefer, set your own username & passphrase and they'll be stored in your browser (local storage).</p>
       </div>
 
-      <!-- Main application -->
+      <!-- Main content (hidden until login) -->
       <div id="appArea" class="hidden">
+        <!-- Big choice landing: OIR vs PPDT -->
+        <section id="landing" class="card">
+          <h1 style="margin-top:0">Screening — Choose a test</h1>
+          <p class="small muted">Select the test you want to attempt. Each selection opens a dedicated flow. We'll implement OIR and PPDT now.</p>
 
-        <!-- Top: choose test group -->
-        <div class="card">
+          <div class="large-option" style="margin-top:12px">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+              <button id="goOIR" class="big-btn" style="min-height:120px">OIR<br><span class="small muted" style="font-weight:600">Observation & Questions</span></button>
+              <button id="goPPDT" class="big-btn" style="min-height:120px">PPDT<br><span class="small muted" style="font-weight:600">Picture Perception & Description Test</span></button>
+            </div>
+          </div>
+        </section>
+
+        <!-- OIR area -->
+        <section id="oirArea" class="card hidden">
           <div style="display:flex;justify-content:space-between;align-items:center">
+            <div><h2 style="margin:0">OIR — Observation & Questions</h2><div class="small muted">Paste generated Q&A or use sample to start.</div></div>
+            <div><button id="backFromOir" class="btn-muted">Back</button></div>
+          </div>
+
+          <div style="margin-top:12px">
+            <label>Instructions</label>
+            <div class="small muted">If you have a Hugging Face text-generation output, paste it in the box below. Otherwise click "Load sample". Then press "Start Test".</div>
+            <textarea id="oirInput" rows="8" placeholder="Paste generated OIR Q&A here..."></textarea>
+            <div class="row" style="margin-top:8px">
+              <button id="loadSampleOir" class="btn-muted">Load sample</button>
+              <button id="startOirTest" class="btn">Start Test</button>
+            </div>
+          </div>
+
+          <div id="oirTestWindow" style="margin-top:12px"></div>
+        </section>
+
+        <!-- PPDT configuration and flow -->
+        <section id="ppdtArea" class="card hidden">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div><h2 style="margin:0">PPDT — Configuration</h2><div class="small muted">Choose gender, test type and options. Then click Start Test to auto-generate image and begin.</div></div>
+            <div><button id="backFromPpdt" class="btn-muted">Back</button></div>
+          </div>
+
+          <div style="margin-top:12px" class="grid">
             <div>
-              <h1 style="margin:0">Practice Dashboard</h1>
-              <div class="small muted">Logged in as <span id="whoami"></span></div>
-            </div>
-            <div>
-              <button id="btnLogout" class="btn-muted">Log out</button>
-            </div>
-          </div>
+              <label>Gender</label>
+              <select id="ppdtGender">
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+                <option value="other">Other</option>
+              </select>
 
-          <div style="margin-top:10px">
-            <label>Choose test category</label>
-            <div class="row" id="categoryRow">
-              <button class="btn tab" data-cat="screening">Screening</button>
-              <button class="btn tab" data-cat="gto">GTO</button>
-              <button class="btn tab" data-cat="psych">Psychology</button>
-            </div>
-            <div class="small muted" style="margin-top:8px">We'll implement Screening fully now. GTO & Psychology will be added later per your request.</div>
-          </div>
-        </div>
-
-        <!-- Screening UI -->
-        <div id="screeningArea" class="card">
-          <h2 style="margin-top:0">Screening — choose a test</h2>
-          <div class="row" style="margin-top:8px">
-            <button class="btn" id="openOIR">OIR (Observation & Questions)</button>
-            <button class="btn" id="openPPDT">PPDT (Picture Perception & Description Test)</button>
-          </div>
-
-          <div id="screeningContent" style="margin-top:12px"></div>
-        </div>
-
-        <!-- Right column: quick resources & HF key -->
-        <div class="grid" style="margin-top:12px">
-          <div>
-            <div class="card">
-              <h3 style="margin-top:0">Hugging Face / AI</h3>
-              <p class="small muted">Free workflow: use the Spaces UI (no key). Optionally, paste your Hugging Face Inference API key here to enable direct fetch (advanced, optional).</p>
-              <label>Hugging Face API Key (optional)</label>
-              <input id="hfKey" type="text" placeholder="hf_xxx (optional - leave empty to use Spaces manually)" />
-              <div style="margin-top:8px" class="row">
-                <button id="openHfSpace" class="btn">Open Stable Diffusion Space</button>
-                <button id="openTextSpace" class="btn">Open Text Spaces</button>
+              <label style="margin-top:10px">Test Type</label>
+              <div class="row">
+                <label><input type="radio" name="ppdtTimed" value="timed" checked> Timed</label>
+                <label><input type="radio" name="ppdtTimed" value="untimed"> Untimed</label>
               </div>
-            </div>
 
-            <div class="card" style="margin-top:12px">
-              <h3 style="margin-top:0">Saved notes</h3>
-              <small class="muted">Copy/paste generated questions, stories, and recordings here for future review.</small>
-              <textarea id="savedNotes" style="min-height:180px;margin-top:8px" placeholder="Your saved materials..."></textarea>
-            </div>
+              <div id="timedOptions" style="margin-top:10px">
+                <label>Duration (seconds) for observation (default 60)</label>
+                <input id="obsDuration" type="number" value="60" min="10" max="600" />
+                <label style="margin-top:8px">Show timer to candidate?</label>
+                <div class="row"><label><input type="checkbox" id="showTimer" checked> Show timer</label></div>
+              </div>
 
-            <div class="card" style="margin-top:12px">
-              <h3 style="margin-top:0">Quick prompts</h3>
-              <div class="small muted">Copy any prompt and paste into the HF Space (image or text)</div>
-              <label style="margin-top:8px">PPDT / TAT / GPE prompt</label>
+              <label style="margin-top:10px">PPDT Prompt</label>
               <textarea id="ppdtPrompt" rows="4">PPDT-style: a blurred photograph of a dusty village road at dusk with a damaged bicycle and two men arguing near a tea stall; a mini-van parked nearby; ambiguous mood; realistic photo; 4:3</textarea>
-              <div style="margin-top:8px" class="row">
-                <button class="btn" id="copyPpdt">Copy prompt</button>
-                <button class="btn" id="openImgSpace">Open Img Space</button>
+
+              <div style="margin-top:10px" class="row">
+                <button id="startPpdtTest" class="btn">Start Test (auto-generate image)</button>
+                <button id="openImgSpace" class="btn-muted">Open HF Space (manual)</button>
               </div>
 
-              <label style="margin-top:10px">OIR (Observation) prompt</label>
-              <textarea id="oirPrompt" rows="3">Generate 10 observation multiple-choice questions (4 options) from this passage: "A busy station platform at 3pm; vendor sells tea; man in blue coat shouts; a child drops a red toy near the tracks." Provide correct answer and a one-line explanation.</textarea>
-              <div style="margin-top:8px" class="row">
-                <button class="btn" id="copyOir">Copy OIR</button>
-                <button class="btn" id="openTextSpace2">Open Text Space</button>
-              </div>
+              <div style="margin-top:8px" class="small muted">Note: To auto-generate an image you must paste your Hugging Face API key on the right panel.</div>
             </div>
 
+            <div>
+              <div class="card">
+                <h4 style="margin:0">Hugging Face / Tools</h4>
+                <label style="margin-top:8px">HF API Key (paste here to enable automatic generation)</label>
+                <input id="hfKey" type="text" placeholder="hf_xxx (optional)" />
+                <div style="margin-top:8px" class="row">
+                  <button id="openImgSpace2" class="btn">Open Stable Diffusion Space</button>
+                  <button id="openTextSpace" class="btn-muted">Open Text Space</button>
+                </div>
+                <p class="small muted" style="margin-top:8px">If you do not have a key use the Space link, generate the image manually and upload it in the next step below.</p>
+              </div>
+
+              <div class="card" style="margin-top:12px">
+                <h4 style="margin:0">Quick prompts</h4>
+                <textarea id="quickPpdtPrompt" rows="3">PPDT-style: a blurred photograph of a dusty village road at dusk with a damaged bicycle and two men arguing near a tea stall; a mini-van parked nearby; ambiguous mood; realistic photo; 4:3</textarea>
+                <div style="margin-top:8px" class="row">
+                  <button id="copyQuickPrompt" class="btn">Copy prompt</button>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <div>
-            <div class="card">
-              <h3 style="margin-top:0">Demo/Test Controls</h3>
-              <div class="small muted">Use these buttons to quickly load the OIR or PPDT flows in the screening area.</div>
+          <!-- PPDT runtime area (image, observation, story, recording) -->
+          <div id="ppdtFlow" class="hidden" style="margin-top:12px">
+            <div id="ppdtImageArea" class="card">
+              <h4 style="margin:0">Generated image</h4>
+              <div id="ppdtImagePreview" class="preview" style="margin-top:8px"><span class="muted">Waiting for image...</span></div>
               <div style="margin-top:8px" class="row">
-                <button class="btn" id="loadDemoOIR">Load OIR demo</button>
-                <button class="btn" id="loadDemoPPDT">Load PPDT demo</button>
+                <button id="downloadPpdtImage" class="btn" disabled>Download image</button>
+                <button id="uploadPpdtImage" class="btn-muted">Upload custom image</button>
+                <input id="ppdtFileInput" type="file" accept="image/*" class="hidden" />
               </div>
             </div>
 
-            <div class="card" style="margin-top:12px">
-              <h3 style="margin-top:0">Help</h3>
-              <small class="muted">If a feature needs an API key (optional), we show fields. Otherwise use the external HF Spaces then paste results here.</small>
-              <ol style="font-size:13px;color:var(--muted);">
-                <li>Click <b>Open Stable Diffusion Space</b> to generate images (no key needed).</li>
-                <li>Download the image, then upload it to the PPDT flow.</li>
-                <li>For OIR: generate questions in HF Text Space and paste the output into the OIR textbox to start the test.</li>
-              </ol>
+            <div id="obsSection" class="card hidden" style="margin-top:12px">
+              <h4 style="margin:0">Observation</h4>
+              <div id="obsInstruction" class="small muted">You will have the configured observation time. Do not navigate away. Fill the fields after observation finishes (if timed).</div>
+
+              <div id="obsTimerWrap" style="margin-top:8px" class="hidden">
+                <div class="timer" id="obsTimerDisplay">00:00</div>
+              </div>
+
+              <div style="margin-top:8px">
+                <label>Action / what is happening?</label>
+                <input id="obsAction" type="text" />
+                <label style="margin-top:8px">Number of characters seen</label>
+                <input id="obsCount" type="text" />
+                <label style="margin-top:8px">Age groups (approx)</label>
+                <input id="obsAges" type="text" />
+                <label style="margin-top:8px">Main hero (who?)</label>
+                <input id="obsHero" type="text" />
+                <label style="margin-top:8px">Mood of characters</label>
+                <input id="obsMood" type="text" />
+              </div>
+
+              <div style="margin-top:8px" class="row">
+                <button id="proceedToStory" class="btn">Proceed to Story Writing</button>
+              </div>
             </div>
 
-          </div>
-        </div>
+            <div id="storySection" class="card hidden" style="margin-top:12px">
+              <h4 style="margin:0">Story Writing</h4>
+              <div class="small muted">Write your story based on observation.</div>
+              <div id="storyTimerWrap" style="margin-top:8px" class="hidden">
+                <div class="timer" id="storyTimerDisplay">00:00</div>
+              </div>
+              <div style="margin-top:8px" class="row">
+                <button id="startStoryBtn" class="btn">Start Story Timer</button>
+                <button id="finishStoryBtn" class="btn-muted">Finish Writing</button>
+              </div>
+              <label style="margin-top:8px">Story</label>
+              <textarea id="storyText" rows="8"></textarea>
+            </div>
 
-        <div id="extraArea"></div>
+            <div id="recordSection" class="card hidden" style="margin-top:12px">
+              <h4 style="margin:0">Narration Recording (1 minute)</h4>
+              <div class="small muted">Click Start Recording to begin. Recording will start immediately and run for 60s.</div>
+              <div style="margin-top:8px" class="row">
+                <button id="startRecordingBtn" class="btn">Start Recording</button>
+                <button id="downloadRecordingBtn" class="btn-muted" disabled>Download</button>
+              </div>
+              <div id="recPreviewWrap" style="margin-top:8px" class="hidden">
+                <video id="recPreview" controls style="width:100%;border-radius:8px"></video>
+                <div style="margin-top:8px">
+                  <button id="playAudioOnly" class="btn">Play audio only</button>
+                  <button id="playMutedVideo" class="btn-muted">Play muted video</button>
+                  <button id="playWithAV" class="btn">Play audio+video</button>
+                </div>
+                <label style="margin-top:8px">Self-assessment notes</label>
+                <textarea id="selfNotes" rows="4"></textarea>
+              </div>
+            </div>
+          </div>
+
+        </section>
+
+        <footer class="small muted">Data is stored locally. Keep this device secure.</footer>
       </div>
-
-      <footer style="margin-top:12px">This practice platform stores data locally in your browser. For privacy keep this device private.</footer>
     </main>
   </div>
 
+  <!-- Locked overlay used to prevent user interaction during test -->
+  <div id="lockedOverlay" class="locked-overlay hidden">
+    <div style="font-weight:700;font-size:18px">Test in progress — please wait</div>
+    <div class="small muted">Do not refresh or close the tab. The test will finish automatically.</div>
+  </div>
+
 <script>
-/* ---------- Simple local auth (personal use) ---------- */
+/* ---------------- Authentication ---------------- */
 const authArea = document.getElementById('authArea');
 const authGate = document.getElementById('authGate');
 const appArea = document.getElementById('appArea');
-const whoami = document.getElementById('whoami');
-
-function isLoggedIn(){
-  return localStorage.getItem('ssb_user') !== null;
-}
+function isLoggedIn(){ return !!localStorage.getItem('ssb_user'); }
 function showAuthState(){
   if(isLoggedIn()){
     const u = JSON.parse(localStorage.getItem('ssb_user'));
-    authArea.innerHTML = `<div class="small muted">Signed in as <strong>${u.username}</strong></div>`;
+    authArea.innerHTML = `<div class="small muted">Signed in as <strong>${u.username}</strong> &nbsp; <button id="signoutBtn" class="btn-muted">Sign out</button></div>`;
     authGate.classList.add('hidden');
     appArea.classList.remove('hidden');
-    whoami.textContent = u.username;
+    document.getElementById('signoutBtn').addEventListener('click', ()=> { localStorage.removeItem('ssb_user'); showAuthState(); });
   } else {
     authArea.innerHTML = '';
     authGate.classList.remove('hidden');
@@ -197,422 +262,17 @@ function showAuthState(){
 }
 showAuthState();
 
-document.getElementById('btnLogin').addEventListener('click', function(){
+document.getElementById('btnLogin').addEventListener('click', ()=> {
   const u = document.getElementById('loginUser').value.trim();
   const p = document.getElementById('loginPass').value;
   if(!u || !p){ alert('Enter both username and passphrase'); return; }
-  localStorage.setItem('ssb_user', JSON.stringify({username:u, created:Date.now()}));
-  // store passphrase hashed? For demo we do not store pass
+  localStorage.setItem('ssb_user', JSON.stringify({username: u, created: Date.now()}));
   showAuthState();
 });
-document.getElementById('btnUseDemo').addEventListener('click', function(){
-  // demo credentials
-  localStorage.setItem('ssb_user', JSON.stringify({username:'demo_user', created:Date.now()}));
+document.getElementById('btnUseDemo').addEventListener('click', ()=> {
+  localStorage.setItem('ssb_user', JSON.stringify({username: 'demo_user', created: Date.now()}));
   showAuthState();
 });
-document.getElementById('btnLogout').addEventListener('click', function(){
-  if(confirm('Sign out?')) { localStorage.removeItem('ssb_user'); showAuthState(); }
-});
 
-/* ---------- Tabs for categories (we'll focus on Screening) ---------- */
-document.querySelectorAll('#categoryRow .tab').forEach(t=>{
-  t.addEventListener('click', function(){
-    document.querySelectorAll('#categoryRow .tab').forEach(x=>x.classList.remove('active'));
-    t.classList.add('active');
-    const cat = t.getAttribute('data-cat');
-    // only screening implemented for now
-    if(cat === 'screening') {
-      document.getElementById('screeningArea').classList.remove('hidden');
-    } else {
-      document.getElementById('screeningArea').classList.add('hidden');
-      document.getElementById('screeningContent').innerHTML = `<div class="small muted">Category "${cat}" not implemented yet. We'll add GTO & Psychology soon.</div>`;
-    }
-  });
-});
-// activate screening by default
-const firstTab = document.querySelector('#categoryRow .tab[data-cat="screening"]');
-if(firstTab) firstTab.click();
-
-/* ---------- Open HF Spaces helpers ---------- */
-document.getElementById('openHfSpace').addEventListener('click', ()=> window.open('https://huggingface.co/spaces/stabilityai/stable-diffusion','_blank'));
-document.getElementById('openTextSpace').addEventListener('click', ()=> window.open('https://huggingface.co/spaces','_blank'));
-document.getElementById('openImgSpace').addEventListener('click', ()=> window.open('https://huggingface.co/spaces/stabilityai/stable-diffusion','_blank'));
-document.getElementById('openTextSpace2').addEventListener('click', ()=> window.open('https://huggingface.co/spaces','_blank'));
-
-/* Copy prompt buttons */
-document.getElementById('copyPpdt').addEventListener('click', async function(){
-  const txt = document.getElementById('ppdtPrompt').value;
-  try { await navigator.clipboard.writeText(txt); this.textContent='Copied'; setTimeout(()=> this.textContent='Copy prompt',1200);} catch(e){ alert('Copy failed, select and copy manually') }
-});
-document.getElementById('copyOir').addEventListener('click', async function(){
-  const txt = document.getElementById('oirPrompt').value;
-  try { await navigator.clipboard.writeText(txt); this.textContent='Copied'; setTimeout(()=> this.textContent='Copy OIR',1200);} catch(e){ alert('Copy failed') }
-});
-
-/* Demo loaders */
-document.getElementById('loadDemoOIR').addEventListener('click', ()=> loadOIRDemo());
-document.getElementById('loadDemoPPDT').addEventListener('click', ()=> loadPPDTDemo());
-document.getElementById('openOIR').addEventListener('click', ()=> loadOIRDemo());
-document.getElementById('openPPDT').addEventListener('click', ()=> loadPPDTDemo());
-
-/* ---------- OIR Flow ---------- */
-function loadOIRDemo(){
-  const container = document.getElementById('screeningContent');
-  container.innerHTML = `
-    <div class="card">
-      <h3 style="margin-top:0">OIR — Observation & Question Test</h3>
-      <p class="small muted">Step 1: Use the OIR prompt on the right to generate questions in a Hugging Face Text Space (or other free generator). Paste the generated Q&A below to start the test inside this page.</p>
-
-      <label style="margin-top:10px">Paste generated OIR Q&A here (or type)</label>
-      <textarea id="oirInput" rows="8" placeholder="Paste Q&A generated by HF Text Space..."></textarea>
-
-      <div style="margin-top:8px" class="row">
-        <button id="startOirTest" class="btn">Start Test</button>
-        <button id="autoSampleOir" class="btn-muted">Load sample Q&A</button>
-      </div>
-
-      <div id="oirTestArea" style="margin-top:12px"></div>
-    </div>
-  `;
-
-  document.getElementById('autoSampleOir').addEventListener('click', function(){
-    const sample = `1) What was the vendor selling on the platform?\nA) Books\nB) Tea\nC) Clothes\nD) Snacks\nAnswer: B\n\n2) What color was the coat of the man who shouted?\nA) Red\nB) Black\nC) Blue\nD) White\nAnswer: C\n\n3) What did the child drop?\nA) A red toy\nB) A coin\nC) A bag\nD) A shoe\nAnswer: A\n\n(End)`;
-    document.getElementById('oirInput').value = sample;
-  });
-
-  document.getElementById('startOirTest').addEventListener('click', function(){
-    const raw = document.getElementById('oirInput').value.trim();
-    if(!raw){ alert('Paste the generated Q&A first (or load sample)'); return; }
-    const parsed = parseOir(raw);
-    renderOirTest(parsed);
-  });
-}
-
-function parseOir(text){
-  // Very simple parser: split by question numbers, find answer lines "Answer: X"
-  const blocks = text.split(/\n\s*\n+/).map(s=>s.trim()).filter(Boolean);
-  const items = [];
-  for(const b of blocks){
-    const qMatch = b.match(/^(?:\d+\)|\d+\.)?\s*(.*?)(?:\n|$)/);
-    if(!qMatch) continue;
-    const lines = b.split('\n');
-    const qLine = lines[0].replace(/^\d+\)|^\d+\./,'').trim();
-    const options = [];
-    let correct = null;
-    for(let i=1;i<lines.length;i++){
-      const ln = lines[i].trim();
-      const aMatch = ln.match(/^([A-D])\)\s*(.*)$/i) || ln.match(/^([A-D])\s*[-.:]?\s*(.*)$/i);
-      if(aMatch){
-        options.push({key:aMatch[1].toUpperCase(), text:aMatch[2]});
-        continue;
-      }
-      const ansMatch = ln.match(/Answer[:\s]*([A-D])/i);
-      if(ansMatch) correct = ansMatch[1].toUpperCase();
-    }
-    if(options.length===0){
-      // try inline options like "A) x B) y"
-      const inline = qLine.split(/([A-D]\))/g);
-    }
-    items.push({question:qLine, options, correct});
-  }
-  return items;
-}
-
-function renderOirTest(items){
-  const area = document.getElementById('oirTestArea');
-  if(!items || items.length===0){ area.innerHTML = '<div class="small muted">No parsable questions found. Please format as Q + A/B/C/D + Answer: X and try again.</div>'; return; }
-  // render test form
-  let html = '<form id="oirForm">';
-  items.forEach((it, idx)=>{
-    html += `<div style="margin-bottom:8px"><strong>Q${idx+1}.</strong> ${it.question}<div style="margin-top:6px">`;
-    it.options.forEach(opt=>{
-      html += `<label style="display:block"><input type="radio" name="q${idx}" value="${opt.key}"> &nbsp; (${opt.key}) ${opt.text}</label>`;
-    });
-    html += `</div></div>`;
-  });
-  html += `<div class="row"><button type="button" class="btn" id="submitOir">Submit</button> <button type="button" class="btn-muted" id="showAnswers">Show answers</button></div></form>`;
-  area.innerHTML = html;
-
-  document.getElementById('submitOir').addEventListener('click', function(){
-    const form = document.getElementById('oirForm');
-    let score = 0, total = items.length, detail = [];
-    items.forEach((it, idx)=>{
-      const sel = form['q'+idx].value;
-      const correct = it.correct;
-      const ok = sel && correct && sel.toUpperCase() === correct.toUpperCase();
-      if(ok) score++;
-      detail.push({q:it.question, selected:sel || '(no answer)', correct: correct || '(unknown)', ok});
-    });
-    const percent = Math.round(score/total*100);
-    let res = `<div class="card" style="margin-top:10px"><strong>Score: ${score}/${total} (${percent}%)</strong><div style="margin-top:8px">`;
-    detail.forEach((d,i)=>{
-      res += `<div style="margin-bottom:6px"><strong>Q${i+1}</strong>: selected <em>${d.selected}</em> — correct <em>${d.correct}</em> ${d.ok?'<span style="color:green">✔</span>':'<span style="color:#ef4444">✖</span>'}</div>`;
-    });
-    res += `</div></div>`;
-    area.insertAdjacentHTML('beforeend', res);
-  });
-
-  document.getElementById('showAnswers').addEventListener('click', function(){
-    let ansHtml = '<div style="margin-top:8px">';
-    items.forEach((it, idx)=>{
-      ansHtml += `<div class="small muted">Q${idx+1} answer: <strong>${it.correct || '(unknown)'}</strong></div>`;
-    });
-    ansHtml += '</div>';
-    area.insertAdjacentHTML('beforeend', ansHtml);
-  });
-}
-
-/* ---------- PPDT Flow ---------- */
-function loadPPDTDemo(){
-  const container = document.getElementById('screeningContent');
-  container.innerHTML = `
-    <div class="card">
-      <h3 style="margin-top:0">PPDT — Picture Perception & Description Test</h3>
-      <p class="small muted">Flow implemented: generate or upload image → 1-minute observation (details) → 4-minute story writing → 1-minute video narration → review audio/video and self-assess.</p>
-
-      <div style="margin-top:10px">
-        <label>Step 1: Generate image (Hugging Face)</label>
-        <div class="row" style="margin-top:6px">
-          <button id="copyPpdtPrompt" class="btn">Copy PPDT prompt</button>
-          <button id="openImgSpace2" class="btn">Open HF Image Space</button>
-          <button id="useSampleImage" class="btn-muted">Use sample image</button>
-        </div>
-        <div class="small muted" style="margin-top:6px">After generating, download & upload the image below.</div>
-      </div>
-
-      <hr>
-
-      <div style="margin-top:10px">
-        <label>Upload image (or use sample)</label>
-        <input id="ppdtUpload" type="file" accept="image/*" />
-        <div id="ppdtPreview" class="preview" style="margin-top:8px"><span class="muted">No image uploaded</span></div>
-        <div style="margin-top:8px" class="row">
-          <button id="ppdtDownload" class="btn" disabled>Download image</button>
-          <button id="clearPpdt" class="btn-muted">Clear</button>
-        </div>
-      </div>
-
-      <hr>
-
-      <div style="margin-top:10px" id="observationBlock">
-        <h4 style="margin:0 0 6px 0">Observation — 1 minute</h4>
-        <div class="small muted">During this time fill the fields: action, characters count, age-groups, probable hero, mood.</div>
-        <div class="timer" id="obsTimer">01:00</div>
-        <div style="margin-top:8px" class="row">
-          <button id="startObs" class="btn">Start 1-min observation</button>
-          <button id="stopObs" class="btn-muted">Stop</button>
-          <button id="resetObs" class="btn-muted">Reset</button>
-        </div>
-
-        <div style="margin-top:10px">
-          <label>Action / what is happening?</label>
-          <input id="obsAction" type="text" placeholder="e.g., Two men arguing near a tea stall" />
-          <label style="margin-top:8px">Number of characters seen</label>
-          <input id="obsCount" type="text" placeholder="e.g., 8" />
-          <label style="margin-top:8px">Age groups (approx)</label>
-          <input id="obsAges" type="text" placeholder="e.g., adult, child" />
-          <label style="margin-top:8px">Main hero (who?)</label>
-          <input id="obsHero" type="text" placeholder="e.g., the man in blue coat" />
-          <label style="margin-top:8px">Mood of characters</label>
-          <input id="obsMood" type="text" placeholder="e.g., tense, worried" />
-        </div>
-
-      </div>
-
-      <hr>
-
-      <div id="storyBlock" style="margin-top:10px">
-        <h4 style="margin:0 0 6px 0">Story Writing — 4 minutes</h4>
-        <div class="small muted">Use the observation above to write a story. Timer will run for 4 mins.</div>
-        <div class="timer" id="storyTimer">04:00</div>
-        <div style="margin-top:8px" class="row">
-          <button id="startStory" class="btn">Start 4-min story</button>
-          <button id="stopStory" class="btn-muted">Stop</button>
-          <button id="resetStory" class="btn-muted">Reset</button>
-        </div>
-        <label style="margin-top:8px">Story (write here)</label>
-        <textarea id="storyText" rows="8" placeholder="Write your story here..."></textarea>
-      </div>
-
-      <hr>
-
-      <div id="recordBlock" style="margin-top:10px">
-        <h4 style="margin:0 0 6px 0">Narration Recording — 1 minute</h4>
-        <div class="small muted">Record a 1-minute video narration of your story using your webcam & mic.</div>
-
-        <div style="margin-top:8px" class="row">
-          <button id="startRec" class="btn">Start recording (1 min)</button>
-          <button id="stopRec" class="btn-muted">Stop</button>
-        </div>
-
-        <div id="recStatus" class="small muted" style="margin-top:8px">No recording yet.</div>
-
-        <div id="playbackArea" style="margin-top:8px" class="hidden">
-          <video id="recVideo" controls style="width:100%;border-radius:8px"></video>
-          <div style="margin-top:8px" class="row">
-            <button id="playAudioOnly" class="btn">Play audio only</button>
-            <button id="playMutedVideo" class="btn">Play muted video</button>
-            <button id="playWithAV" class="btn">Play audio + video</button>
-            <button id="downloadRec" class="btn-muted">Download recording</button>
-          </div>
-
-          <div style="margin-top:8px">
-            <label>Self-assessment / notes</label>
-            <textarea id="selfAssess" rows="6" placeholder="Note about voice, clarity, body language, gestures..."></textarea>
-            <div style="margin-top:8px" class="small muted">Checklist: voice clarity, pacing, eye contact, appropriate gestures, confidence.</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
-
-  // wire up PPDT controls
-  document.getElementById('copyPpdtPrompt').addEventListener('click', async function(){
-    const txt = document.getElementById('ppdtPrompt').value;
-    try { await navigator.clipboard.writeText(txt); this.textContent='Copied'; setTimeout(()=> this.textContent='Copy PPDT prompt',1200);} catch(e){ alert('Copy failed') }
-  });
-  document.getElementById('openImgSpace2').addEventListener('click', ()=> window.open('https://huggingface.co/spaces/stabilityai/stable-diffusion','_blank'));
-  document.getElementById('useSampleImage').addEventListener('click', ()=> {
-    // sample image from data URL (small placeholder)
-    const sample = 'data:image/svg+xml;utf8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="800" height="500"><rect width="100%" height="100%" fill="#ddd"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="22" fill="#666">Sample PPDT Image</text></svg>');
-    loadPpdtImage(sample);
-  });
-
-  const up = document.getElementById('ppdtUpload');
-  const preview = document.getElementById('ppdtPreview');
-  const downBtn = document.getElementById('ppdtDownload');
-  const clearBtn = document.getElementById('clearPpdt');
-  let ppdtDataUrl = null;
-
-  up.addEventListener('change', function(e){
-    const f = this.files[0];
-    if(!f) return;
-    const reader = new FileReader();
-    reader.onload = function(ev){
-      loadPpdtImage(ev.target.result);
-    };
-    reader.readAsDataURL(f);
-  });
-  function loadPpdtImage(dataUrl){
-    ppdtDataUrl = dataUrl;
-    preview.innerHTML = '';
-    const img = document.createElement('img'); img.src = dataUrl; img.style.maxWidth='100%';
-    preview.appendChild(img);
-    downBtn.disabled = false;
-  }
-  downBtn.addEventListener('click', function(){
-    if(!ppdtDataUrl) return;
-    const a = document.createElement('a'); a.href=ppdtDataUrl;a.download='ppdt_image.png';document.body.appendChild(a);a.click();a.remove();
-  });
-  clearBtn.addEventListener('click', function(){
-    ppdtDataUrl = null; up.value=''; preview.innerHTML='<span class="muted">No image uploaded</span>'; downBtn.disabled=true;
-  });
-
-  /* Observation timer */
-  let obsSeconds = 60, obsId = null, obsRemaining = obsSeconds;
-  const obsDisplay = document.getElementById('obsTimer');
-  function format(s){ const mm = Math.floor(s/60).toString().padStart(2,'0'); const ss = (s%60).toString().padStart(2,'0'); return mm+':'+ss; }
-  obsDisplay.textContent = format(obsRemaining);
-  document.getElementById('startObs').addEventListener('click', function(){
-    if(obsId) return;
-    obsRemaining = obsSeconds; obsDisplay.textContent = format(obsRemaining);
-    obsId = setInterval(()=> {
-      obsRemaining--; obsDisplay.textContent = format(obsRemaining);
-      if(obsRemaining<=0){ clearInterval(obsId); obsId=null; alert('Observation time finished — proceed to Story writing'); }
-    },1000);
-  });
-  document.getElementById('stopObs').addEventListener('click', ()=> { if(obsId) { clearInterval(obsId); obsId=null; } });
-  document.getElementById('resetObs').addEventListener('click', ()=> { if(obsId) clearInterval(obsId); obsId=null; obsRemaining=obsSeconds; obsDisplay.textContent=format(obsRemaining); });
-
-  /* Story timer */
-  let storySeconds = 240, storyId=null, storyRemaining=storySeconds;
-  const storyDisplay = document.getElementById('storyTimer'); storyDisplay.textContent = format(storyRemaining);
-  document.getElementById('startStory').addEventListener('click', function(){
-    if(storyId) return;
-    storyRemaining = storySeconds; storyDisplay.textContent = format(storyRemaining);
-    storyId = setInterval(()=> {
-      storyRemaining--; storyDisplay.textContent = format(storyRemaining);
-      if(storyRemaining<=0){ clearInterval(storyId); storyId=null; alert('Story time finished — proceed to recording'); }
-    },1000);
-  });
-  document.getElementById('stopStory').addEventListener('click', ()=> { if(storyId){ clearInterval(storyId); storyId=null; }});
-  document.getElementById('resetStory').addEventListener('click', ()=> { if(storyId) clearInterval(storyId); storyId=null; storyRemaining=storySeconds; storyDisplay.textContent=format(storyRemaining); });
-
-  /* Recording (1 min video) */
-  let mediaStream=null, mediaRecorder=null, recordedBlobs=[], recTimeout=null;
-  const recStatus = document.getElementById('recStatus');
-  const recVideo = document.getElementById('recVideo');
-  const playbackArea = document.getElementById('playbackArea');
-
-  document.getElementById('startRec').addEventListener('click', async function(){
-    // request camera+mic
-    try{
-      mediaStream = await navigator.mediaDevices.getUserMedia({audio:true, video:true});
-    } catch(e){ alert('Could not access camera/microphone: '+e.message); return; }
-    recordedBlobs = [];
-    mediaRecorder = new MediaRecorder(mediaStream, {mimeType:'video/webm;codecs=vp9,opus'});
-    mediaRecorder.ondataavailable = e => { if(e.data && e.data.size>0) recordedBlobs.push(e.data); };
-    mediaRecorder.onstop = ()=> {
-      // build blob
-      const superBuffer = new Blob(recordedBlobs, {type:'video/webm'});
-      const url = window.URL.createObjectURL(superBuffer);
-      recVideo.src = url; recVideo.controls = true;
-      playbackArea.classList.remove('hidden');
-      recStatus.textContent = 'Recording complete. Review below.';
-      // stop tracks
-      mediaStream.getTracks().forEach(t=>t.stop());
-    };
-    mediaRecorder.start();
-    recStatus.textContent = 'Recording... (auto stops at 60s)';
-    // auto stop after 60s
-    recTimeout = setTimeout(()=> { if(mediaRecorder && mediaRecorder.state === 'recording') mediaRecorder.stop(); }, 60000);
-  });
-
-  document.getElementById('stopRec').addEventListener('click', function(){
-    if(mediaRecorder && mediaRecorder.state === 'recording'){ mediaRecorder.stop(); clearTimeout(recTimeout); }
-    if(mediaStream) mediaStream.getTracks().forEach(t=>t.stop());
-  });
-
-  document.getElementById('playAudioOnly').addEventListener('click', function(){
-    if(!recVideo.src){ alert('No recording yet'); return; }
-    // play audio only by detaching video track temporarily
-    recVideo.muted = false;
-    recVideo.play();
-    // pause video display? we can't hide track; instead instruct user to look away for audio-only
-    alert('Playing audio-only: close your eyes or look away to judge voice & intonation.');
-  });
-  document.getElementById('playMutedVideo').addEventListener('click', function(){
-    if(!recVideo.src){ alert('No recording'); return; }
-    recVideo.muted = true;
-    recVideo.play();
-  });
-  document.getElementById('playWithAV').addEventListener('click', function(){
-    if(!recVideo.src){ alert('No recording'); return; }
-    recVideo.muted = false;
-    recVideo.play();
-  });
-  document.getElementById('downloadRec').addEventListener('click', function(){
-    if(!recordedBlobs || recordedBlobs.length===0){ alert('No recording'); return;}
-    const blob = new Blob(recordedBlobs, {type:'video/webm'});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href = url; a.download = 'ppdt_recording.webm'; document.body.appendChild(a); a.click(); a.remove();
-  });
-
-  // Scroll view to the PPDT section for UX
-  document.querySelector('#screeningContent').scrollIntoView({behavior:'smooth'});
-}
-
-/* ---------- Helpers ---------- */
-function alertOnce(msg){
-  if(!sessionStorage.getItem('seenAlert_'+btoa(msg))){ alert(msg); sessionStorage.setItem('seenAlert_'+btoa(msg),'1'); }
-}
-
-/* Initialize small behaviors */
-document.getElementById('openHfSpace').addEventListener('click', ()=> window.open('https://huggingface.co/spaces/stabilityai/stable-diffusion','_blank'));
-
-/* show initial instructions to user once */
-alertOnce('Tip: Use Hugging Face Spaces (open links) to generate images & text. If you want me to integrate direct HF API calls, paste your hf_ API key in the HF API Key field (optional).');
-
-</script>
-</body>
-</html>
+/* ---------------- Landing buttons ---------------- */
+document.getElementB
