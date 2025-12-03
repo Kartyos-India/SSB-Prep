@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile – SSB Prep</title>
+
+    <!-- Main stylesheet -->
+    <link rel="stylesheet" href="css/style.css">
+
+    <style>
+        .profile-container {
+            max-width: 750px;
+            margin: 40px auto;
+            padding: 25px;
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: var(--shadow-soft);
+        }
+
+        .profile-container h1 {
+            margin-bottom: 10px;
+        }
+
+        .profile-description {
+            color: var(--text-secondary);
+            margin-bottom: 25px;
+        }
+
+        .profile-section {
+            padding: 20px;
+            border-radius: 12px;
+            background-color: var(--bg-light);
+            margin-bottom: 30px;
+            border: 1px solid var(--divider);
+        }
+
+        .profile-section h2 {
+            margin-bottom: 12px;
+        }
+
+        .profile-input {
+            width: 100%;
+            padding: 14px;
+            border-radius: 8px;
+            border: 1px solid var(--divider);
+            background: var(--input-bg);
+            color: var(--text-primary);
+            margin-top: 8px;
+            font-size: 15px;
+        }
+
+        #hf-save-btn {
+            margin-top: 12px;
+            padding: 12px 22px;
+            background-color: var(--primary);
+            color: white;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            transition: 0.2s ease;
+        }
+
+        #hf-save-btn:hover {
+            opacity: 0.9;
+        }
+
+        #hf-status {
+            margin-top: 10px;
+            font-size: 0.9em;
+        }
+
+        .status-ok {
+            color: var(--success-green);
+        }
+
+        .status-error {
+            color: var(--error-red);
+        }
+    </style>
+
+</head>
+<body>
+    
+    <!-- Header injected by main.js -->
+    <div id="site-header"></div>  
+
+    <main class="profile-container">
+        <h1>Your Profile</h1>
+        <p class="profile-description">Manage your HuggingFace API key and app preferences.</p>
+
+        <!-- HF KEY SECTION -->
+        <div class="profile-section">
+            <h2>✨ HuggingFace API Key</h2>
+            <p>This key is used to generate PPDT images and OIR questions.  
+            Your usage is billed to your own HuggingFace account.</p>
+
+            <label for="hf-api-key"><strong>Your HuggingFace API Key:</strong></label>
+            <input 
+                id="hf-api-key"
+                type="text"
+                class="profile-input"
+                placeholder="hf_xxxxxxxxxxxxxxxxxx" 
+            />
+
+            <button id="hf-save-btn">Save Key</button>
+
+            <div id="hf-status"></div>
+        </div>
+
+    </main>
+
+    <!-- scripts -->
+    <script type="module" src="js/main.js"></script>
+    <script type="module" src="js/profile.js"></script>
+
+</body>
+</html>
