@@ -1,102 +1,94 @@
 // api/generate-oir-questions.js
-// Fetches the default OIR questions from Firestore, shuffles them, and returns 50.
-// Requires Firebase Admin SDK setup in Vercel environment variables.
+// Serverless endpoint that generates OIR questions via a Hugging Face text model using
+// the caller's HF key stored under users/{uid}/secrets/hf.
+//
+// Similar flow to the image endpoint: verify id token, read user key, call HF, return JSON/text.
 
-// IMPORTANT: You need to set up Firebase Admin SDK for this serverless function.
-// 1. Go to Firebase Console -> Project Settings -> Service Accounts.
-// 2. Generate a new private key (JSON file).
-// 3. Copy the contents of this JSON file.
-// 4. In Vercel -> Project Settings -> Environment Variables, create a variable named FIREBASE_ADMIN_CONFIG
-// 5. Paste the entire JSON content as the value for FIREBASE_ADMIN_CONFIG.
+import admin from './_shared/admin.js';
 
-import admin from 'firebase-admin';
-
-// Initialize Firebase Admin SDK only once
-try {
-    if (!admin.apps.length) {
-        // Get the config string from environment variables
-        const serviceAccountString = process.env.FIREBASE_ADMIN_CONFIG;
-        if (!serviceAccountString) {
-            throw new Error("FIREBASE_ADMIN_CONFIG environment variable not set.");
-        }
-        // Parse the string into a JSON object
-        const serviceAccount = JSON.parse(serviceAccountString);
-
-        admin.initializeApp({
-            credential: admin.credential.cert(serviceAccount)
-        });
-        console.log("Firebase Admin SDK Initialized Successfully.");
-    }
-} catch (error) {
-    console.error('Firebase Admin SDK initialization error:', error);
-    // If Admin SDK fails, the function won't work, but we handle errors below.
+// Helpers (same as in generate-ppdt-image.js)
+async function verifyIdTokenFromHeader(req) {
+  const authHeader = req.headers.authorization || req.headers.Authorization || '';
+  const m = ('' + authHeader).match(/^Bearer (.+)$/);
+  if (!m) return null;
+  const idToken = m[1];
+  try {
+    const decoded = await admin.auth().verifyIdToken(idToken);
+    return decoded.uid;
+  } catch (err) {
+    console.warn('generate-oir-questions: token verify failed', err && err.message);
+    return null;
+  }
 }
 
-const db = admin.firestore();
-
-export default async function handler(request, response) {
-    // Standard CORS and OPTIONS method handling
-    response.setHeader('Access-Control-Allow-Credentials', true);
-    response.setHeader('Access-Control-Allow-Origin', '*'); // Adjust for production
-    response.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-    response.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
-    if (request.method === 'OPTIONS') {
-        response.status(200).end();
-        return;
-    }
-    if (request.method !== 'GET') {
-        return response.status(405).json({ error: 'Method Not Allowed' });
-    }
-
-    // --- Determine App ID ---
-    // Vercel automatically provides SOME deployment context, but not __app_id like the frontend.
-    // If you need appId specific data, you might pass it as a query param or use a known constant.
-    // For public data, we might not strictly need it, depending on your structure.
-    // Let's assume a default or structure that doesn't rely on runtime appId here.
-    // Replace 'default-app-id' if you have a way to determine it or use a fixed one.
-    const appId = process.env.VERCEL_PROJECT_ID || 'default-app-id'; // Example fallback
-
-    try {
-        // --- Fetch Questions from Firestore ---
-        // Path adjusted for public data structure
-        const docRef = db.collection('artifacts').doc(appId)
-                         .collection('public').doc('data')
-                         .collection('oirDefaultQuestions').doc('main');
-
-        const docSnap = await docRef.get();
-
-        if (!docSnap.exists) {
-            console.error("Firestore document 'oirDefaultQuestions/main' not found.");
-            throw new Error("Default questions not found in the database.");
-        }
-
-        const data = docSnap.data();
-        if (!data || !Array.isArray(data.questionsList) || data.questionsList.length === 0) {
-            console.error("Firestore document 'oirDefaultQuestions/main' has invalid or empty 'questionsList'.");
-            throw new Error("Invalid question data format in the database.");
-        }
-
-        let allQuestions = data.questionsList;
-
-        // --- Shuffle the array ---
-        for (let i = allQuestions.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [allQuestions[i], allQuestions[j]] = [allQuestions[j], allQuestions[i]];
-        }
-
-        // --- Select the first 50 ---
-        const selectedQuestions = allQuestions.slice(0, 50);
-
-        // --- Send response ---
-        response.status(200).json(selectedQuestions);
-
-    } catch (error) {
-        console.error("Error fetching/processing OIR questions from Firestore:", error);
-        // Ensure Admin SDK initialized correctly if this error persists
-        if (error.message.includes("initialize")) {
-             return response.status(500).json({ error: 'Server configuration error (Firebase Admin SDK).', details: error.message });
-        }
-        response.status(500).json({ error: 'Failed to generate OIR questions from Firestore.', details: error.message });
-    }
+async function getUserHFKey(uid) {
+  if (!uid) return null;
+  try {
+    const docRef = admin.firestore().doc(`users/${uid}/secrets/hf`);
+    const snap = await docRef.get();
+    if (!snap.exists) return null;
+    const data = snap.data();
+    if (!data || !data.key) return null;
+    return data.key;
+  } catch (err) {
+    console.error('generate-oir-questions: failed to read user HF key', err && err.message);
+    return null;
+  }
 }
 
+export default async function handler(req, res) {
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
+  const body = req.body || {};
+  // Allow caller to specify a modelEndpoint in body; otherwise use env default or a safe default.
+  const modelEndpoint = body.modelEndpoint || process.env.DEFAULT_TEXT_MODEL_ENDPOINT || 'https://api-inference.huggingface.co/models/google/flan-t5-large';
+  // Build prompt: either caller provided or construct based on payload
+  const prompt = body.prompt || "Generate 5 OIR-style multiple-choice reasoning questions with 4 options each. Return JSON array with fields: question, options (array), answer (index).";
+
+  const uid = await verifyIdTokenFromHeader(req);
+  let hfKey = await getUserHFKey(uid);
+  if (!hfKey) hfKey = process.env.HF_API_KEY || null;
+
+  if (!hfKey) {
+    return res.status(400).json({ error: 'No Hugging Face API key configured for this user. Add it in your profile.' });
+  }
+
+  try {
+    const payload = {
+      inputs: prompt,
+      options: { wait_for_model: true }
+    };
+
+    const hfRes = await fetch(modelEndpoint, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${hfKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!hfRes.ok) {
+      const txt = await hfRes.text().catch(() => '');
+      console.error('generate-oir-questions: HF responded with error', hfRes.status, txt && txt.substring ? txt.substring(0, 200) : txt);
+      return res.status(502).json({ error: 'Hugging Face API error', status: hfRes.status, message: txt });
+    }
+
+    const contentType = (hfRes.headers.get('content-type') || '').toLowerCase();
+    if (contentType.includes('application/json') || contentType.includes('text')) {
+      const json = await hfRes.json().catch(async () => {
+        // If not parseable as JSON, return text
+        const txt = await hfRes.text().catch(() => '');
+        return { text: txt };
+      });
+      return res.status(200).json(json);
+    }
+
+    // If HF returns something else, try to return the body as JSON or text
+    const txt = await hfRes.text().catch(() => '');
+    return res.status(200).json({ raw: txt });
+  } catch (err) {
+    console.error('generate-oir-questions: unexpected error', err && err.stack ? err.stack : err);
+    return res.status(500).json({ error: 'Server error' });
+  }
+}
