@@ -1,102 +1,130 @@
 // api/generate-ppdt-image.js
-// Serverless endpoint that uses the caller's Hugging Face key (stored in Firestore)
-// to call a Hugging Face inference model for image generation.
-// Flow:
-//  - Validate request method (POST)
-//  - Verify Firebase ID token (Authorization: Bearer <idToken>)
-//  - Read user's HF key from Firestore (users/{uid}/secrets/hf) via Admin SDK
-//  - Fall back to process.env.HF_API_KEY if no user key present (optional)
-//  - Call HF model endpoint and return either JSON or base64-encoded image { image: '<base64>', contentType: 'image/png' }
+// Uses per-user HuggingFace key stored at users/{uid}/secrets/hf
+// If missing, falls back to server HF_API_KEY.
+// Validates Firebase ID token from Authorization: Bearer <token>
+// Supports image models that return raw binary or JSON base64.
 
 import admin from './_shared/admin.js';
 
-// Node 18+ has global fetch; Vercel node runtimes do. If not present, fallback to node-fetch:
-// import fetch from 'node-fetch';
+// --- Verify Firebase ID Token ---
+async function verifyIdToken(req) {
+  const header = req.headers.authorization || req.headers.Authorization || "";
+  const match = ("" + header).match(/^Bearer (.+)$/);
+  if (!match) return null;
 
-async function verifyIdTokenFromHeader(req) {
-  const authHeader = req.headers.authorization || req.headers.Authorization || '';
-  const m = ('' + authHeader).match(/^Bearer (.+)$/);
-  if (!m) return null;
-  const idToken = m[1];
   try {
-    const decoded = await admin.auth().verifyIdToken(idToken);
+    const decoded = await admin.auth().verifyIdToken(match[1]);
     return decoded.uid;
   } catch (err) {
-    console.warn('generate-ppdt-image: token verify failed', err && err.message);
+    console.warn("⚠️ PPDT: token verification failed", err.message);
     return null;
   }
 }
 
+// --- Fetch per-user HF key from Firestore ---
 async function getUserHFKey(uid) {
   if (!uid) return null;
   try {
     const docRef = admin.firestore().doc(`users/${uid}/secrets/hf`);
     const snap = await docRef.get();
+
     if (!snap.exists) return null;
     const data = snap.data();
-    if (!data || !data.key) return null;
-    return data.key;
+    return data?.key || null;
   } catch (err) {
-    console.error('generate-ppdt-image: failed to read user HF key', err && err.message);
+    console.error("🔥 Error fetching user HF key:", err.message);
     return null;
   }
 }
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method must be POST" });
+  }
 
-  // Parse body safely (Vercel provides parsed req.body for JSON)
-  const body = req.body || {};
-  const modelEndpoint = body.modelEndpoint || process.env.DEFAULT_IMAGE_MODEL_ENDPOINT || 'https://api-inference.huggingface.co/models/gsdf/Counterfeit-V2.5';
-  const prompt = body.prompt || body.text || 'A simple black-and-white line-drawing for a PPDT test scene';
-  const uid = await verifyIdTokenFromHeader(req);
+  // 1. Identify user (optional)
+  const uid = await verifyIdToken(req);
+
+  // 2. Get user key OR fallback
   let hfKey = await getUserHFKey(uid);
+  if (!hfKey) hfKey = process.env.HF_API_KEY || null;
 
   if (!hfKey) {
-    hfKey = process.env.HF_API_KEY || null; // optional fallback
+    return res.status(400).json({
+      error: "No HuggingFace API key found. Add your key in the Profile page."
+    });
   }
 
-  if (!hfKey) {
-    return res.status(400).json({ error: 'No Hugging Face API key configured for this user. Add it in your profile.' });
-  }
+  // 3. Resolve model
+  const body = req.body || {};
+  const model = body.modelEndpoint ||
+    process.env.DEFAULT_PPDT_MODEL ||
+    "https://api-inference.huggingface.co/models/gsdf/Counterfeit-V2.5";
+
+  const prompt =
+    body.prompt ||
+    `A single-scene black-and-white picture for PPDT test.`; // default safe prompt
 
   try {
-    // Build HF request body. For many image models HF inference accepts { inputs: prompt, options: { wait_for_model: true } }
-    // Some models require different payloads; adapt as needed for your chosen model.
-    const payload = {
-      inputs: prompt,
-      options: { wait_for_model: true }
-    };
-
-    const hfRes = await fetch(modelEndpoint, {
-      method: 'POST',
+    const hfResponse = await fetch(model, {
+      method: "POST",
       headers: {
         Authorization: `Bearer ${hfKey}`,
-        'Content-Type': 'application/json'
+        "Content-Type": "application/json"
       },
-      body: JSON.stringify(payload)
+      body: JSON.stringify({
+        inputs: prompt,
+        options: { wait_for_model: true }
+      })
     });
 
-    if (!hfRes.ok) {
-      const txt = await hfRes.text().catch(() => '');
-      console.error('generate-ppdt-image: HF responded with error', hfRes.status, txt && txt.substring ? txt.substring(0, 200) : txt);
-      return res.status(502).json({ error: 'Hugging Face API error', status: hfRes.status, message: txt });
+    if (!hfResponse.ok) {
+      const errText = await hfResponse.text().catch(() => "");
+      console.error("HF error:", hfResponse.status, errText.slice(0, 200));
+
+      return res.status(502).json({
+        error: "HuggingFace API error",
+        status: hfResponse.status,
+        message: errText
+      });
     }
 
-    const contentType = (hfRes.headers.get('content-type') || '').toLowerCase();
+    const contentType = (hfResponse.headers.get("content-type") || "").toLowerCase();
 
-    if (contentType.startsWith('image/')) {
-      // Binary image: return base64
-      const arr = await hfRes.arrayBuffer();
-      const base64 = Buffer.from(arr).toString('base64');
-      return res.status(200).json({ image: base64, contentType });
+    // 4A. Binary image → convert to base64
+    if (contentType.startsWith("image/")) {
+      const arrayBuffer = await hfResponse.arrayBuffer();
+      const base64 = Buffer.from(arrayBuffer).toString("base64");
+
+      return res.status(200).json({
+        image: base64,
+        format: contentType
+      });
     }
 
-    // Some HF endpoints return JSON (e.g., array of objects or base64 inside JSON)
-    const json = await hfRes.json();
+    // 4B. JSON or text → try to parse
+    const json = await hfResponse.json().catch(null);
+
+    // Many HF models return array like: [{ generated_image: "<base64>" }]
+    if (json?.[0]?.generated_image) {
+      return res.status(200).json({
+        image: json[0].generated_image,
+        format: "image/png"
+      });
+    }
+
+    // Some return array of base64 strings
+    if (Array.isArray(json) && typeof json[0] === "string") {
+      return res.status(200).json({
+        image: json[0],
+        format: "image/png"
+      });
+    }
+
+    // Otherwise return raw JSON
     return res.status(200).json(json);
   } catch (err) {
-    console.error('generate-ppdt-image: unexpected error', err && err.stack ? err.stack : err);
-    return res.status(500).json({ error: 'Server error' });
+    console.error("PPDT generation failed:", err);
+    return res.status(500).json({ error: "Server error generating image" });
   }
 }
