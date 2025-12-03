@@ -4,6 +4,7 @@ import { onAuthStateChanged, collection, query, getDocs, orderBy } from './fireb
 import { firebasePromise, auth, db } from './firebase-app.js';
 
 
+
 const pageContent = document.getElementById('page-content');
 
 // This function will fetch and display the test data
@@ -110,3 +111,4 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 });
+

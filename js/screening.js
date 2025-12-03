@@ -1,7 +1,9 @@
 // js/screening.js - Manages the entire screening test flow, including OIR and PPDT.
 
 import { appInitialized } from './main.js';
-import { auth, db } from './firebase-app.js';
+import { firebasePromise, auth, db } from './firebase-app.js';
+
+import { postWithIdToken } from './screening-serverside.js';
 // Import necessary Firestore functions
 import { collection, addDoc, serverTimestamp, doc, setDoc, getDoc } from './firebase-init.js';
 
@@ -156,18 +158,63 @@ async function initializePPDTTest(settings) {
     // ... (rest of PPDT initialization) ...
      pageContent.innerHTML = `<div class="page-title-section"><div class="loader"></div><p>Loading PPDT image...</p></div>`;
     try {
-        const response = await fetch('/api/generate-ppdt-image', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ gender: settings.gender })
-        });
-        if (!response.ok) throw new Error(`API failed: ${await response.text()}`);
+        // Use postWithIdToken if user is logged in so server can use user's HF key.
+        let response;
+        if (auth && auth.currentUser) {
+            response = await postWithIdToken('/api/generate-ppdt-image', { gender: settings.gender });
+        } else {
+            // fallback: unauthenticated call - server may use global HF_API_KEY if configured
+            response = await fetch('/api/generate-ppdt-image', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ gender: settings.gender })
+            });
+        }
+
+        if (!response.ok) {
+            const txt = await response.text().catch(() => '');
+            throw new Error(`API failed: ${response.status} ${txt}`);
+        }
+
         const data = await response.json();
-        ppdtImageUrl = data.imageUrl;
-        if (!ppdtImageUrl) throw new Error("No image URL was returned from the API.");
+
+        // Support multiple server response formats:
+        //  - { imageUrl: 'https://...' }
+        //  - { image: '<base64 string>' }
+        //  - model-specific JSON structures (try to extract base64 or url)
+        let resolvedUrl = null;
+
+        if (data.imageUrl && typeof data.imageUrl === 'string') {
+            resolvedUrl = data.imageUrl;
+        } else if (data.image && typeof data.image === 'string') {
+            // server returned base64 or data: url
+            if (data.image.startsWith('data:')) resolvedUrl = data.image;
+            else resolvedUrl = `data:image/png;base64,${data.image}`;
+        } else if (Array.isArray(data) && data.length && typeof data[0] === 'string') {
+            // Some HF model endpoints return an array of base64 strings
+            const first = data[0];
+            if (first.startsWith('/')) {
+                // unlikely, but defensive
+                resolvedUrl = first;
+            } else {
+                resolvedUrl = first.startsWith('data:') ? first : `data:image/png;base64,${first}`;
+            }
+        } else if (data && data[0] && data[0].generated_image) {
+            // example nested structure — adapt as needed
+            const b64 = data[0].generated_image;
+            resolvedUrl = b64.startsWith('data:') ? b64 : `data:image/png;base64,${b64}`;
+        }
+
+        if (!resolvedUrl) {
+            console.error('Unrecognized PPDT API response shape:', data);
+            throw new Error('No image returned from the API.');
+        }
+
+        ppdtImageUrl = resolvedUrl;
         runPPDTObservationPhase(settings);
     } catch (error) {
-        renderErrorPage("Could not load PPDT image.", error.message);
+        console.error('initializePPDTTest error:', error);
+        renderErrorPage("Could not load PPDT image.", error.message || String(error));
     }
 }
 
@@ -345,7 +392,7 @@ function renderPPDTReview(videoBlob) {
             const btn = document.getElementById('save-ppdt-btn');
             btn.textContent = 'Saving...'; btn.disabled = true;
             try {
-                // We save the hosted URL, which is more efficient than storing Base64
+                // We save the hosted URL or data: URL. If data: URL is large, consider uploading to storage later.
                 await addDoc(collection(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'tests'), { // Updated path
                     testType: 'PPDT', imageUrl: ppdtImageUrl, story: ppdtStoryText, timestamp: serverTimestamp()
                 });
@@ -436,10 +483,6 @@ async function handleExcelUpload(file) {
             const docRef = doc(db, 'artifacts', appId, 'users', userId, 'oirCustomData', 'questions'); 
             
             // Use setDoc to OVERWRITE the document with the new questions array.
-            // Using { merge: true } could be used to add fields without overwriting, 
-            // but for a question list, overwriting is usually simpler.
-            // Consider using updateDoc with arrayUnion if you want to ADD questions 
-            // without duplicates, but that's more complex if users re-upload.
             await setDoc(docRef, { questionsList: customQuestions }); 
 
             statusDiv.textContent = `Successfully saved ${customQuestions.length} custom questions to your account!`;
@@ -539,11 +582,30 @@ async function initializeOIRTest() {
     // --- Start a New Test ---
     pageContent.innerHTML = `<div class="page-title-section"><div class="loader"></div><p>Generating your test...</p></div>`;
     try {
-        // 1. Fetch default questions from the Groq API
-        const response = await fetch('/api/generate-oir-questions');
+        // 1. Fetch default questions from the Groq API (server)
+        let response;
+        if (auth && auth.currentUser) {
+            // Use authenticated route so server can use user's HF key if needed
+            response = await postWithIdToken('/api/generate-oir-questions', {});
+        } else {
+            // fallback unauthenticated call
+            response = await fetch('/api/generate-oir-questions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) });
+        }
+
         if (!response.ok) throw new Error(`API error fetching default questions: ${response.status}`);
         let defaultQuestions = await response.json();
-        if (!Array.isArray(defaultQuestions)) throw new Error("Invalid default question format from API.");
+        if (!Array.isArray(defaultQuestions)) {
+            // If server returned an object or text, try to extract array
+            if (Array.isArray(defaultQuestions?.questions)) {
+                defaultQuestions = defaultQuestions.questions;
+            } else if (typeof defaultQuestions === 'string') {
+                // server returned plain text - can't parse into questions reliably
+                console.error('Received plain text for defaultQuestions:', defaultQuestions);
+                throw new Error('Invalid default question format from API.');
+            } else {
+                throw new Error('Invalid default question format from API.');
+            }
+        }
 
         // 2. Fetch custom questions from Firestore (if logged in)
         let customQuestions = [];
@@ -589,7 +651,7 @@ async function initializeOIRTest() {
         startOIRTimer();
     } catch (error) {
         console.error("Error initializing OIR Test:", error); // Log the full error
-        renderErrorPage("Could not load OIR questions.", error.message);
+        renderErrorPage("Could not load OIR questions.", error.message || String(error));
     }
 }
 

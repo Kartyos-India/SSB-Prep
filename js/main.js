@@ -1,6 +1,7 @@
 // js/main.js
 import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut } from './firebase-init.js';
-import { firebaseReady, auth } from './firebase-app.js';
+import { firebasePromise, auth, db } from './firebase-app.js';
+
 
 // --- DOM ELEMENTS ---
 const headerBar = document.getElementById('header-bar');
@@ -102,4 +103,5 @@ async function main() {
 
 // Export the main function's promise so other scripts (like screening.js) can wait for it.
 export const appInitialized = main();
+
 
