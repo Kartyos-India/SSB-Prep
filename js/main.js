@@ -88,7 +88,8 @@ async function main() {
     headerRenderPromise = new Promise(async (resolve, reject) => {
         try {
             // Wait for Firebase to be ready before doing anything auth-related.
-            await firebasePromise; // <--- FIXED: Changed from firebaseReady to firebasePromise
+            // FIXED: Using firebasePromise because that is what is imported at the top.
+            await firebasePromise; 
             
             onAuthStateChanged(auth, (user) => {
                 renderHeader(user);
