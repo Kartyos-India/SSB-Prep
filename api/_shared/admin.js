@@ -20,14 +20,16 @@ function initAdmin() {
   
   if (!raw) {
     console.error('❌ FIREBASE_ADMIN_CONFIG is missing.');
-    return admin; // Return uninitialized admin (will fail later gracefully)
+    // We do NOT return initialized admin here, allowing the caller to handle the error
+    return admin; 
   }
 
   try {
     const cred = JSON.parse(raw);
     
     // --- CRITICAL FIX FOR VERCEL ---
-    // Replace literal "\n" characters with actual newlines if they exist
+    // Replace literal "\n" characters with actual newlines if they exist.
+    // This is the #1 cause of 502 errors on Vercel with Firebase.
     if (cred.private_key) {
       cred.private_key = cred.private_key.replace(/\\n/g, '\n');
     }
@@ -42,6 +44,7 @@ function initAdmin() {
     return admin;
   } catch (err) {
     console.error('❌ Admin Init Failed:', err.message);
+    // Return admin anyway so the specific API endpoint can try-catch the failure
     return admin;
   }
 }
