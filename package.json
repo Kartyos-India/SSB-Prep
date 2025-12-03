@@ -1,7 +1,9 @@
-    {
-      "name": "ssb-prep-platform",
-      "version": "1.0.0",
-      "description": "SSB Preparation Platform",
-      "type": "module"
-    }
-    
+{
+  "name": "ssb-prep-platform",
+  "version": "1.0.0",
+  "description": "SSB Preparation Platform",
+  "type": "module",
+  "dependencies": {
+    "firebase-admin": "^12.1.0"
+  }
+}
