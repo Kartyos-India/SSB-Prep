@@ -20,7 +20,8 @@ import {
     getDoc, 
     orderBy,
     serverTimestamp,
-    setDoc // <-- IMPORT ADDED HERE
+    setDoc,
+    deleteDoc // Added deleteDoc for profile management
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 export {
@@ -39,6 +40,6 @@ export {
     getDoc,
     orderBy,
     serverTimestamp,
-    setDoc // <-- EXPORT ADDED HERE
+    setDoc,
+    deleteDoc
 };
-

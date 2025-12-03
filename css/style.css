@@ -46,6 +46,9 @@ body.test-in-progress .app-footer {
 .user-menu { display: flex; flex-direction: column; align-items: flex-end; gap: 0.5rem; }
 .user-info { display: flex; align-items: center; gap: 0.75rem; }
 .user-info img { width: 32px; height: 32px; border-radius: 50%; }
+.user-links { font-size: 0.85rem; display: flex; gap: 1rem; }
+.user-links a { color: var(--text-secondary); text-decoration: none; }
+.user-links a:hover { color: var(--primary-blue); }
 .app-footer { text-align: center; padding: 2rem 0; margin-top: 4rem; border-top: 1px solid var(--border-color); color: var(--text-secondary); font-size: 0.9rem; }
 
 /* --- Homepage Specific Styles --- */
@@ -91,12 +94,7 @@ body.test-in-progress .app-footer {
 
 /* --- PPDT Test Flow Styles --- */
 .ppdt-phase-container { max-width: 900px; margin: 2rem auto; text-align: center; }
-.ppdt-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1.5rem;
-}
+.ppdt-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
 .ppdt-header h2 { font-size: 2rem; margin-bottom: 0; }
 .timer-display { font-size: 1.5rem; color: var(--primary-blue); font-weight: 600; margin-bottom: 1.5rem; }
 .ppdt-image { max-width: 100%; max-height: 70vh; border-radius: 16px; border: 1px solid var(--border-color); }
@@ -159,11 +157,45 @@ body.test-in-progress .app-footer {
 .loader { border: 4px solid var(--border-color); border-top: 4px solid var(--primary-blue); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 1rem auto; }
 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
+/* --- Dashboard (Performance & Profile) Styles --- */
+.dashboard-grid { display: grid; grid-template-columns: 1fr; gap: 2rem; margin-top: 2rem; }
+.dashboard-section { background-color: var(--medium-dark-bg); border: 1px solid var(--border-color); border-radius: 16px; padding: 1.5rem; }
+.dashboard-section h2 { font-size: 1.5rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem; }
+.dashboard-section h2 svg { color: var(--primary-blue); }
+
+/* Profile Form Styles */
+.profile-form label { display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-primary); }
+.api-key-input { width: 100%; padding: 0.8rem; background-color: var(--dark-bg); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary); font-family: monospace; margin-bottom: 0.5rem; }
+.api-key-input:focus { outline: none; border-color: var(--primary-blue); }
+.small-note { font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1.5rem; }
+.small-note code { background: rgba(110, 118, 129, 0.4); padding: 0.2em 0.4em; border-radius: 4px; }
+.profile-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+.profile-btn { padding: 0.6rem 1.2rem; border-radius: 6px; font-weight: 600; cursor: pointer; border: 1px solid transparent; font-size: 0.9rem; }
+.profile-btn.primary { background-color: var(--primary-blue); color: var(--dark-bg); }
+.profile-btn.secondary { background-color: transparent; border-color: var(--border-color); color: var(--text-primary); }
+.profile-btn.danger { background-color: transparent; border-color: var(--error-red); color: var(--error-red); }
+.profile-btn:hover { opacity: 0.9; }
+.status-msg { margin-top: 1rem; font-size: 0.9rem; font-weight: 500; min-height: 1.4em; }
+.status-msg.ok { color: var(--success-green); }
+.status-msg.err { color: var(--error-red); }
+
+/* Performance List Styles */
+.performance-list { display: flex; flex-direction: column; gap: 1rem; max-height: 600px; overflow-y: auto; padding-right: 0.5rem; }
+.test-result-card { background-color: var(--light-dark-bg); border: 1px solid var(--border-color); padding: 1rem; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; }
+.test-info h3 { font-size: 1rem; font-weight: 600; margin-bottom: 0.25rem; }
+.test-date { font-size: 0.8rem; color: var(--text-secondary); }
+.test-score { font-weight: 700; font-size: 1.1rem; text-align: right; }
+.test-score.pass { color: var(--success-green); }
+.test-score.fail { color: var(--error-red); }
+.test-score.neutral { color: var(--primary-blue); }
+
 /* --- Responsive Design --- */
 @media (max-width: 768px) {
     .app-container { padding: 0 1rem; }
     .header-nav { display: none; }
     .hero-section h1 { font-size: 2.5rem; }
-    .module-grid, .test-choice-container, .ppdt-review-grid { grid-template-columns: 1fr; flex-direction: column; }
+    .module-grid, .test-choice-container, .ppdt-review-grid, .dashboard-grid { grid-template-columns: 1fr; flex-direction: column; }
 }
-
+@media (min-width: 900px) {
+    .dashboard-grid { grid-template-columns: 2fr 1fr; }
+}
