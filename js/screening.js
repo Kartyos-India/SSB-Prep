@@ -1,7 +1,8 @@
 // js/screening.js - Manages the entire screening test flow, including OIR and PPDT.
 
 import { appInitialized } from './main.js';
-import { auth, db } from './firebase-app.js';
+import { firebasePromise, auth, db } from './firebase-app.js';
+
 import { postWithIdToken } from './screening-serverside.js';
 // Import necessary Firestore functions
 import { collection, addDoc, serverTimestamp, doc, setDoc, getDoc } from './firebase-init.js';
@@ -822,3 +823,4 @@ async function initializePage() {
 
 // Start the page logic
 initializePage();
+
