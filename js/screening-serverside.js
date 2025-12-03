@@ -1,7 +1,8 @@
 // js/screening-serverside.js
 // Helper to call server endpoints with Firebase ID token in Authorization header.
 
-import { auth } from './firebase-app.js';
+import { firebasePromise, auth, db } from './firebase-app.js';
+
 
 export async function postWithIdToken(path, body = {}, opts = {}) {
   if (!auth || !auth.currentUser) {
