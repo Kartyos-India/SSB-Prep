@@ -24,6 +24,9 @@ async function verifyIdToken(req) {
 // --- Fetch per-user HF key from Firestore ---
 async function getUserHFKey(uid) {
   if (!uid) return null;
+  // Safety check for uninitialized admin
+  if (admin.apps.length === 0) return null;
+
   try {
     const docRef = admin.firestore().doc(`users/${uid}/secrets/hf`);
     const snap = await docRef.get();
@@ -51,15 +54,16 @@ export default async function handler(req, res) {
 
   if (!hfKey) {
     return res.status(400).json({
-      error: "No HuggingFace API key found. Add your key in the Profile page."
+      error: "No HuggingFace API key found. Add your key in the Dashboard settings."
     });
   }
 
   // 3. Resolve model
+  // FIXED: Updated domain from api-inference.huggingface.co to router.huggingface.co
   const body = req.body || {};
   const model = body.modelEndpoint ||
     process.env.DEFAULT_PPDT_MODEL ||
-    "https://api-inference.huggingface.co/models/gsdf/Counterfeit-V2.5";
+    "https://router.huggingface.co/models/gsdf/Counterfeit-V2.5";
 
   const prompt =
     body.prompt ||
@@ -125,6 +129,6 @@ export default async function handler(req, res) {
     return res.status(200).json(json);
   } catch (err) {
     console.error("PPDT generation failed:", err);
-    return res.status(500).json({ error: "Server error generating image" });
+    return res.status(500).json({ error: "Server error generating image", details: err.message });
   }
 }
