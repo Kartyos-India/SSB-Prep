@@ -11,8 +11,6 @@ const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 // --- GLOBAL STATE ---
 let oirTimerInterval;
 let ppdtTimerInterval;
-let mediaRecorder;
-let recordedChunks = [];
 let ppdtStoryText = "";
 let ppdtImageUrl = "";
 let oirQuestions = [];
@@ -37,6 +35,7 @@ function enterTestMode() {
 function exitTestMode() {
     document.body.classList.remove('test-in-progress');
     try {
+        // FIX: Check if we are actually in fullscreen before trying to exit
         if (document.fullscreenElement && document.exitFullscreen) {
             document.exitFullscreen().catch(err => {
                 console.warn("Exit fullscreen failed (safe to ignore):", err);
@@ -128,7 +127,6 @@ function renderPPDTSetup() {
     const startBtn = document.getElementById('start-ppdt-btn');
     const timerStep = document.getElementById('timer-visibility-step');
 
-    // Logic to show/hide timer step and enable start button
     const validate = () => {
         const gender = document.querySelector('input[name="gender"]:checked');
         const mode = document.querySelector('input[name="ppdt-mode"]:checked');
@@ -142,14 +140,11 @@ function renderPPDTSetup() {
         startBtn.disabled = !isValid;
     };
 
-    // Listen for changes
     document.querySelectorAll('input').forEach(input => {
         input.addEventListener('change', (e) => {
-            // Handle timer step visibility
             if (e.target.name === 'ppdt-mode') {
                 if (e.target.value === 'timed') {
                     timerStep.style.display = 'block';
-                    // Reset timer vis selection to force user to choose again or keep logic simple
                 } else {
                     timerStep.style.display = 'none';
                 }
@@ -216,10 +211,6 @@ async function initializePPDTTest(settings) {
 function runPPDTObservationPhase(settings) {
     enterTestMode();
     let timeLeft = 30;
-    
-    // Adjust logic if user selected untimed - usually observation is still timed (30s), 
-    // but writing is what varies. Standard PPDT is strict 30s observe.
-    // Keeping standard 30s observation for now.
 
     pageContent.innerHTML = `
         <div class="ppdt-phase-container">
@@ -240,7 +231,6 @@ function runPPDTObservationPhase(settings) {
 }
 
 function runPPDTWritingPhase(settings) {
-    // Determine timer display based on settings
     const isTimed = settings.mode === 'timed';
     const showTimer = settings.timerVisible;
     let timerHtml = '';
@@ -263,7 +253,7 @@ function runPPDTWritingPhase(settings) {
     document.getElementById('submit-story-btn').addEventListener('click', runPPDTReview);
 
     if (isTimed) {
-        let timeLeft = 270; // 4 minutes 30 seconds
+        let timeLeft = 270; 
         ppdtTimerInterval = setInterval(() => {
             timeLeft--;
             
