@@ -39,9 +39,9 @@ export default async function handler(req, res) {
     // 1. Identify user (optional)
     const uid = await verifyIdToken(req);
 
-    // 2. Get user key OR fallback to Server Env Var
+    // 2. Get user key OR fallback to Server Env Var (Your Request)
     let hfKey = await getUserHFKey(uid);
-    if (!hfKey) hfKey = process.env.HF_API_KEY; // Use server key if user hasn't saved one
+    if (!hfKey) hfKey = process.env.HF_API_KEY;
 
     if (!hfKey) {
       return res.status(500).json({
@@ -49,13 +49,14 @@ export default async function handler(req, res) {
       });
     }
 
-    // 3. Resolve model (Using NEW Router URL)
+    // 3. Resolve model 
+    // FIX: Switched to 'runwayml/stable-diffusion-v1-5' which is reliable on the router
     const body = req.body || {};
     const model = body.modelEndpoint ||
       process.env.DEFAULT_PPDT_MODEL ||
-      "https://router.huggingface.co/models/gsdf/Counterfeit-V2.5"; 
+      "https://router.huggingface.co/models/runwayml/stable-diffusion-v1-5"; 
 
-    const prompt = body.prompt || `A single-scene black-and-white picture for PPDT test.`;
+    const prompt = body.prompt || `black and white sketch of a scene, realistic, high quality, 4k`;
 
     // 4. Call Hugging Face
     const hfResponse = await fetch(model, {
@@ -92,7 +93,7 @@ export default async function handler(req, res) {
     // 5B. JSON or text → try to parse
     const json = await hfResponse.json().catch(null);
     
-    // Handle specific array response format
+    // Handle array response format
     if (Array.isArray(json) && typeof json[0] === "string") {
          return res.status(200).json({ image: json[0], format: "image/png" });
     }
