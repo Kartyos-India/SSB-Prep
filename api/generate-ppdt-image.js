@@ -24,7 +24,7 @@ async function verifyIdToken(req) {
 // --- Fetch per-user HF key from Firestore ---
 async function getUserHFKey(uid) {
   if (!uid) return null;
-  // Safety check for uninitialized admin
+  // Safety check
   if (admin.apps.length === 0) return null;
 
   try {
@@ -59,7 +59,7 @@ export default async function handler(req, res) {
   }
 
   // 3. Resolve model
-  // FIXED: Updated domain from api-inference.huggingface.co to router.huggingface.co
+  // FIXED: Updated domain to router.huggingface.co
   const body = req.body || {};
   const model = body.modelEndpoint ||
     process.env.DEFAULT_PPDT_MODEL ||
