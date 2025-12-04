@@ -37,7 +37,6 @@ function enterTestMode() {
 function exitTestMode() {
     document.body.classList.remove('test-in-progress');
     try {
-        // FIXED: Only try to exit fullscreen if we are actually in fullscreen mode
         if (document.fullscreenElement && document.exitFullscreen) {
             document.exitFullscreen().catch(err => {
                 console.warn("Exit fullscreen failed (safe to ignore):", err);
@@ -47,11 +46,8 @@ function exitTestMode() {
         console.warn("Exit fullscreen error:", err);
     }
     
-    // Clear all timers safely
     if (oirTimerInterval) clearInterval(oirTimerInterval);
     if (ppdtTimerInterval) clearInterval(ppdtTimerInterval);
-    
-    // Clear session state
     sessionStorage.removeItem('oirTestState');
 }
 
@@ -87,7 +83,6 @@ function renderScreeningMenu() {
                 <p>Observe a picture, write a story, and prepare for the group discussion.</p>
             </div>
         </div>
-        <!-- Custom Questions Section Omitted for brevity, assumed unchanged -->
     `;
     document.getElementById('start-oir-test').addEventListener('click', initializeOIRTest);
     document.getElementById('setup-ppdt-test').addEventListener('click', renderPPDTSetup);
@@ -108,19 +103,72 @@ function renderPPDTSetup() {
                     <label><input type="radio" name="gender" value="female" class="setup-option"><div class="option-button"><span>Female</span></div></label>
                 </div>
             </div>
+            
+            <div class="setup-step">
+                <h2>Step 2: Choose Mode</h2>
+                <div class="option-group" id="mode-options">
+                    <label><input type="radio" name="ppdt-mode" value="timed" class="setup-option"><div class="option-button"><span>Timed (4:30)</span></div></label>
+                    <label><input type="radio" name="ppdt-mode" value="untimed" class="setup-option"><div class="option-button"><span>Untimed</span></div></label>
+                </div>
+            </div>
+
+            <div class="setup-step" id="timer-visibility-step" style="display: none;">
+                <h2>Step 3: Timer Visibility</h2>
+                <div class="option-group">
+                    <label><input type="radio" name="timer-visibility" value="visible" class="setup-option"><div class="option-button"><span>Show Timer</span></div></label>
+                    <label><input type="radio" name="timer-visibility" value="hidden" class="setup-option"><div class="option-button"><span>Hide Timer</span></div></label>
+                </div>
+            </div>
+
             <div class="start-test-container">
                 <button id="start-ppdt-btn" class="start-btn" disabled>Start PPDT</button>
             </div>
         </div>`;
     
     const startBtn = document.getElementById('start-ppdt-btn');
-    document.querySelectorAll('.setup-option').forEach(opt => opt.addEventListener('change', () => {
-        if(document.querySelector('input[name="gender"]:checked')) startBtn.disabled = false;
-    }));
+    const timerStep = document.getElementById('timer-visibility-step');
+
+    // Logic to show/hide timer step and enable start button
+    const validate = () => {
+        const gender = document.querySelector('input[name="gender"]:checked');
+        const mode = document.querySelector('input[name="ppdt-mode"]:checked');
+        const timerVis = document.querySelector('input[name="timer-visibility"]:checked');
+
+        let isValid = false;
+        if (gender && mode) {
+            if (mode.value === 'untimed') isValid = true;
+            else if (mode.value === 'timed' && timerVis) isValid = true;
+        }
+        startBtn.disabled = !isValid;
+    };
+
+    // Listen for changes
+    document.querySelectorAll('input').forEach(input => {
+        input.addEventListener('change', (e) => {
+            // Handle timer step visibility
+            if (e.target.name === 'ppdt-mode') {
+                if (e.target.value === 'timed') {
+                    timerStep.style.display = 'block';
+                    // Reset timer vis selection to force user to choose again or keep logic simple
+                } else {
+                    timerStep.style.display = 'none';
+                }
+            }
+            validate();
+        });
+    });
 
     startBtn.addEventListener('click', () => {
         const gender = document.querySelector('input[name="gender"]:checked').value;
-        initializePPDTTest({ gender, mode: 'timed' }); // Defaulting to timed for simplicity
+        const mode = document.querySelector('input[name="ppdt-mode"]:checked').value;
+        const timerVisInput = document.querySelector('input[name="timer-visibility"]:checked');
+        
+        const settings = { 
+            gender, 
+            mode,
+            timerVisible: timerVisInput ? timerVisInput.value === 'visible' : true
+        };
+        initializePPDTTest(settings);
     });
 }
 
@@ -159,7 +207,6 @@ async function initializePPDTTest(settings) {
 
     } catch (error) {
         console.error('PPDT Init Error:', error);
-        // Clean up error message for display
         let msg = error.message || String(error);
         if (msg.includes('502')) msg = "AI Service is currently busy or down. Please try again later.";
         renderErrorPage("Image Generation Failed", msg);
@@ -169,6 +216,11 @@ async function initializePPDTTest(settings) {
 function runPPDTObservationPhase(settings) {
     enterTestMode();
     let timeLeft = 30;
+    
+    // Adjust logic if user selected untimed - usually observation is still timed (30s), 
+    // but writing is what varies. Standard PPDT is strict 30s observe.
+    // Keeping standard 30s observation for now.
+
     pageContent.innerHTML = `
         <div class="ppdt-phase-container">
             <div class="ppdt-header"><h2>Observe the Picture</h2></div>
@@ -188,29 +240,46 @@ function runPPDTObservationPhase(settings) {
 }
 
 function runPPDTWritingPhase(settings) {
+    // Determine timer display based on settings
+    const isTimed = settings.mode === 'timed';
+    const showTimer = settings.timerVisible;
+    let timerHtml = '';
+
+    if (isTimed) {
+        timerHtml = `<p class="timer-display" id="ppdt-write-timer">${showTimer ? "4:30 remaining" : "Time Running..."}</p>`;
+    } else {
+        timerHtml = `<p class="timer-display" style="color:var(--text-secondary)">Untimed Mode</p>`;
+    }
+
     pageContent.innerHTML = `
         <div class="ppdt-phase-container">
             <div class="ppdt-header"><h2>Write Your Story</h2><button id="abort-btn" class="oir-nav-btn abort">Abort</button></div>
-            <p class="timer-display" id="ppdt-write-timer">4:30 remaining</p>
+            ${timerHtml}
             <textarea id="ppdt-story-textarea" placeholder="Write your story here..."></textarea>
             <div class="start-test-container"><button id="submit-story-btn" class="start-btn">Submit Story</button></div>
         </div>`;
     
     document.getElementById('abort-btn').addEventListener('click', () => { exitTestMode(); renderScreeningMenu(); });
-    document.getElementById('submit-story-btn').addEventListener('click', runPPDTReview); // Skip narration for simplicity in this fix
+    document.getElementById('submit-story-btn').addEventListener('click', runPPDTReview);
 
-    let timeLeft = 270;
-    ppdtTimerInterval = setInterval(() => {
-        timeLeft--;
-        const m = Math.floor(timeLeft / 60);
-        const s = timeLeft % 60;
-        const el = document.getElementById('ppdt-write-timer');
-        if(el) el.textContent = `${m}:${s.toString().padStart(2, '0')} remaining`;
-        if (timeLeft <= 0) {
-            clearInterval(ppdtTimerInterval);
-            runPPDTReview();
-        }
-    }, 1000);
+    if (isTimed) {
+        let timeLeft = 270; // 4 minutes 30 seconds
+        ppdtTimerInterval = setInterval(() => {
+            timeLeft--;
+            
+            if (showTimer) {
+                const m = Math.floor(timeLeft / 60);
+                const s = timeLeft % 60;
+                const el = document.getElementById('ppdt-write-timer');
+                if(el) el.textContent = `${m}:${s.toString().padStart(2, '0')} remaining`;
+            }
+
+            if (timeLeft <= 0) {
+                clearInterval(ppdtTimerInterval);
+                runPPDTReview();
+            }
+        }, 1000);
+    }
 }
 
 function runPPDTReview() {
@@ -231,23 +300,29 @@ function runPPDTReview() {
     document.getElementById('menu-btn').addEventListener('click', renderScreeningMenu);
     document.getElementById('save-btn').addEventListener('click', async () => {
         if (!auth.currentUser) return alert("Please login to save.");
+        const btn = document.getElementById('save-btn');
+        btn.textContent = 'Saving...'; btn.disabled = true;
         try {
             await addDoc(collection(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'tests'), {
                 testType: 'PPDT', imageUrl: 'AI Generated', story: ppdtStoryText, timestamp: serverTimestamp()
             });
             alert("Saved successfully!");
-        } catch(e) { console.error(e); alert("Save failed"); }
+            btn.textContent = 'Saved';
+        } catch(e) { 
+            console.error(e); 
+            alert("Save failed"); 
+            btn.textContent = 'Save Result'; btn.disabled = false;
+        }
     });
 }
 
-// --- OIR TEST LOGIC (Simplified for context) ---
+// --- OIR TEST LOGIC ---
 async function initializeOIRTest() {
     pageContent.innerHTML = `<div class="page-title-section"><div class="loader"></div><p>Generating Questions...</p></div>`;
     try {
         const resp = await fetch('/api/generate-oir-questions', { method: 'POST' });
         if(!resp.ok) throw new Error(await resp.text());
         oirQuestions = await resp.json();
-        // Assuming array return
         if(!Array.isArray(oirQuestions)) oirQuestions = oirQuestions.questions || [];
         
         currentOIRIndex = 0;
