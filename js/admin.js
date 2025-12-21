@@ -1,5 +1,5 @@
 // js/admin.js
-import { auth, db } from './firebase-app.js';
+import { auth, db, firebasePromise } from './firebase-app.js'; // Import firebasePromise
 import { onAuthStateChanged } from './firebase-init.js';
 import { collection, addDoc, getDocs, deleteDoc, doc, serverTimestamp } from './firebase-init.js';
 
@@ -25,6 +25,16 @@ function convertDriveLink(url) {
 // --- MAIN LOGIC ---
 document.addEventListener('DOMContentLoaded', async () => {
     
+    // 1. Wait for Firebase to initialize
+    try {
+        await firebasePromise;
+    } catch (e) {
+        console.error("Firebase Init Error:", e);
+        document.getElementById('admin-content').innerHTML = `<p style="color:red">Error connecting to database.</p>`;
+        return;
+    }
+
+    // 2. Now 'auth' is valid, proceed with auth listener
     onAuthStateChanged(auth, user => {
         const warningEl = document.getElementById('login-warning');
         const contentEl = document.getElementById('admin-content');
