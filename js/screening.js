@@ -22,6 +22,8 @@ let recordedChunks = [];
 let recordedBlob = null;
 let mediaRecorder = null;
 let stream = null;
+// Audio Context for Bell
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
 // --- UTILITIES ---
 function enterTestMode() {
@@ -49,6 +51,25 @@ function exitTestMode() {
         stream.getTracks().forEach(track => track.stop());
         stream = null;
     }
+}
+
+function playBell() {
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const oscillator = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+
+    oscillator.type = 'sine';
+    oscillator.frequency.setValueAtTime(500, audioCtx.currentTime); // 500Hz Beep
+    oscillator.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.5);
+
+    gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+
+    oscillator.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+
+    oscillator.start();
+    oscillator.stop(audioCtx.currentTime + 0.5);
 }
 
 function renderErrorPage(title, message) {
@@ -98,25 +119,45 @@ function renderPPDTSetup() {
             <div class="setup-step">
                 <h2>Step 1: Choose Mode</h2>
                 <div class="option-group" id="mode-options">
-                    <label><input type="radio" name="ppdt-mode" value="timed" class="setup-option"><div class="option-button"><span>Timed (4:30)</span></div></label>
-                    <label><input type="radio" name="ppdt-mode" value="untimed" class="setup-option"><div class="option-button"><span>Untimed</span></div></label>
+                    <label><input type="radio" name="ppdt-mode" value="timed" class="setup-option" checked><div class="option-button"><span>Timed (Real Simulation)</span></div></label>
+                    <label><input type="radio" name="ppdt-mode" value="untimed" class="setup-option"><div class="option-button"><span>Untimed (Practice)</span></div></label>
                 </div>
             </div>
+            
+            <div class="setup-step" id="timer-visibility-step">
+                <h2>Step 2: Timer Visibility</h2>
+                <p>Do you want to see the countdown clock while writing?</p>
+                <div class="option-group">
+                    <label><input type="radio" name="ppdt-timer-vis" value="visible" checked><div class="option-button"><span>Show Timer</span></div></label>
+                    <label><input type="radio" name="ppdt-timer-vis" value="hidden"><div class="option-button"><span>Hide Timer (Realistic)</span></div></label>
+                </div>
+            </div>
+
             <div class="start-test-container">
-                <button id="start-ppdt-btn" class="start-btn" disabled>Start PPDT</button>
+                <button id="start-ppdt-btn" class="start-btn">Start PPDT</button>
             </div>
         </div>`;
     
-    const startBtn = document.getElementById('start-ppdt-btn');
+    // Toggle visibility option based on mode
+    const modeOptions = document.querySelectorAll('input[name="ppdt-mode"]');
+    const timerStep = document.getElementById('timer-visibility-step');
     
-    // Enable button when mode is selected
-    document.querySelectorAll('input[name="ppdt-mode"]').forEach(input => {
-        input.addEventListener('change', () => startBtn.disabled = false);
+    modeOptions.forEach(input => {
+        input.addEventListener('change', (e) => {
+            if (e.target.value === 'untimed') {
+                timerStep.style.opacity = '0.5';
+                timerStep.style.pointerEvents = 'none';
+            } else {
+                timerStep.style.opacity = '1';
+                timerStep.style.pointerEvents = 'auto';
+            }
+        });
     });
 
-    startBtn.addEventListener('click', () => {
+    document.getElementById('start-ppdt-btn').addEventListener('click', () => {
         const mode = document.querySelector('input[name="ppdt-mode"]:checked').value;
-        initializePPDTTest({ mode });
+        const visibility = document.querySelector('input[name="ppdt-timer-vis"]:checked').value;
+        initializePPDTTest({ mode, timerVisibility: visibility });
     });
 }
 
@@ -124,11 +165,10 @@ async function initializePPDTTest(settings) {
     pageContent.innerHTML = `<div class="page-title-section"><div class="loader"></div><p>Fetching Practice Image...</p></div>`;
     
     try {
-        // 1. Get Image from JSON catalog via Content Manager
         const content = await getNewTestContent('ppdt');
-        ppdtCurrentContent = content; // Store for saving later
+        ppdtCurrentContent = content; 
 
-        // 2. Start Test
+        // Start Test
         runPPDTObservationPhase(settings);
 
     } catch (error) {
@@ -139,19 +179,24 @@ async function initializePPDTTest(settings) {
 
 function runPPDTObservationPhase(settings) {
     enterTestMode();
-    let timeLeft = 30;
+    // Play Bell at start of observation
+    if (settings.mode === 'timed') playBell();
+
+    let timeLeft = 30; // 30 seconds to observe
 
     pageContent.innerHTML = `
         <div class="ppdt-phase-container">
             <div class="ppdt-header"><h2>Observe the Picture</h2></div>
-            <p class="timer-display" id="ppdt-timer">${timeLeft}s</p>
+            <p class="timer-display" id="ppdt-timer" style="color:var(--primary-blue)">${timeLeft}s</p>
             <img src="${ppdtCurrentContent.path}" alt="PPDT Image" class="ppdt-image">
+            <p style="margin-top:1rem; color:var(--text-secondary); font-size:0.9rem;">Observe the characters, their mood, age, and the situation.</p>
         </div>`;
 
     ppdtTimerInterval = setInterval(() => {
         timeLeft--;
         const el = document.getElementById('ppdt-timer');
         if(el) el.textContent = `${timeLeft}s`;
+        
         if (timeLeft <= 0) {
             clearInterval(ppdtTimerInterval);
             runPPDTWritingPhase(settings);
@@ -161,34 +206,59 @@ function runPPDTObservationPhase(settings) {
 
 function runPPDTWritingPhase(settings) {
     const isTimed = settings.mode === 'timed';
-    let timerHtml = isTimed ? `<p class="timer-display" id="ppdt-write-timer">4:30 remaining</p>` : `<p class="timer-display" style="color:var(--text-secondary)">Untimed Mode</p>`;
+    const showTimer = settings.timerVisibility === 'visible';
+
+    // Play Bell at start of writing phase
+    if (isTimed) playBell();
+
+    let timerHtml = '';
+    if (isTimed) {
+        timerHtml = showTimer 
+            ? `<p class="timer-display" id="ppdt-write-timer">4:30 remaining</p>` 
+            : `<p class="timer-display" style="color:var(--text-secondary); font-size:1rem;">Time is running...</p>`;
+    } else {
+        timerHtml = `<p class="timer-display" style="color:var(--text-secondary)">Untimed Mode</p>`;
+    }
 
     pageContent.innerHTML = `
         <div class="ppdt-phase-container">
             <div class="ppdt-header"><h2>Write Your Story</h2><button id="abort-btn" class="oir-nav-btn abort">Abort</button></div>
             ${timerHtml}
-            <textarea id="ppdt-story-textarea" placeholder="Write your story here..."></textarea>
+            <div style="text-align:left; margin-bottom:10px;">
+                <label style="font-size:0.9rem; color:var(--text-secondary);">Action / Theme:</label>
+                <input type="text" id="ppdt-action-input" placeholder="e.g. Rescuing a drowning boy" style="width:100%; padding:8px; background:var(--dark-bg); border:1px solid var(--border-color); border-radius:4px; color:#fff; margin-top:5px;">
+            </div>
+            <textarea id="ppdt-story-textarea" placeholder="Write your story here... Describe what led to the situation, what is happening now, and the outcome." style="min-height:350px;"></textarea>
             <div class="start-test-container"><button id="submit-story-btn" class="start-btn">Submit Story</button></div>
         </div>`;
     
     document.getElementById('abort-btn').addEventListener('click', () => { exitTestMode(); renderScreeningMenu(); });
     
     const finishWriting = () => {
-        ppdtStoryText = document.getElementById('ppdt-story-textarea')?.value || "No story written.";
+        // Play Bell at end of writing
+        if (isTimed) playBell();
+
+        const action = document.getElementById('ppdt-action-input')?.value || "";
+        const body = document.getElementById('ppdt-story-textarea')?.value || "";
+        ppdtStoryText = `Action: ${action}\n\n${body}`;
+
         clearInterval(ppdtTimerInterval);
-        runPPDTNarrationSetup(settings); // Go to Narration instead of Review
+        runPPDTNarrationSetup(settings); 
     };
 
     document.getElementById('submit-story-btn').addEventListener('click', finishWriting);
 
     if (isTimed) {
-        let timeLeft = 270; // 4m 30s
+        let timeLeft = 270; // 4 minutes 30 seconds
         ppdtTimerInterval = setInterval(() => {
             timeLeft--;
-            const m = Math.floor(timeLeft / 60);
-            const s = timeLeft % 60;
-            const el = document.getElementById('ppdt-write-timer');
-            if(el) el.textContent = `${m}:${s.toString().padStart(2, '0')} remaining`;
+            
+            if (showTimer) {
+                const m = Math.floor(timeLeft / 60);
+                const s = timeLeft % 60;
+                const el = document.getElementById('ppdt-write-timer');
+                if(el) el.textContent = `${m}:${s.toString().padStart(2, '0')} remaining`;
+            }
 
             if (timeLeft <= 0) {
                 finishWriting();
