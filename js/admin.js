@@ -82,6 +82,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             addBtn.textContent = "Adding...";
 
             try {
+                // Correct path: artifacts/{appId}/public/data/ppdt_catalog
                 await addDoc(collection(db, 'artifacts', APP_ID, 'public', 'data', 'ppdt_catalog'), {
                     path: directUrl,
                     originalLink: rawUrl,
@@ -96,6 +97,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 previewImg.style.display = 'none';
                 loadCatalog();
             } catch (e) {
+                console.error("Add Error:", e);
                 statusEl.textContent = "Error: " + e.message;
                 statusEl.className = "status-msg status-error";
             } finally {
