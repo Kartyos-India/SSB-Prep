@@ -1,0 +1,352 @@
+[
+  {
+    "id": "oir_001",
+    "question": "Which word does not belong to the group?",
+    "options": ["Apple", "Orange", "Banana", "Carrot"],
+    "answer": "Carrot",
+    "type": "verbal"
+  },
+  {
+    "id": "oir_002",
+    "question": "If 2 = 4, 3 = 9, 4 = 16, then 5 = ?",
+    "options": ["20", "25", "30", "10"],
+    "answer": "25",
+    "type": "logical"
+  },
+  {
+    "id": "oir_003",
+    "question": "Look at this series: 2, 1, (1/2), (1/4), ... What number should come next?",
+    "options": ["(1/3)", "(1/8)", "(2/8)", "(1/16)"],
+    "answer": "(1/8)",
+    "type": "math"
+  },
+  {
+    "id": "oir_004",
+    "question": "Which number replaces the question mark? 3, 5, 8, 13, 21, ?",
+    "options": ["30", "32", "34", "35"],
+    "answer": "34",
+    "type": "logical"
+  },
+  {
+    "id": "oir_005",
+    "question": "CUP : LIP :: BIRD : ?",
+    "options": ["GRASS", "FOREST", "BEAK", "BUSH"],
+    "answer": "BEAK",
+    "type": "verbal"
+  },
+  {
+    "id": "oir_006",
+    "question": "If RED is coded as 27, what is the code for BLUE?",
+    "options": ["30", "40", "50", "35"],
+    "answer": "40",
+    "type": "logical"
+  },
+  {
+    "id": "oir_007",
+    "question": "Arrange the words in a meaningful sequence: 1. Key, 2. Door, 3. Lock, 4. Room",
+    "options": ["1,3,2,4", "1,2,3,4", "4,2,3,1", "3,1,2,4"],
+    "answer": "1,3,2,4",
+    "type": "verbal"
+  },
+  {
+    "id": "oir_008",
+    "question": "Which number is the odd one out? 4, 9, 16, 25, 30, 36",
+    "options": ["25", "30", "9", "36"],
+    "answer": "30",
+    "type": "math"
+  },
+  {
+    "id": "oir_009",
+    "question": "Paw : Cat :: Hoof : ?",
+    "options": ["Lamb", "Elephant", "Lion", "Horse"],
+    "answer": "Horse",
+    "type": "verbal"
+  },
+  {
+    "id": "oir_010",
+    "question": "Identify the next number in the series: 8, 27, 64, 125, ?",
+    "options": ["216", "200", "150", "300"],
+    "answer": "216",
+    "type": "math"
+  },
+  {
+    "id": "oir_011",
+    "question": "Which word is the odd one out?",
+    "options": ["Inch", "Ounce", "Centimeter", "Yard"],
+    "answer": "Ounce",
+    "type": "verbal"
+  },
+  {
+    "id": "oir_012",
+    "question": "If A = 1, B = 2, C = 3, what is the value of FACE?",
+    "options": ["15", "6135", "613", "18"],
+    "answer": "15",
+    "type": "logical"
+  },
+  {
+    "id": "oir_013",
+    "question": "Find the missing number: 7, 10, 8, 11, 9, 12, ?",
+    "options": ["10", "12", "7", "13"],
+    "answer": "10",
+    "type": "logical"
+  },
+  {
+    "id": "oir_014",
+    "question": "Melt : Liquid :: Freeze : ?",
+    "options": ["Ice", "Solid", "Condense", "Push"],
+    "answer": "Solid",
+    "type": "verbal"
+  },
+  {
+    "id": "oir_015",
+    "question": "What comes next: 1, 4, 9, 16, 25, ?",
+    "options": ["36", "30", "32", "40"],
+    "answer": "36",
+    "type": "math"
+  },
+  {
+    "id": "oir_016",
+    "question": "If you rearrange the letters 'CIFAIPC', you get the name of a(n):",
+    "options": ["Animal", "Country", "Ocean", "City"],
+    "answer": "Ocean",
+    "type": "verbal"
+  },
+  {
+    "id": "oir_017",
+    "question": "Choose the word which is least like the other words in the group.",
+    "options": ["Geometry", "Algebra", "Calculus", "Thermodynamics"],
+    "answer": "Thermodynamics",
+    "type": "verbal"
+  },
+  {
+    "id": "oir_018",
+    "question": "Looking at a portrait of a man, Harsh said, 'His mother is the wife of my father's son. Brothers and sisters I have none.' At whose portrait was Harsh looking?",
+    "options": ["His son", "His cousin", "His uncle", "His nephew"],
+    "answer": "His son",
+    "type": "logical"
+  },
+  {
+    "id": "oir_019",
+    "question": "Which number should replace the question mark? 12, 11, 13, 12, 14, 13, ?",
+    "options": ["10", "16", "13", "15"],
+    "answer": "15",
+    "type": "logical"
+  },
+  {
+    "id": "oir_020",
+    "question": "Bird is to Fly as Fish is to ?",
+    "options": ["Water", "Swim", "Gill", "Fin"],
+    "answer": "Swim",
+    "type": "verbal"
+  },
+  {
+    "id": "oir_021",
+    "question": "Identify the next number in the series: 3, 6, 11, 18, 27, ?",
+    "options": ["38", "36", "34", "40"],
+    "answer": "38",
+    "type": "math"
+  },
+  {
+    "id": "oir_022",
+    "question": "Which of the following does not fit the group?",
+    "options": ["Sneeze", "Cough", "Yawn", "Hiccup"],
+    "answer": "Yawn",
+    "type": "verbal"
+  },
+  {
+    "id": "oir_023",
+    "question": "If SOUTH-EAST becomes NORTH, and NORTH-EAST becomes WEST, then WEST will become?",
+    "options": ["SOUTH-EAST", "SOUTH-WEST", "NORTH-EAST", "NORTH-WEST"],
+    "answer": "SOUTH-EAST",
+    "type": "logical"
+  },
+  {
+    "id": "oir_024",
+    "question": "Start : End :: Birth : ?",
+    "options": ["Life", "Death", "Grow", "Create"],
+    "answer": "Death",
+    "type": "verbal"
+  },
+  {
+    "id": "oir_025",
+    "question": "Find the odd one out.",
+    "options": ["Circle", "Triangle", "Rectangle", "Sphere"],
+    "answer": "Sphere",
+    "type": "spatial"
+  },
+  {
+    "id": "oir_026",
+    "question": "Which letter comes next in the series: A, C, F, J, O, ?",
+    "options": ["U", "T", "S", "R"],
+    "answer": "U",
+    "type": "verbal"
+  },
+  {
+    "id": "oir_027",
+    "question": "1, 2, 4, 8, 16, ?",
+    "options": ["20", "24", "32", "28"],
+    "answer": "32",
+    "type": "math"
+  },
+  {
+    "id": "oir_028",
+    "question": "Find the odd one out.",
+    "options": ["Copper", "Iron", "Brass", "Aluminum"],
+    "answer": "Brass",
+    "type": "verbal"
+  },
+  {
+    "id": "oir_029",
+    "question": "Doctor is to Patient as Lawyer is to ?",
+    "options": ["Judge", "Court", "Client", "Criminal"],
+    "answer": "Client",
+    "type": "verbal"
+  },
+  {
+    "id": "oir_030",
+    "question": "How many 5s are there in the following sequence which are immediately preceded by 3 but not immediately followed by 7? 3 5 7 3 5 2 4 5 3 5 8 3 5 7",
+    "options": ["1", "2", "3", "4"],
+    "answer": "2",
+    "type": "logical"
+  },
+  {
+    "id": "oir_031",
+    "question": "Which number is the odd one out? 5, 15, 20, 24, 30",
+    "options": ["20", "24", "15", "30"],
+    "answer": "24",
+    "type": "math"
+  },
+  {
+    "id": "oir_032",
+    "question": "Safe : Insecure :: Spend : ?",
+    "options": ["Save", "Earn", "Money", "Shop"],
+    "answer": "Save",
+    "type": "verbal"
+  },
+  {
+    "id": "oir_033",
+    "question": "If 'WATER' is written as 'YCVGT', then what is written as 'HKTG'?",
+    "options": ["FIRE", "IRGE", "HIRE", "EIRD"],
+    "answer": "FIRE",
+    "type": "logical"
+  },
+  {
+    "id": "oir_034",
+    "question": "What is the next number in the series: 50, 45, 40, 35, ?",
+    "options": ["30", "25", "20", "15"],
+    "answer": "30",
+    "type": "math"
+  },
+  {
+    "id": "oir_035",
+    "question": "Choose the pair that has a similar relationship: Grain : Salt",
+    "options": ["Shard : Pottery", "Chip : Glass", "Blades : Grass", "Flake : Snow"],
+    "answer": "Chip : Glass",
+    "type": "verbal"
+  },
+  {
+    "id": "oir_036",
+    "question": "If yesterday was Tuesday, what day will it be day after tomorrow?",
+    "options": ["Friday", "Saturday", "Thursday", "Sunday"],
+    "answer": "Friday",
+    "type": "logical"
+  },
+  {
+    "id": "oir_037",
+    "question": "Which one is different from the rest?",
+    "options": ["Rigveda", "Yajurveda", "Atharvaveda", "Ayurveda"],
+    "answer": "Ayurveda",
+    "type": "verbal"
+  },
+  {
+    "id": "oir_038",
+    "question": "Find the missing number in the sequence: 5, 11, 23, 47, ?",
+    "options": ["95", "90", "85", "100"],
+    "answer": "95",
+    "type": "math"
+  },
+  {
+    "id": "oir_039",
+    "question": "If 10 men can do a piece of work in 12 days, how many men are required to do the same work in 6 days?",
+    "options": ["20", "15", "18", "24"],
+    "answer": "20",
+    "type": "math"
+  },
+  {
+    "id": "oir_040",
+    "question": "Rearrange the letters 'RTEOU' to form a meaningful word.",
+    "options": ["ROUTE", "OUTER", "TOUR", "TRUE"],
+    "answer": "ROUTE",
+    "type": "verbal"
+  },
+  {
+    "id": "oir_041",
+    "question": "Which letter replaces the question mark? B, E, H, K, ?",
+    "options": ["N", "M", "L", "O"],
+    "answer": "N",
+    "type": "verbal"
+  },
+  {
+    "id": "oir_042",
+    "question": "Find the odd one out.",
+    "options": ["Car", "Bicycle", "Motorcycle", "Scooter"],
+    "answer": "Bicycle",
+    "type": "verbal"
+  },
+  {
+    "id": "oir_043",
+    "question": "What comes next in the sequence: 80, 10, 70, 15, 60, ?",
+    "options": ["20", "25", "50", "30"],
+    "answer": "20",
+    "type": "math"
+  },
+  {
+    "id": "oir_044",
+    "question": "Choose the alternative which is closely resembles the mirror image of the word: FUN.",
+    "options": ["NUF", "ИUF", "ИUꟻ", "FUM"],
+    "answer": "ИUꟻ",
+    "type": "spatial"
+  },
+  {
+    "id": "oir_045",
+    "question": "Book : Author :: Statue : ?",
+    "options": ["Painter", "Mason", "Sculptor", "Artist"],
+    "answer": "Sculptor",
+    "type": "verbal"
+  },
+  {
+    "id": "oir_046",
+    "question": "If 'CAT' is coded as '3120', how is 'NAVY' coded?",
+    "options": ["1412225", "141225", "1412224", "1412226"],
+    "answer": "1412225",
+    "type": "logical"
+  },
+  {
+    "id": "oir_047",
+    "question": "Which word can be formed using the letters of the word 'MEASUREMENT'?",
+    "options": ["MASTER", "MANTLE", "SUMMIT", "ASSURE"],
+    "answer": "MASTER",
+    "type": "verbal"
+  },
+  {
+    "id": "oir_048",
+    "question": "Find the missing number: 6, 13, 28, 59, ?",
+    "options": ["122", "111", "120", "118"],
+    "answer": "122",
+    "type": "math"
+  },
+  {
+    "id": "oir_049",
+    "question": "Clock : Time :: Thermometer : ?",
+    "options": ["Heat", "Temperature", "Energy", "Radiation"],
+    "answer": "Temperature",
+    "type": "verbal"
+  },
+  {
+    "id": "oir_050",
+    "question": "Which shape is the odd one out?",
+    "options": ["Cube", "Cuboid", "Cone", "Square"],
+    "answer": "Square",
+    "type": "spatial"
+  }
+]
