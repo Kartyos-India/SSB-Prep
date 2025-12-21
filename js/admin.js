@@ -1,7 +1,8 @@
 // js/admin.js
-import { auth, db } from './firebase-app.js';
+import { auth, db, firebasePromise } from './firebase-app.js'; // Import firebasePromise
 import { onAuthStateChanged } from './firebase-init.js';
 import { collection, addDoc, getDocs, deleteDoc, doc, serverTimestamp } from './firebase-init.js';
+import { postWithIdToken } from './screening-serverside.js';
 
 const APP_ID = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
@@ -25,6 +26,16 @@ function convertDriveLink(url) {
 // --- MAIN LOGIC ---
 document.addEventListener('DOMContentLoaded', async () => {
     
+    // 1. Wait for Firebase to initialize
+    try {
+        await firebasePromise;
+    } catch (e) {
+        console.error("Firebase Init Error:", e);
+        document.getElementById('admin-content').innerHTML = `<p style="color:red">Error connecting to database.</p>`;
+        return;
+    }
+
+    // 2. Now 'auth' is valid, proceed with auth listener
     onAuthStateChanged(auth, user => {
         const warningEl = document.getElementById('login-warning');
         const contentEl = document.getElementById('admin-content');
@@ -57,7 +68,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    // --- SINGLE ADD BUTTON ---
+    // --- SINGLE ADD BUTTON (Updated to use API) ---
     const addBtn = document.getElementById('add-ppdt-btn');
     if (addBtn) {
         addBtn.addEventListener('click', async () => {
@@ -72,13 +83,19 @@ document.addEventListener('DOMContentLoaded', async () => {
             addBtn.textContent = "Adding...";
 
             try {
-                await addDoc(collection(db, 'artifacts', APP_ID, 'public', 'data', 'ppdt_catalog'), {
-                    path: directUrl,
-                    originalLink: rawUrl,
-                    description: desc || "No description",
-                    timestamp: serverTimestamp(),
-                    active: true
+                // Call API instead of direct DB write
+                const response = await postWithIdToken('/api/add-catalog-item', {
+                    appId: APP_ID,
+                    collectionName: 'ppdt_catalog',
+                    items: {
+                        path: directUrl,
+                        originalLink: rawUrl,
+                        description: desc || "No description"
+                    }
                 });
+
+                if (!response.ok) throw new Error(await response.text());
+
                 statusEl.textContent = "Success!";
                 statusEl.className = "status-msg status-success";
                 linkInput.value = "";
@@ -86,6 +103,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 previewImg.style.display = 'none';
                 loadCatalog();
             } catch (e) {
+                console.error("Add Error:", e);
                 statusEl.textContent = "Error: " + e.message;
                 statusEl.className = "status-msg status-error";
             } finally {
@@ -123,45 +141,38 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                     statusEl.textContent = `Found ${json.length} items. Uploading...`;
                     
-                    let successCount = 0;
-                    let failCount = 0;
+                    const itemsToUpload = [];
 
                     for (const item of json) {
-                        // Accept 'link', 'url', or 'path' keys
                         const rawUrl = item.link || item.url || item.path;
                         const desc = item.description || item.desc || "Imported Image";
 
-                        if (!rawUrl) {
-                            failCount++;
-                            continue;
-                        }
+                        if (!rawUrl) continue;
 
-                        const directUrl = convertDriveLink(rawUrl);
-                        
-                        try {
-                            await addDoc(collection(db, 'artifacts', APP_ID, 'public', 'data', 'ppdt_catalog'), {
-                                path: directUrl,
-                                originalLink: rawUrl,
-                                description: desc,
-                                timestamp: serverTimestamp(),
-                                active: true
-                            });
-                            successCount++;
-                        } catch (err) {
-                            console.error("Upload failed for item:", item, err);
-                            failCount++;
-                        }
-                        
-                        // Update progress UI
-                        statusEl.textContent = `Progress: ${successCount + failCount} / ${json.length}`;
+                        itemsToUpload.push({
+                            path: convertDriveLink(rawUrl),
+                            originalLink: rawUrl,
+                            description: desc
+                        });
                     }
 
-                    statusEl.textContent = `Complete! Added: ${successCount}, Failed: ${failCount}`;
-                    statusEl.className = successCount > 0 ? "status-msg status-success" : "status-msg status-error";
+                    if (itemsToUpload.length === 0) throw new Error("No valid items found.");
+
+                    // Call API with bulk data
+                    const response = await postWithIdToken('/api/add-catalog-item', {
+                        appId: APP_ID,
+                        collectionName: 'ppdt_catalog',
+                        items: itemsToUpload
+                    });
+
+                    if (!response.ok) throw new Error(await response.text());
+
+                    statusEl.textContent = `Complete! Added: ${itemsToUpload.length}`;
+                    statusEl.className = "status-msg status-success";
                     loadCatalog(); 
 
                 } catch (err) {
-                    statusEl.textContent = "Invalid JSON: " + err.message;
+                    statusEl.textContent = "Upload failed: " + err.message;
                     statusEl.className = "status-msg status-error";
                 } finally {
                     bulkBtn.disabled = false;
@@ -194,26 +205,16 @@ async function loadCatalog() {
             const data = doc.data();
             html += `
                 <div style="display:flex; gap:1rem; align-items:center; background:var(--dark-bg); padding:1rem; border-radius:8px; margin-bottom:1rem; border:1px solid var(--border-color);">
-                    <img src="${data.path}" style="width:60px; height:60px; object-fit:cover; border-radius:4px;">
+                    <img src="${data.path}" style="width:60px; height:60px; object-fit:cover; border-radius:4px;" onerror="this.src='https://placehold.co/60x60?text=Error'">
                     <div style="flex:1;">
                         <p style="font-weight:600; font-size:0.9rem;">${data.description}</p>
                         <a href="${data.originalLink}" target="_blank" style="font-size:0.8rem; color:var(--primary-blue);">Original Link</a>
                     </div>
-                    <button class="delete-btn" data-id="${doc.id}" style="background:transparent; border:1px solid var(--error-red); color:var(--error-red); padding:0.4rem 0.8rem; border-radius:4px; cursor:pointer;">Remove</button>
                 </div>
             `;
         });
         
         listEl.innerHTML = html;
-
-        document.querySelectorAll('.delete-btn').forEach(btn => {
-            btn.addEventListener('click', async (e) => {
-                if(!confirm("Remove this image?")) return;
-                const id = e.target.dataset.id;
-                await deleteDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', 'ppdt_catalog', id));
-                loadCatalog();
-            });
-        });
 
     } catch (e) {
         listEl.innerHTML = '<p style="color:var(--error-red);">Failed to load catalog.</p>';

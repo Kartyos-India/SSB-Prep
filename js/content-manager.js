@@ -1,43 +1,49 @@
 // js/content-manager.js
 import { auth, db } from './firebase-app.js';
-import { doc, getDoc, setDoc, arrayUnion, serverTimestamp } from './firebase-init.js';
+import { doc, getDoc, setDoc, arrayUnion, serverTimestamp, collection, getDocs } from './firebase-init.js';
 
 const APP_ID = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
-let _storageBaseUrl = null;
-
 /**
- * Fetches the Storage Base URL from the server environment variable.
- */
-async function getStorageBaseUrl() {
-    if (_storageBaseUrl !== null) return _storageBaseUrl;
-    try {
-        const res = await fetch('/api/get-storage-config');
-        if (res.ok) {
-            const data = await res.json();
-            _storageBaseUrl = data.baseUrl || "";
-        } else {
-            _storageBaseUrl = "";
-        }
-    } catch (e) {
-        console.warn("Could not fetch storage config, defaulting to empty.", e);
-        _storageBaseUrl = "";
-    }
-    return _storageBaseUrl;
-}
-
-/**
- * Fetches the static JSON catalog for a specific test type.
+ * Fetches the catalog of content (images/questions).
+ * Strategy: 
+ * 1. Try fetching from Firestore (Dynamic Data from Admin Panel)
+ * 2. If Firestore is empty/fails, fallback to local JSON (Static Data)
  */
 async function fetchContentCatalog(type) {
+    let catalog = [];
+
+    // 1. Try Firestore First (Dynamic)
     try {
-        const response = await fetch(`data/${type}.json`);
-        if (!response.ok) throw new Error(`Failed to load ${type} data`);
-        return await response.json();
+        if (db) {
+            // Collection: artifacts/{appId}/public/data/{type}_catalog
+            // Note: Admin saves to 'ppdt_catalog', so we construct the name dynamically
+            const catalogName = `${type}_catalog`; 
+            const catalogRef = collection(db, 'artifacts', APP_ID, 'public', 'data', catalogName);
+            const snapshot = await getDocs(catalogRef);
+            
+            if (!snapshot.empty) {
+                catalog = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                console.log(`Loaded ${catalog.length} items from Firestore for ${type}`);
+            }
+        }
     } catch (e) {
-        console.error("Content fetch error:", e);
-        return [];
+        console.warn(`Firestore catalog fetch failed for ${type}, falling back to JSON.`, e);
     }
+
+    // 2. If Firestore gave no results, load local JSON
+    if (catalog.length === 0) {
+        try {
+            const response = await fetch(`data/${type}.json`);
+            if (response.ok) {
+                catalog = await response.json();
+            }
+        } catch (e) {
+            console.warn(`Local JSON fetch error for ${type}:`, e);
+        }
+    }
+
+    return catalog;
 }
 
 /**
@@ -56,25 +62,16 @@ async function getUserSeenHistory(uid, testType) {
 }
 
 /**
- * Helper to construct the full image URL.
+ * Helper to ensure the image path is a valid URL.
  */
-async function resolveImagePath(itemPath) {
-    // If it's already a full URL (http/https), return it.
+function resolveImagePath(itemPath) {
+    if (!itemPath) return '';
+    // If it's a full URL (Drive link, Cloudinary, etc.), return as is.
     if (itemPath.startsWith('http://') || itemPath.startsWith('https://')) {
         return itemPath;
     }
-
-    // Otherwise, prepend the base URL from env
-    const baseUrl = await getStorageBaseUrl();
-    
-    // If no base URL and path is relative, assume local public folder
-    if (!baseUrl) return itemPath;
-
-    // Remove double slashes if they exist
-    const cleanBase = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
-    const cleanPath = itemPath.startsWith('/') ? itemPath.slice(1) : itemPath;
-    
-    return `${cleanBase}/${cleanPath}`;
+    // If it's a relative path, assume it's in the public folder.
+    return itemPath;
 }
 
 /**
@@ -82,7 +79,10 @@ async function resolveImagePath(itemPath) {
  */
 export async function getNewTestContent(testType) {
     const catalog = await fetchContentCatalog(testType);
-    if (!catalog || catalog.length === 0) throw new Error("Content catalog is empty.");
+    
+    if (!catalog || catalog.length === 0) {
+        throw new Error("Content catalog is empty. Please add items via Admin Panel or JSON.");
+    }
 
     let seenIds = [];
     if (auth && auth.currentUser) {
@@ -93,16 +93,19 @@ export async function getNewTestContent(testType) {
     const available = catalog.filter(item => !seenIds.includes(item.id));
 
     if (available.length === 0) {
-        throw new Error("You have completed all available practice sets for this category!");
+        throw new Error("You have completed all available practice sets! Check back later for new uploads.");
     }
 
     // Pick random
     const randomIndex = Math.floor(Math.random() * available.length);
     const selectedItem = available[randomIndex];
 
-    // Resolve the full URL for the image
+    // Resolve URL (Handle Google Drive links vs Local paths)
     if (selectedItem.path) {
-        selectedItem.path = await resolveImagePath(selectedItem.path);
+        selectedItem.path = resolveImagePath(selectedItem.path);
+    } else if (selectedItem.link) {
+        // Handle case where JSON might use 'link' key instead of 'path'
+        selectedItem.path = resolveImagePath(selectedItem.link);
     }
 
     return selectedItem;
@@ -119,9 +122,10 @@ export async function getUnseenBatch(testType, count = 30) {
         seenIds = await getUserSeenHistory(auth.currentUser.uid, testType);
     }
 
+    // Filter
     const available = catalog.filter(item => !seenIds.includes(item.id));
     
-    // Shuffle
+    // Shuffle (Fisher-Yates)
     for (let i = available.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [available[i], available[j]] = [available[j], available[i]];
@@ -129,7 +133,7 @@ export async function getUnseenBatch(testType, count = 30) {
 
     let result = available.slice(0, count);
     
-    // Fill with seen items if we run out
+    // Fill with seen items if needed (to ensure we always return 'count' questions)
     if (result.length < count) {
         const needed = count - result.length;
         const seenItems = catalog.filter(item => seenIds.includes(item.id));
