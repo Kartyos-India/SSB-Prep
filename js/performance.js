@@ -2,7 +2,8 @@
 // Logic for Performance Dashboard (History & Settings)
 
 import { onAuthStateChanged, collection, query, getDocs, orderBy, doc, getDoc, setDoc, deleteDoc, serverTimestamp } from './firebase-init.js';
-import { auth, db } from './firebase-app.js';
+// FIXED: Import firebasePromise to wait for init
+import { firebasePromise, auth, db } from './firebase-app.js';
 
 const pageContent = document.getElementById('page-content');
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
@@ -90,7 +91,7 @@ async function loadPerformanceHistory(userId) {
                 detailsHtml = `
                 <div id="details-${uniqueId}" style="display:none; margin-top: 15px; padding-top:15px; border-top:1px solid var(--border-color);">
                     <div style="display:flex; flex-direction:column; gap:15px;">
-                        <img src="${data.imageUrl}" style="width: 100%; max-width: 300px; border-radius:8px; border:1px solid var(--border-color);">
+                        <img src="${data.imageUrl}" style="width: 100%; max-width: 300px; border-radius:8px; border:1px solid var(--border-color);" onerror="this.style.display='none'">
                         <div style="background:var(--dark-bg); padding:1rem; border-radius:8px;">
                             <h4 style="margin-bottom:0.5rem; color:var(--text-secondary); font-size:0.85rem; text-transform:uppercase; letter-spacing:0.05em;">Your Story</h4>
                             <p style="font-size:0.95rem; color:var(--text-primary); white-space: pre-wrap;">${data.story || 'No text saved.'}</p>
@@ -108,9 +109,6 @@ async function loadPerformanceHistory(userId) {
                 resultHtml = `<span class="test-score neutral">N/A</span>`;
             }
 
-            // Click handler logic is inline for simplicity in template string, 
-            // but relies on global window event or a post-render attach. 
-            // We will attach event listeners after rendering.
             return `
                 <div class="test-result-card" id="card-${uniqueId}" data-has-details="${!!detailsHtml}">
                     <div class="card-summary" style="display: flex; justify-content: space-between; align-items: center; cursor:${detailsHtml ? 'pointer' : 'default'}">
@@ -148,6 +146,11 @@ async function loadPerformanceHistory(userId) {
 
 // --- INIT ---
 document.addEventListener('DOMContentLoaded', async () => {
-    // Wait for Auth
-    onAuthStateChanged(auth, renderDashboard);
+    // Wait for Auth to Initialize
+    try {
+        await firebasePromise;
+        onAuthStateChanged(auth, renderDashboard);
+    } catch(e) {
+        console.error("Init failed", e);
+    }
 });
