@@ -16,6 +16,11 @@ let ppdtCurrentContent = null; // Stores the current image object {id, path, ...
 let oirQuestions = [];
 let currentOIRIndex = 0;
 let oirScore = 0;
+// New Global for Video
+let recordedChunks = [];
+let recordedBlob = null;
+let mediaRecorder = null;
+let stream = null;
 
 // --- UTILITIES ---
 function enterTestMode() {
@@ -37,6 +42,12 @@ function exitTestMode() {
     
     if (oirTimerInterval) clearInterval(oirTimerInterval);
     if (ppdtTimerInterval) clearInterval(ppdtTimerInterval);
+    
+    // Stop camera if active
+    if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+        stream = null;
+    }
 }
 
 function renderErrorPage(title, message) {
@@ -160,7 +171,14 @@ function runPPDTWritingPhase(settings) {
         </div>`;
     
     document.getElementById('abort-btn').addEventListener('click', () => { exitTestMode(); renderScreeningMenu(); });
-    document.getElementById('submit-story-btn').addEventListener('click', runPPDTReview);
+    
+    const finishWriting = () => {
+        ppdtStoryText = document.getElementById('ppdt-story-textarea')?.value || "No story written.";
+        clearInterval(ppdtTimerInterval);
+        runPPDTNarrationSetup(settings); // Go to Narration instead of Review
+    };
+
+    document.getElementById('submit-story-btn').addEventListener('click', finishWriting);
 
     if (isTimed) {
         let timeLeft = 270; // 4m 30s
@@ -172,16 +190,136 @@ function runPPDTWritingPhase(settings) {
             if(el) el.textContent = `${m}:${s.toString().padStart(2, '0')} remaining`;
 
             if (timeLeft <= 0) {
-                clearInterval(ppdtTimerInterval);
-                runPPDTReview();
+                finishWriting();
             }
         }, 1000);
     }
 }
 
+// --- NEW: NARRATION PHASE ---
+async function runPPDTNarrationSetup(settings) {
+    pageContent.innerHTML = `
+        <div class="ppdt-phase-container">
+            <div class="ppdt-header"><h2>Narration Preparation</h2></div>
+            <div class="oir-question-card" style="text-align:center;">
+                <p style="margin-bottom:1rem; color:var(--text-secondary);">You will now narrate your story. Please enable camera and microphone access.</p>
+                <div id="camera-preview-container" style="width:100%; max-width:480px; height:320px; background:#000; margin:0 auto; display:flex; align-items:center; justify-content:center; border-radius:8px; overflow:hidden;">
+                    <p style="color:#666;">Waiting for camera...</p>
+                    <video id="live-preview" autoplay muted playsinline style="width:100%; height:100%; object-fit:cover; display:none;"></video>
+                </div>
+                <div class="start-test-container">
+                    <button id="enable-cam-btn" class="start-btn">Enable Camera</button>
+                    <button id="start-record-btn" class="start-btn" style="display:none; background-color:var(--error-red);">Start Recording</button>
+                    <button id="skip-narration-btn" class="oir-nav-btn" style="margin-top:10px;">Skip Narration</button>
+                </div>
+            </div>
+        </div>`;
+
+    document.getElementById('skip-narration-btn').addEventListener('click', runPPDTReview);
+
+    document.getElementById('enable-cam-btn').addEventListener('click', async () => {
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            const videoEl = document.getElementById('live-preview');
+            videoEl.srcObject = stream;
+            videoEl.style.display = 'block';
+            document.querySelector('#camera-preview-container p').style.display = 'none';
+            
+            document.getElementById('enable-cam-btn').style.display = 'none';
+            document.getElementById('start-record-btn').style.display = 'inline-block';
+        } catch (err) {
+            console.error("Camera Error:", err);
+            alert("Could not access camera. Please check permissions.");
+        }
+    });
+
+    document.getElementById('start-record-btn').addEventListener('click', runPPDTRecording);
+}
+
+function runPPDTRecording() {
+    recordedChunks = [];
+    mediaRecorder = new MediaRecorder(stream);
+
+    mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) recordedChunks.push(e.data);
+    };
+
+    mediaRecorder.onstop = () => {
+        recordedBlob = new Blob(recordedChunks, { type: 'video/webm' });
+        runPPDTPlayback();
+    };
+
+    let timeLeft = 60; // 1 minute for narration
+    mediaRecorder.start();
+
+    pageContent.innerHTML = `
+        <div class="ppdt-phase-container">
+            <div class="ppdt-header"><h2>Narrating...</h2></div>
+            <p class="timer-display" id="record-timer" style="color:var(--error-red);">Recording: 60s</p>
+            <div style="width:100%; max-width:480px; height:320px; background:#000; margin:0 auto; border-radius:8px; overflow:hidden; border:2px solid var(--error-red);">
+                <video id="recording-preview" autoplay muted playsinline style="width:100%; height:100%; object-fit:cover;"></video>
+            </div>
+            <div class="start-test-container">
+                <button id="stop-record-btn" class="start-btn">Stop Recording</button>
+            </div>
+        </div>`;
+    
+    const previewEl = document.getElementById('recording-preview');
+    previewEl.srcObject = stream;
+
+    const timerInt = setInterval(() => {
+        timeLeft--;
+        const el = document.getElementById('record-timer');
+        if(el) el.textContent = `Recording: ${timeLeft}s`;
+        if (timeLeft <= 0) {
+            clearInterval(timerInt);
+            if (mediaRecorder.state === 'recording') mediaRecorder.stop();
+        }
+    }, 1000);
+
+    document.getElementById('stop-record-btn').addEventListener('click', () => {
+        clearInterval(timerInt);
+        if (mediaRecorder.state === 'recording') mediaRecorder.stop();
+    });
+}
+
+function runPPDTPlayback() {
+    // Stop camera stream now
+    if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+        stream = null;
+    }
+
+    const videoUrl = URL.createObjectURL(recordedBlob);
+
+    pageContent.innerHTML = `
+        <div class="page-title-section"><h1>Self Evaluation</h1></div>
+        <div class="ppdt-review-grid" style="grid-template-columns: 1fr;">
+            <div class="review-item-card" style="text-align:center;">
+                <h3>Your Narration</h3>
+                <video id="playback-video" controls src="${videoUrl}" style="width:100%; max-width:480px; border-radius:8px; margin-bottom:1rem;"></video>
+                <div style="display:flex; justify-content:center; gap:10px; margin-bottom:1rem;">
+                    <button class="oir-nav-btn" onclick="document.getElementById('playback-video').muted=true; document.getElementById('playback-video').play()">Play Muted (Body Language)</button>
+                    <button class="oir-nav-btn" onclick="document.getElementById('playback-video').muted=false; document.getElementById('playback-video').play()">Play Audio (Speech)</button>
+                </div>
+                <a href="${videoUrl}" download="my-narration.webm" class="oir-nav-btn" style="text-decoration:none; display:inline-block;">Download Video</a>
+            </div>
+        </div>
+        <div class="start-test-container">
+            <button id="finish-review-btn" class="start-btn">Proceed to Final Review</button>
+        </div>`;
+
+    document.getElementById('finish-review-btn').addEventListener('click', runPPDTReview);
+}
+// --- END NEW NARRATION PHASE ---
+
+
 function runPPDTReview() {
     exitTestMode();
-    ppdtStoryText = document.getElementById('ppdt-story-textarea')?.value || "No story written.";
+    // Ensure story is captured if we skipped here directly
+    if (!ppdtStoryText && document.getElementById('ppdt-story-textarea')) {
+        ppdtStoryText = document.getElementById('ppdt-story-textarea').value;
+    }
     
     pageContent.innerHTML = `
         <div class="page-title-section"><h1>PPDT Completed</h1></div>
