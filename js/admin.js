@@ -1,8 +1,8 @@
 // js/admin.js
-import { auth, firebasePromise } from './firebase-app.js';
-import { onAuthStateChanged, collection, getDocs, deleteDoc, doc } from './firebase-init.js';
-import { db } from './firebase-app.js'; // Needed for reading the list
-import { postWithIdToken } from './screening-serverside.js'; // Import helper for API calls
+import { auth, db, firebasePromise } from './firebase-app.js'; // Import firebasePromise
+import { onAuthStateChanged } from './firebase-init.js';
+import { collection, addDoc, getDocs, deleteDoc, doc, serverTimestamp } from './firebase-init.js';
+import { postWithIdToken } from './screening-serverside.js';
 
 const APP_ID = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
@@ -10,12 +10,14 @@ const APP_ID = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 function convertDriveLink(url) {
     if (!url) return null;
     let id = null;
+    // Match standard drive URL patterns
     const match1 = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
     if (match1) id = match1[1];
     const match2 = url.match(/id=([a-zA-Z0-9_-]+)/);
     if (match2) id = match2[1];
 
     if (id) {
+        // Use lh3.googleusercontent.com for direct image access
         return `https://lh3.googleusercontent.com/d/${id}`;
     }
     return url;
@@ -24,7 +26,7 @@ function convertDriveLink(url) {
 // --- MAIN LOGIC ---
 document.addEventListener('DOMContentLoaded', async () => {
     
-    // 1. Wait for Firebase
+    // 1. Wait for Firebase to initialize
     try {
         await firebasePromise;
     } catch (e) {
@@ -33,7 +35,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
 
-    // 2. Auth Listener
+    // 2. Now 'auth' is valid, proceed with auth listener
     onAuthStateChanged(auth, user => {
         const warningEl = document.getElementById('login-warning');
         const contentEl = document.getElementById('admin-content');
@@ -48,7 +50,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
-    // --- PREVIEW HANDLER ---
+    // --- SINGLE IMAGE PREVIEW ---
     const linkInput = document.getElementById('drive-link');
     const previewImg = document.getElementById('img-preview');
     
@@ -66,7 +68,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    // --- SINGLE ADD BUTTON (Via API) ---
+    // --- SINGLE ADD BUTTON (Updated to use API) ---
     const addBtn = document.getElementById('add-ppdt-btn');
     if (addBtn) {
         addBtn.addEventListener('click', async () => {
@@ -81,7 +83,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             addBtn.textContent = "Adding...";
 
             try {
-                // Call Server API instead of Client SDK
+                // Call API instead of direct DB write
                 const response = await postWithIdToken('/api/add-catalog-item', {
                     appId: APP_ID,
                     collectionName: 'ppdt_catalog',
@@ -111,7 +113,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    // --- BULK UPLOAD HANDLER (Via API) ---
+    // --- BULK UPLOAD HANDLER ---
     const bulkBtn = document.getElementById('bulk-upload-btn');
     if (bulkBtn) {
         bulkBtn.addEventListener('click', () => {
@@ -184,7 +186,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 });
 
-// Load Catalog (Client Read - Assuming Public Read is allowed)
 async function loadCatalog() {
     const listEl = document.getElementById('catalog-list');
     if (!listEl) return;
@@ -209,8 +210,6 @@ async function loadCatalog() {
                         <p style="font-weight:600; font-size:0.9rem;">${data.description}</p>
                         <a href="${data.originalLink}" target="_blank" style="font-size:0.8rem; color:var(--primary-blue);">Original Link</a>
                     </div>
-                    <!-- Delete button removed because client-delete might also be blocked by rules. 
-                         To add delete, we would need a delete API endpoint. -->
                 </div>
             `;
         });
@@ -218,7 +217,7 @@ async function loadCatalog() {
         listEl.innerHTML = html;
 
     } catch (e) {
-        listEl.innerHTML = '<p style="color:var(--error-red);">Failed to load catalog. (Read Permission Error?)</p>';
+        listEl.innerHTML = '<p style="color:var(--error-red);">Failed to load catalog.</p>';
         console.error(e);
     }
 }
