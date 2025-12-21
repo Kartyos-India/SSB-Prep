@@ -1,9 +1,8 @@
 // js/performance.js
-// Combined logic for Performance History and Profile/Settings management.
+// Logic for Performance Dashboard (History & Settings)
 
 import { onAuthStateChanged, collection, query, getDocs, orderBy, doc, getDoc, setDoc, deleteDoc, serverTimestamp } from './firebase-init.js';
-import { firebasePromise, auth, db } from './firebase-app.js';
-import { postWithIdToken } from './screening-serverside.js';
+import { auth, db } from './firebase-app.js';
 
 const pageContent = document.getElementById('page-content');
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
@@ -41,38 +40,31 @@ async function renderDashboard(user) {
                 </div>
             </div>
 
-            <!-- Right Column: Settings / API Key -->
+            <!-- Right Column: Settings / Profile -->
             <div class="dashboard-section" id="settings-section">
                 <h2 id="settings">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.72v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                     Settings
                 </h2>
                 <div class="profile-form">
-                    <label for="hf-api-key">HuggingFace API Key</label>
-                    <input id="hf-api-key" class="api-key-input" type="text" placeholder="Loading status..." autocomplete="off" />
-                    <div class="small-note">Saved privately. Required for AI features.</div>
-                    
-                    <div class="profile-actions">
-                        <button id="hf-save-btn" class="profile-btn primary">Save</button>
-                        <button id="hf-test-btn" class="profile-btn secondary">Test</button>
-                        <button id="hf-delete-btn" class="profile-btn danger">Delete</button>
-                    </div>
-                    <div id="hf-status" class="status-msg"></div>
+                    <p class="text-gray-400 text-sm mb-4">Manage your account preferences here.</p>
+                    <button id="logout-btn-dash" class="profile-btn danger w-full">Logout</button>
                 </div>
             </div>
         </div>
     `;
 
+    document.getElementById('logout-btn-dash').addEventListener('click', () => auth.signOut());
+
     // Initialize Sub-Components
     loadPerformanceHistory(user.uid);
-    initializeProfileSettings(user.uid);
 }
 
 // --- MODULE 1: PERFORMANCE HISTORY ---
 async function loadPerformanceHistory(userId) {
     const container = document.getElementById('performance-list-container');
     try {
-        // Updated path: artifacts/{appId}/users/{uid}/tests
+        // Path: artifacts/{appId}/users/{uid}/tests
         const testsRef = collection(db, 'artifacts', appId, 'users', userId, 'tests');
         const q = query(testsRef, orderBy('timestamp', 'desc'));
         const snapshot = await getDocs(q);
@@ -88,27 +80,65 @@ async function loadPerformanceHistory(userId) {
                 year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
             }) : 'Unknown Date';
             
+            const uniqueId = doc.id;
             let resultHtml = '';
+            let detailsHtml = '';
+
+            // Handle PPDT
             if (data.testType === 'PPDT') {
-                resultHtml = `<span class="test-score neutral">Completed</span>`;
-            } else if (typeof data.score === 'number') {
+                resultHtml = `<span class="test-score neutral" style="font-size:0.9rem; cursor:pointer;">View Story ▼</span>`;
+                detailsHtml = `
+                <div id="details-${uniqueId}" style="display:none; margin-top: 15px; padding-top:15px; border-top:1px solid var(--border-color);">
+                    <div style="display:flex; flex-direction:column; gap:15px;">
+                        <img src="${data.imageUrl}" style="width: 100%; max-width: 300px; border-radius:8px; border:1px solid var(--border-color);">
+                        <div style="background:var(--dark-bg); padding:1rem; border-radius:8px;">
+                            <h4 style="margin-bottom:0.5rem; color:var(--text-secondary); font-size:0.85rem; text-transform:uppercase; letter-spacing:0.05em;">Your Story</h4>
+                            <p style="font-size:0.95rem; color:var(--text-primary); white-space: pre-wrap;">${data.story || 'No text saved.'}</p>
+                        </div>
+                    </div>
+                </div>`;
+            } 
+            // Handle OIR
+            else if (data.testType === 'OIR') {
                 const percentage = (data.score / data.total) * 100;
                 const scoreClass = percentage >= 60 ? 'pass' : 'fail';
                 resultHtml = `<span class="test-score ${scoreClass}">${data.score}/${data.total}</span>`;
-            } else {
+            } 
+            else {
                 resultHtml = `<span class="test-score neutral">N/A</span>`;
             }
 
+            // Click handler logic is inline for simplicity in template string, 
+            // but relies on global window event or a post-render attach. 
+            // We will attach event listeners after rendering.
             return `
-                <div class="test-result-card">
-                    <div class="test-info">
-                        <h3>${data.testType || 'Practice Test'}</h3>
-                        <p class="test-date">${date}</p>
+                <div class="test-result-card" id="card-${uniqueId}" data-has-details="${!!detailsHtml}">
+                    <div class="card-summary" style="display: flex; justify-content: space-between; align-items: center; cursor:${detailsHtml ? 'pointer' : 'default'}">
+                        <div class="test-info">
+                            <h3>${data.testType || 'Practice Test'}</h3>
+                            <p class="test-date">${date}</p>
+                        </div>
+                        ${resultHtml}
                     </div>
-                    ${resultHtml}
+                    ${detailsHtml}
                 </div>
             `;
         }).join('');
+
+        // Attach Event Listeners for Accordion
+        snapshot.docs.forEach(doc => {
+            const card = document.getElementById(`card-${doc.id}`);
+            if (card && card.dataset.hasDetails === 'true') {
+                card.querySelector('.card-summary').addEventListener('click', () => {
+                    const details = document.getElementById(`details-${doc.id}`);
+                    if (details.style.display === 'none') {
+                        details.style.display = 'block';
+                    } else {
+                        details.style.display = 'none';
+                    }
+                });
+            }
+        });
 
     } catch (error) {
         console.error("Error loading performance:", error);
@@ -116,84 +146,8 @@ async function loadPerformanceHistory(userId) {
     }
 }
 
-// --- MODULE 2: PROFILE SETTINGS (HF KEY) ---
-async function initializeProfileSettings(userId) {
-    const inputEl = document.getElementById('hf-api-key');
-    const statusEl = document.getElementById('hf-status');
-
-    function setStatus(text, type = '') {
-        statusEl.textContent = text;
-        statusEl.className = 'status-msg' + (type === 'ok' ? ' ok' : type === 'err' ? ' err' : '');
-    }
-
-    // 1. Load current status (exists or not)
-    try {
-        const ref = doc(db, 'users', userId, 'secrets', 'hf'); // Keep original path for secrets for compatibility
-        const snap = await getDoc(ref);
-        if (snap.exists()) {
-            inputEl.placeholder = '•••••••••••••••• (Saved)';
-            setStatus('Key is saved and ready.', 'ok');
-        } else {
-            inputEl.placeholder = 'Paste your HF_xxx key here';
-            setStatus('No key saved.');
-        }
-    } catch (e) {
-        console.warn('Profile load error:', e);
-        inputEl.placeholder = 'Error checking status';
-    }
-
-    // 2. Event Handlers
-    document.getElementById('hf-save-btn').addEventListener('click', async () => {
-        const rawKey = inputEl.value.trim();
-        if (!rawKey) return setStatus('Please paste a key first.', 'err');
-        
-        setStatus('Saving...');
-        try {
-            await setDoc(doc(db, 'users', userId, 'secrets', 'hf'), { 
-                key: rawKey, 
-                updatedAt: serverTimestamp() 
-            });
-            inputEl.value = '';
-            inputEl.placeholder = '•••••••••••••••• (Saved)';
-            setStatus('Key saved successfully!', 'ok');
-        } catch (err) {
-            setStatus('Save failed: ' + err.message, 'err');
-        }
-    });
-
-    document.getElementById('hf-test-btn').addEventListener('click', async () => {
-        setStatus('Testing key with AI server...');
-        try {
-            // Simple prompt to check connectivity
-            const testPrompt = 'Return a single JSON array of one question like [{"question":"Is this a test?","options":["A","B","C","D"],"answer":0}]';
-            const resp = await postWithIdToken('/api/generate-oir-questions', { prompt: testPrompt });
-            if (!resp.ok) throw new Error(`Server returned ${resp.status}`);
-            setStatus('Test successful! Key is working.', 'ok');
-        } catch (err) {
-            setStatus('Test failed: ' + err.message, 'err');
-        }
-    });
-
-    document.getElementById('hf-delete-btn').addEventListener('click', async () => {
-        if (!confirm('Are you sure you want to remove your API key? AI features will stop working.')) return;
-        setStatus('Deleting...');
-        try {
-            await deleteDoc(doc(db, 'users', userId, 'secrets', 'hf'));
-            inputEl.placeholder = 'Paste your HF_xxx key here';
-            setStatus('Key deleted.', 'ok');
-        } catch (err) {
-            setStatus('Delete failed: ' + err.message, 'err');
-        }
-    });
-}
-
 // --- INIT ---
 document.addEventListener('DOMContentLoaded', async () => {
-    try {
-        await firebasePromise;
-        onAuthStateChanged(auth, renderDashboard);
-    } catch (error) {
-        console.error("Dashboard Init Error:", error);
-        pageContent.innerHTML = `<div class="dashboard-section"><p style="color:var(--error-red)">System Error: Could not connect to database.</p></div>`;
-    }
+    // Wait for Auth
+    onAuthStateChanged(auth, renderDashboard);
 });

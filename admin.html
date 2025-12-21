@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Content Manager</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .admin-container { max-width: 800px; margin: 0 auto; padding: 2rem; }
+        .admin-card { background: var(--medium-dark-bg); padding: 2rem; border-radius: 16px; border: 1px solid var(--border-color); margin-bottom: 2rem; }
+        .form-group { margin-bottom: 1.5rem; }
+        .form-group label { display: block; margin-bottom: 0.5rem; color: var(--text-secondary); }
+        .form-group input, .form-group textarea { width: 100%; padding: 0.8rem; background: var(--dark-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 8px; }
+        .status-msg { margin-top: 1rem; font-weight: 500; }
+        .status-success { color: var(--success-green); }
+        .status-error { color: var(--error-red); }
+        .preview-img { max-width: 100%; margin-top: 1rem; border-radius: 8px; border: 1px solid var(--border-color); display: none; }
+        code { background: #333; padding: 0.2rem 0.4rem; border-radius: 4px; font-family: monospace; }
+    </style>
+</head>
+<body>
+
+    <header id="header-bar" class="app-header app-container"></header>
+
+    <main class="admin-container">
+        <h1>Content Manager</h1>
+        <p style="color:var(--text-secondary); margin-bottom: 2rem;">Add new content to the SSB Prep Platform.</p>
+
+        <!-- Login Protection -->
+        <div id="login-warning" style="display:none; text-align:center; padding:2rem; background:var(--medium-dark-bg); border-radius:8px;">
+            <h3>Restricted Access</h3>
+            <p>Please log in with an authorized account.</p>
+        </div>
+
+        <div id="admin-content" style="display:none;">
+            
+            <!-- Bulk Uploader -->
+            <div class="admin-card" style="border-color: var(--primary-blue);">
+                <h2>Bulk Upload (JSON)</h2>
+                <div class="form-group">
+                    <label>Upload JSON file containing links</label>
+                    <input type="file" id="bulk-json-file" accept=".json">
+                    <p class="format-info" style="margin-top:0.5rem; font-size:0.85rem; color:var(--text-secondary);">
+                        Required JSON Format:<br>
+                        <code>[ { "link": "https://drive...", "description": "optional" }, ... ]</code>
+                    </p>
+                </div>
+                <button id="bulk-upload-btn" class="start-btn">Upload Bulk Data</button>
+                <div id="bulk-status" class="status-msg"></div>
+            </div>
+
+            <!-- Single PPDT Uploader -->
+            <div class="admin-card">
+                <h2>Add Single PPDT Image</h2>
+                <div class="form-group">
+                    <label>Google Drive Link</label>
+                    <input type="text" id="drive-link" placeholder="https://drive.google.com/file/d/..." autocomplete="off">
+                </div>
+                
+                <div class="form-group">
+                    <label>Description (Optional)</label>
+                    <input type="text" id="img-desc" placeholder="e.g. Group discussion in office">
+                </div>
+
+                <img id="img-preview" class="preview-img" alt="Preview">
+                
+                <button id="add-ppdt-btn" class="start-btn" style="margin-top:1rem;">Add Single Image</button>
+                <div id="ppdt-status" class="status-msg"></div>
+            </div>
+
+            <!-- Existing Content List -->
+            <div class="admin-card">
+                <h2>Current Catalog</h2>
+                <div id="catalog-list" style="margin-top:1rem;">
+                    <p style="color:var(--text-secondary);">Loading...</p>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script type="module" src="js/main.js"></script>
+    <script type="module" src="js/admin.js"></script>
+</body>
+</html>
