@@ -15,6 +15,7 @@ let ppdtStoryText = "";
 let ppdtCurrentContent = null; // Stores the current image object {id, path, ...}
 let oirQuestions = [];
 let currentOIRIndex = 0;
+let oirAnswers = {}; // Store user answers: { 0: "Answer", 1: null }
 let oirScore = 0;
 // New Global for Video
 let recordedChunks = [];
@@ -370,6 +371,7 @@ async function initializeOIRTest() {
         
         currentOIRIndex = 0;
         oirScore = 0;
+        oirAnswers = {}; // Reset answers
         enterTestMode();
         renderOIRQuestion();
     } catch(e) {
@@ -378,50 +380,118 @@ async function initializeOIRTest() {
 }
 
 function renderOIRQuestion() {
-    if(!oirQuestions[currentOIRIndex]) {
-        // End of test
-        finishOIRTest();
-        return;
-    }
-
     const q = oirQuestions[currentOIRIndex];
     
+    // Generate Palette HTML
+    let paletteHtml = '<div class="oir-palette" style="display:flex; flex-wrap:wrap; gap:5px; margin-bottom:15px; justify-content:center;">';
+    for (let i = 0; i < oirQuestions.length; i++) {
+        let statusClass = 'neutral';
+        if (i === currentOIRIndex) statusClass = 'active'; // Current
+        else if (oirAnswers[i]) statusClass = 'answered'; // Answered
+        else if (oirAnswers[i] === null) statusClass = 'skipped'; // Explicitly skipped (visited but no answer)
+        else statusClass = 'unvisited';
+
+        // Styling for palette items
+        let style = `
+            width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;
+            border-radius: 4px; font-size: 0.8rem; cursor: pointer; border: 1px solid var(--border-color);
+        `;
+        
+        if (statusClass === 'active') style += 'background: var(--primary-blue); color: #fff; border-color: var(--primary-blue);';
+        else if (statusClass === 'answered') style += 'background: var(--success-green); color: #000; border-color: var(--success-green);';
+        else if (statusClass === 'skipped') style += 'background: var(--error-red); color: #fff; border-color: var(--error-red);';
+        else style += 'background: var(--light-dark-bg); color: var(--text-secondary);';
+
+        paletteHtml += `<div class="palette-item" data-index="${i}" style="${style}">${i + 1}</div>`;
+    }
+    paletteHtml += '</div>';
+
     pageContent.innerHTML = `
         <div class="oir-test-container">
-            <div class="oir-header">
-                <span class="oir-progress">Question ${currentOIRIndex + 1} of ${oirQuestions.length}</span>
+            <div class="oir-header" style="flex-direction: column; align-items: normal;">
+                 <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                    <span class="oir-progress">Question ${currentOIRIndex + 1} of ${oirQuestions.length}</span>
+                    <button id="finish-test-btn" class="oir-nav-btn finish" style="padding: 0.4rem 1rem; font-size: 0.85rem;">Finish Test</button>
+                 </div>
+                 ${paletteHtml}
             </div>
             <div class="oir-question-card">
                 <p class="oir-question-text">${q.question}</p>
                 <div class="oir-options">
                     ${(q.options||[]).map((o, idx) => `
                         <label class="oir-option-label">
-                            <input type="radio" name="opt" value="${o}" data-idx="${idx}"> ${o}
+                            <input type="radio" name="opt" value="${o}" data-idx="${idx}" ${oirAnswers[currentOIRIndex] === o ? 'checked' : ''}> ${o}
                         </label>`).join('')}
                 </div>
                 <div class="oir-navigation">
+                    <button id="prev-btn" class="oir-nav-btn" ${currentOIRIndex === 0 ? 'disabled style="opacity:0.5; cursor:default;"' : ''}>Previous</button>
                     <button id="next-btn" class="oir-nav-btn">Next</button>
                 </div>
             </div>
         </div>`;
 
-    document.getElementById('next-btn').addEventListener('click', () => {
-        const selected = document.querySelector('input[name="opt"]:checked');
-        if (selected) {
-            // Check answer (Assuming simple string matching or index matching)
-            if (selected.value === q.answer) {
-                oirScore++;
-            }
-        }
-        
-        currentOIRIndex++;
-        renderOIRQuestion();
+    // Palette Click
+    document.querySelectorAll('.palette-item').forEach(item => {
+        item.addEventListener('click', (e) => {
+            saveCurrentAnswer();
+            currentOIRIndex = parseInt(e.target.dataset.index);
+            renderOIRQuestion();
+        });
     });
+
+    // Finish Test
+    document.getElementById('finish-test-btn').addEventListener('click', () => {
+        if (confirm("Are you sure you want to finish the test?")) {
+            saveCurrentAnswer();
+            finishOIRTest();
+        }
+    });
+
+    // Previous Button
+    document.getElementById('prev-btn').addEventListener('click', () => {
+        if (currentOIRIndex > 0) {
+            saveCurrentAnswer();
+            currentOIRIndex--;
+            renderOIRQuestion();
+        }
+    });
+
+    // Next Button
+    document.getElementById('next-btn').addEventListener('click', () => {
+        saveCurrentAnswer();
+        if (currentOIRIndex < oirQuestions.length - 1) {
+            currentOIRIndex++;
+            renderOIRQuestion();
+        } else {
+            finishOIRTest(); // Last question next finishes test
+        }
+    });
+}
+
+function saveCurrentAnswer() {
+    const selected = document.querySelector('input[name="opt"]:checked');
+    if (selected) {
+        oirAnswers[currentOIRIndex] = selected.value;
+    } else {
+        // Only mark as skipped (null) if it wasn't already answered. 
+        // If they revisit and don't change anything, keep old answer.
+        if (oirAnswers[currentOIRIndex] === undefined) {
+             oirAnswers[currentOIRIndex] = null;
+        }
+    }
 }
 
 function finishOIRTest() {
     exitTestMode();
     
+    // Calculate Score based on oirAnswers
+    oirScore = 0;
+    oirQuestions.forEach((q, idx) => {
+        if (oirAnswers[idx] === q.answer) {
+            oirScore++;
+        }
+    });
+
     // Save results automatically if logged in
     const saveResults = async () => {
         if (!auth.currentUser) return;
