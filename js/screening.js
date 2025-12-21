@@ -15,12 +15,15 @@ let ppdtStoryText = "";
 let ppdtCurrentContent = null; // Stores the current image object {id, path, ...}
 let oirQuestions = [];
 let currentOIRIndex = 0;
+let oirAnswers = {}; // Store user answers: { 0: "Answer", 1: null }
 let oirScore = 0;
 // New Global for Video
 let recordedChunks = [];
 let recordedBlob = null;
 let mediaRecorder = null;
 let stream = null;
+// Audio Context for Bell
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
 // --- UTILITIES ---
 function enterTestMode() {
@@ -48,6 +51,25 @@ function exitTestMode() {
         stream.getTracks().forEach(track => track.stop());
         stream = null;
     }
+}
+
+function playBell() {
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const oscillator = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+
+    oscillator.type = 'sine';
+    oscillator.frequency.setValueAtTime(500, audioCtx.currentTime); // 500Hz Beep
+    oscillator.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.5);
+
+    gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+
+    oscillator.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+
+    oscillator.start();
+    oscillator.stop(audioCtx.currentTime + 0.5);
 }
 
 function renderErrorPage(title, message) {
@@ -97,25 +119,45 @@ function renderPPDTSetup() {
             <div class="setup-step">
                 <h2>Step 1: Choose Mode</h2>
                 <div class="option-group" id="mode-options">
-                    <label><input type="radio" name="ppdt-mode" value="timed" class="setup-option"><div class="option-button"><span>Timed (4:30)</span></div></label>
-                    <label><input type="radio" name="ppdt-mode" value="untimed" class="setup-option"><div class="option-button"><span>Untimed</span></div></label>
+                    <label><input type="radio" name="ppdt-mode" value="timed" class="setup-option" checked><div class="option-button"><span>Timed (Real Simulation)</span></div></label>
+                    <label><input type="radio" name="ppdt-mode" value="untimed" class="setup-option"><div class="option-button"><span>Untimed (Practice)</span></div></label>
                 </div>
             </div>
+            
+            <div class="setup-step" id="timer-visibility-step">
+                <h2>Step 2: Timer Visibility</h2>
+                <p>Do you want to see the countdown clock while writing?</p>
+                <div class="option-group">
+                    <label><input type="radio" name="ppdt-timer-vis" value="visible" checked><div class="option-button"><span>Show Timer</span></div></label>
+                    <label><input type="radio" name="ppdt-timer-vis" value="hidden"><div class="option-button"><span>Hide Timer (Realistic)</span></div></label>
+                </div>
+            </div>
+
             <div class="start-test-container">
-                <button id="start-ppdt-btn" class="start-btn" disabled>Start PPDT</button>
+                <button id="start-ppdt-btn" class="start-btn">Start PPDT</button>
             </div>
         </div>`;
     
-    const startBtn = document.getElementById('start-ppdt-btn');
+    // Toggle visibility option based on mode
+    const modeOptions = document.querySelectorAll('input[name="ppdt-mode"]');
+    const timerStep = document.getElementById('timer-visibility-step');
     
-    // Enable button when mode is selected
-    document.querySelectorAll('input[name="ppdt-mode"]').forEach(input => {
-        input.addEventListener('change', () => startBtn.disabled = false);
+    modeOptions.forEach(input => {
+        input.addEventListener('change', (e) => {
+            if (e.target.value === 'untimed') {
+                timerStep.style.opacity = '0.5';
+                timerStep.style.pointerEvents = 'none';
+            } else {
+                timerStep.style.opacity = '1';
+                timerStep.style.pointerEvents = 'auto';
+            }
+        });
     });
 
-    startBtn.addEventListener('click', () => {
+    document.getElementById('start-ppdt-btn').addEventListener('click', () => {
         const mode = document.querySelector('input[name="ppdt-mode"]:checked').value;
-        initializePPDTTest({ mode });
+        const visibility = document.querySelector('input[name="ppdt-timer-vis"]:checked').value;
+        initializePPDTTest({ mode, timerVisibility: visibility });
     });
 }
 
@@ -123,11 +165,10 @@ async function initializePPDTTest(settings) {
     pageContent.innerHTML = `<div class="page-title-section"><div class="loader"></div><p>Fetching Practice Image...</p></div>`;
     
     try {
-        // 1. Get Image from JSON catalog via Content Manager
         const content = await getNewTestContent('ppdt');
-        ppdtCurrentContent = content; // Store for saving later
+        ppdtCurrentContent = content; 
 
-        // 2. Start Test
+        // Start Test
         runPPDTObservationPhase(settings);
 
     } catch (error) {
@@ -138,19 +179,24 @@ async function initializePPDTTest(settings) {
 
 function runPPDTObservationPhase(settings) {
     enterTestMode();
-    let timeLeft = 30;
+    // Play Bell at start of observation
+    if (settings.mode === 'timed') playBell();
+
+    let timeLeft = 30; // 30 seconds to observe
 
     pageContent.innerHTML = `
         <div class="ppdt-phase-container">
             <div class="ppdt-header"><h2>Observe the Picture</h2></div>
-            <p class="timer-display" id="ppdt-timer">${timeLeft}s</p>
+            <p class="timer-display" id="ppdt-timer" style="color:var(--primary-blue)">${timeLeft}s</p>
             <img src="${ppdtCurrentContent.path}" alt="PPDT Image" class="ppdt-image">
+            <p style="margin-top:1rem; color:var(--text-secondary); font-size:0.9rem;">Observe the characters, their mood, age, and the situation.</p>
         </div>`;
 
     ppdtTimerInterval = setInterval(() => {
         timeLeft--;
         const el = document.getElementById('ppdt-timer');
         if(el) el.textContent = `${timeLeft}s`;
+        
         if (timeLeft <= 0) {
             clearInterval(ppdtTimerInterval);
             runPPDTWritingPhase(settings);
@@ -160,34 +206,59 @@ function runPPDTObservationPhase(settings) {
 
 function runPPDTWritingPhase(settings) {
     const isTimed = settings.mode === 'timed';
-    let timerHtml = isTimed ? `<p class="timer-display" id="ppdt-write-timer">4:30 remaining</p>` : `<p class="timer-display" style="color:var(--text-secondary)">Untimed Mode</p>`;
+    const showTimer = settings.timerVisibility === 'visible';
+
+    // Play Bell at start of writing phase
+    if (isTimed) playBell();
+
+    let timerHtml = '';
+    if (isTimed) {
+        timerHtml = showTimer 
+            ? `<p class="timer-display" id="ppdt-write-timer">4:30 remaining</p>` 
+            : `<p class="timer-display" style="color:var(--text-secondary); font-size:1rem;">Time is running...</p>`;
+    } else {
+        timerHtml = `<p class="timer-display" style="color:var(--text-secondary)">Untimed Mode</p>`;
+    }
 
     pageContent.innerHTML = `
         <div class="ppdt-phase-container">
             <div class="ppdt-header"><h2>Write Your Story</h2><button id="abort-btn" class="oir-nav-btn abort">Abort</button></div>
             ${timerHtml}
-            <textarea id="ppdt-story-textarea" placeholder="Write your story here..."></textarea>
+            <div style="text-align:left; margin-bottom:10px;">
+                <label style="font-size:0.9rem; color:var(--text-secondary);">Action / Theme:</label>
+                <input type="text" id="ppdt-action-input" placeholder="e.g. Rescuing a drowning boy" style="width:100%; padding:8px; background:var(--dark-bg); border:1px solid var(--border-color); border-radius:4px; color:#fff; margin-top:5px;">
+            </div>
+            <textarea id="ppdt-story-textarea" placeholder="Write your story here... Describe what led to the situation, what is happening now, and the outcome." style="min-height:350px;"></textarea>
             <div class="start-test-container"><button id="submit-story-btn" class="start-btn">Submit Story</button></div>
         </div>`;
     
     document.getElementById('abort-btn').addEventListener('click', () => { exitTestMode(); renderScreeningMenu(); });
     
     const finishWriting = () => {
-        ppdtStoryText = document.getElementById('ppdt-story-textarea')?.value || "No story written.";
+        // Play Bell at end of writing
+        if (isTimed) playBell();
+
+        const action = document.getElementById('ppdt-action-input')?.value || "";
+        const body = document.getElementById('ppdt-story-textarea')?.value || "";
+        ppdtStoryText = `Action: ${action}\n\n${body}`;
+
         clearInterval(ppdtTimerInterval);
-        runPPDTNarrationSetup(settings); // Go to Narration instead of Review
+        runPPDTNarrationSetup(settings); 
     };
 
     document.getElementById('submit-story-btn').addEventListener('click', finishWriting);
 
     if (isTimed) {
-        let timeLeft = 270; // 4m 30s
+        let timeLeft = 270; // 4 minutes 30 seconds
         ppdtTimerInterval = setInterval(() => {
             timeLeft--;
-            const m = Math.floor(timeLeft / 60);
-            const s = timeLeft % 60;
-            const el = document.getElementById('ppdt-write-timer');
-            if(el) el.textContent = `${m}:${s.toString().padStart(2, '0')} remaining`;
+            
+            if (showTimer) {
+                const m = Math.floor(timeLeft / 60);
+                const s = timeLeft % 60;
+                const el = document.getElementById('ppdt-write-timer');
+                if(el) el.textContent = `${m}:${s.toString().padStart(2, '0')} remaining`;
+            }
 
             if (timeLeft <= 0) {
                 finishWriting();
@@ -370,6 +441,7 @@ async function initializeOIRTest() {
         
         currentOIRIndex = 0;
         oirScore = 0;
+        oirAnswers = {}; // Reset answers
         enterTestMode();
         renderOIRQuestion();
     } catch(e) {
@@ -378,50 +450,118 @@ async function initializeOIRTest() {
 }
 
 function renderOIRQuestion() {
-    if(!oirQuestions[currentOIRIndex]) {
-        // End of test
-        finishOIRTest();
-        return;
-    }
-
     const q = oirQuestions[currentOIRIndex];
     
+    // Generate Palette HTML
+    let paletteHtml = '<div class="oir-palette" style="display:flex; flex-wrap:wrap; gap:5px; margin-bottom:15px; justify-content:center;">';
+    for (let i = 0; i < oirQuestions.length; i++) {
+        let statusClass = 'neutral';
+        if (i === currentOIRIndex) statusClass = 'active'; // Current
+        else if (oirAnswers[i]) statusClass = 'answered'; // Answered
+        else if (oirAnswers[i] === null) statusClass = 'skipped'; // Explicitly skipped (visited but no answer)
+        else statusClass = 'unvisited';
+
+        // Styling for palette items
+        let style = `
+            width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;
+            border-radius: 4px; font-size: 0.8rem; cursor: pointer; border: 1px solid var(--border-color);
+        `;
+        
+        if (statusClass === 'active') style += 'background: var(--primary-blue); color: #fff; border-color: var(--primary-blue);';
+        else if (statusClass === 'answered') style += 'background: var(--success-green); color: #000; border-color: var(--success-green);';
+        else if (statusClass === 'skipped') style += 'background: var(--error-red); color: #fff; border-color: var(--error-red);';
+        else style += 'background: var(--light-dark-bg); color: var(--text-secondary);';
+
+        paletteHtml += `<div class="palette-item" data-index="${i}" style="${style}">${i + 1}</div>`;
+    }
+    paletteHtml += '</div>';
+
     pageContent.innerHTML = `
         <div class="oir-test-container">
-            <div class="oir-header">
-                <span class="oir-progress">Question ${currentOIRIndex + 1} of ${oirQuestions.length}</span>
+            <div class="oir-header" style="flex-direction: column; align-items: normal;">
+                 <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                    <span class="oir-progress">Question ${currentOIRIndex + 1} of ${oirQuestions.length}</span>
+                    <button id="finish-test-btn" class="oir-nav-btn finish" style="padding: 0.4rem 1rem; font-size: 0.85rem;">Finish Test</button>
+                 </div>
+                 ${paletteHtml}
             </div>
             <div class="oir-question-card">
                 <p class="oir-question-text">${q.question}</p>
                 <div class="oir-options">
                     ${(q.options||[]).map((o, idx) => `
                         <label class="oir-option-label">
-                            <input type="radio" name="opt" value="${o}" data-idx="${idx}"> ${o}
+                            <input type="radio" name="opt" value="${o}" data-idx="${idx}" ${oirAnswers[currentOIRIndex] === o ? 'checked' : ''}> ${o}
                         </label>`).join('')}
                 </div>
                 <div class="oir-navigation">
+                    <button id="prev-btn" class="oir-nav-btn" ${currentOIRIndex === 0 ? 'disabled style="opacity:0.5; cursor:default;"' : ''}>Previous</button>
                     <button id="next-btn" class="oir-nav-btn">Next</button>
                 </div>
             </div>
         </div>`;
 
-    document.getElementById('next-btn').addEventListener('click', () => {
-        const selected = document.querySelector('input[name="opt"]:checked');
-        if (selected) {
-            // Check answer (Assuming simple string matching or index matching)
-            if (selected.value === q.answer) {
-                oirScore++;
-            }
-        }
-        
-        currentOIRIndex++;
-        renderOIRQuestion();
+    // Palette Click
+    document.querySelectorAll('.palette-item').forEach(item => {
+        item.addEventListener('click', (e) => {
+            saveCurrentAnswer();
+            currentOIRIndex = parseInt(e.target.dataset.index);
+            renderOIRQuestion();
+        });
     });
+
+    // Finish Test
+    document.getElementById('finish-test-btn').addEventListener('click', () => {
+        if (confirm("Are you sure you want to finish the test?")) {
+            saveCurrentAnswer();
+            finishOIRTest();
+        }
+    });
+
+    // Previous Button
+    document.getElementById('prev-btn').addEventListener('click', () => {
+        if (currentOIRIndex > 0) {
+            saveCurrentAnswer();
+            currentOIRIndex--;
+            renderOIRQuestion();
+        }
+    });
+
+    // Next Button
+    document.getElementById('next-btn').addEventListener('click', () => {
+        saveCurrentAnswer();
+        if (currentOIRIndex < oirQuestions.length - 1) {
+            currentOIRIndex++;
+            renderOIRQuestion();
+        } else {
+            finishOIRTest(); // Last question next finishes test
+        }
+    });
+}
+
+function saveCurrentAnswer() {
+    const selected = document.querySelector('input[name="opt"]:checked');
+    if (selected) {
+        oirAnswers[currentOIRIndex] = selected.value;
+    } else {
+        // Only mark as skipped (null) if it wasn't already answered. 
+        // If they revisit and don't change anything, keep old answer.
+        if (oirAnswers[currentOIRIndex] === undefined) {
+             oirAnswers[currentOIRIndex] = null;
+        }
+    }
 }
 
 function finishOIRTest() {
     exitTestMode();
     
+    // Calculate Score based on oirAnswers
+    oirScore = 0;
+    oirQuestions.forEach((q, idx) => {
+        if (oirAnswers[idx] === q.answer) {
+            oirScore++;
+        }
+    });
+
     // Save results automatically if logged in
     const saveResults = async () => {
         if (!auth.currentUser) return;
