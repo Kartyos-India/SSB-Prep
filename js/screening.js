@@ -197,8 +197,10 @@ async function initializePPDTTest(settings) {
         const data = await response.json();
         let resolvedUrl = null;
 
-        if (data.image) resolvedUrl = data.image.startsWith('data:') ? data.image : `data:image/png;base64,${data.image}`;
-        else if (data.imageUrl) resolvedUrl = data.imageUrl;
+        if (data.image) {
+            resolvedUrl = `data:image/png;base64,${data.image}`;
+        }
+
 
         if (!resolvedUrl) throw new Error('No valid image returned from AI service.');
 
@@ -359,3 +361,4 @@ function renderOIRQuestion() {
     await appInitialized;
     if(pageContent) renderScreeningMenu();
 })();
+
