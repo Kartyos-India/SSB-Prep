@@ -21,7 +21,8 @@ import {
     orderBy,
     serverTimestamp,
     setDoc,
-    deleteDoc // Added deleteDoc for profile management
+    deleteDoc,
+    arrayUnion // <--- Added this
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 export {
@@ -41,5 +42,6 @@ export {
     orderBy,
     serverTimestamp,
     setDoc,
-    deleteDoc
+    deleteDoc,
+    arrayUnion // <--- Exported here
 };
