@@ -107,11 +107,21 @@ function runTATSlide() {
     playBell();
     pageContent.innerHTML = `
         <div class="ppdt-phase-container">
-            <div class="ppdt-header"><h2>TAT ${currentItemIndex + 1}/12: Observe</h2></div>
+            <div class="ppdt-header">
+                <h2>TAT ${currentItemIndex + 1}/12: Observe</h2>
+                <button id="exit-test-btn" class="oir-nav-btn abort">Exit Test</button>
+            </div>
             <p class="timer-display" id="tat-timer">30s</p>
             <img src="${item.path}" style="max-height:60vh; border-radius:8px; border:1px solid #444;">
         </div>
     `;
+
+    document.getElementById('exit-test-btn').addEventListener('click', () => {
+        if(confirm("Exit test? Progress will not be saved.")) {
+            exitTestMode();
+            renderPsychMenu();
+        }
+    });
 
     let timeLeft = 30;
     testInterval = setInterval(() => {
@@ -133,7 +143,7 @@ function runTATWriting(item) {
         <div class="ppdt-phase-container">
             <div class="ppdt-header">
                 <h2>TAT ${currentItemIndex + 1}/12: Write Story</h2>
-                <button id="abort-btn" class="oir-nav-btn abort">Abort</button>
+                <button id="abort-btn" class="oir-nav-btn abort">Exit Test</button>
             </div>
             <p class="timer-display" id="tat-write-timer">4:00</p>
             ${!isBlank ? `<div style="opacity:0.5; margin-bottom:10px;">Context: Image previously shown</div>` : `<div>Write a story of your choice.</div>`}
@@ -144,7 +154,12 @@ function runTATWriting(item) {
         </div>
     `;
 
-    document.getElementById('abort-btn').addEventListener('click', () => { exitTestMode(); renderPsychMenu(); });
+    document.getElementById('abort-btn').addEventListener('click', () => { 
+        if(confirm("Exit test? Progress will not be saved.")) {
+            exitTestMode(); 
+            renderPsychMenu(); 
+        }
+    });
     
     // Auto-focus
     const input = document.getElementById('tat-input');
@@ -208,7 +223,7 @@ function runWATWord() {
         <div class="ppdt-phase-container">
             <div class="ppdt-header">
                 <h2>WAT ${currentItemIndex + 1}/60</h2>
-                <button id="abort-btn" class="oir-nav-btn abort">Abort</button>
+                <button id="abort-btn" class="oir-nav-btn abort">Exit Test</button>
             </div>
             <p class="timer-display" id="wat-timer" style="color:var(--primary-blue)">15s</p>
             
@@ -221,7 +236,12 @@ function runWATWord() {
         </div>
     `;
 
-    document.getElementById('abort-btn').addEventListener('click', () => { exitTestMode(); renderPsychMenu(); });
+    document.getElementById('abort-btn').addEventListener('click', () => { 
+        if(confirm("Exit test? Progress will not be saved.")) {
+            exitTestMode(); 
+            renderPsychMenu(); 
+        }
+    });
     
     const input = document.getElementById('wat-input');
     input.focus();
@@ -286,6 +306,7 @@ function runSRTPage() {
     pageContent.innerHTML = `
         <div class="app-container" style="max-width:800px; padding-top:2rem;">
             <div style="position:sticky; top:0; background:var(--dark-bg); padding:1rem 0; border-bottom:1px solid var(--border-color); z-index:10; display:flex; justify-content:space-between; align-items:center;">
+                <button id="srt-exit-btn" class="oir-nav-btn abort" style="padding:0.5rem 1rem;">Exit</button>
                 <h2>SRT Test</h2>
                 <div style="font-size:1.5rem; font-weight:700; color:var(--primary-blue);" id="srt-timer">30:00</div>
                 <button id="srt-submit-btn" class="start-btn" style="padding:0.5rem 1rem;">Submit Test</button>
@@ -305,6 +326,13 @@ function runSRTPage() {
         
         if (timeLeft <= 0) finishSRT();
     }, 1000);
+
+    document.getElementById('srt-exit-btn').addEventListener('click', () => {
+        if(confirm("Exit test? Progress will not be saved.")) {
+            exitTestMode();
+            renderPsychMenu();
+        }
+    });
 
     document.getElementById('srt-submit-btn').addEventListener('click', () => {
         if(confirm("Submit SRT Test?")) finishSRT();
