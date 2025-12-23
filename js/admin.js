@@ -100,7 +100,12 @@ async function handleBulk(type) {
                 } else if (type === 'srt') {
                     return { situation: item.situation || item.text };
                 } else if (type === 'oir') {
-                    return item; // Structure already matches
+                    // Support optional image field for OIR
+                    const processedItem = { ...item };
+                    if (processedItem.image) {
+                        processedItem.image = convertDriveLink(processedItem.image);
+                    }
+                    return processedItem; 
                 }
             }).filter(i => i !== null);
 
@@ -165,6 +170,7 @@ async function loadCatalog(type) {
                 html += `
                     <div style="background:var(--dark-bg); padding:1rem; border-radius:8px; margin-bottom:1rem; border:1px solid var(--border-color);">
                         <p style="font-weight:600; font-size:0.95rem; margin-bottom:0.5rem;">${data.question || data.word || data.situation}</p>
+                        ${data.image ? `<img src="${data.image}" style="max-width:100%; height:auto; margin-bottom:0.5rem; border-radius:4px;">` : ''}
                         <p style="font-size:0.85rem; color:var(--text-secondary);">${data.answer ? 'Ans: ' + data.answer : ''}</p>
                     </div>`;
             }
