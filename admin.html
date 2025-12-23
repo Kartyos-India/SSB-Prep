@@ -25,6 +25,8 @@
         .nav-tab { background: var(--light-dark-bg); border: 1px solid var(--border-color); padding: 10px 20px; border-radius: 8px; cursor: pointer; color: var(--text-secondary); transition: all 0.2s; }
         .nav-tab:hover { background: #333; }
         .nav-tab.active { background: var(--primary-blue); color: white; border-color: var(--primary-blue); }
+        .helper-text { font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.5rem; line-height: 1.4; }
+        .helper-text code { display: block; margin-top: 0.5rem; white-space: pre-wrap; word-break: break-all; }
     </style>
 </head>
 <body>
@@ -34,15 +36,20 @@
     <main class="admin-container">
         <h1>Content Manager</h1>
         
-        <div class="nav-tabs" id="admin-tabs">
-            <button class="nav-tab active" data-target="ppdt">PPDT (Images)</button>
-            <button class="nav-tab" data-target="tat">TAT (Images)</button>
-            <button class="nav-tab" data-target="oir">OIR (Questions)</button>
-            <button class="nav-tab" data-target="wat">WAT (Words)</button>
-            <button class="nav-tab" data-target="srt">SRT (Situations)</button>
+        <!-- Login Protection -->
+        <div id="login-warning" style="display:none; text-align:center; padding:2rem; background:var(--medium-dark-bg); border-radius:8px;">
+            <h3>Restricted Access</h3>
+            <p>Please log in with an authorized account.</p>
         </div>
 
-        <div id="admin-content">
+        <div id="admin-content" style="display:none;">
+            <div class="nav-tabs" id="admin-tabs">
+                <button class="nav-tab active" data-target="ppdt">PPDT (Images)</button>
+                <button class="nav-tab" data-target="tat">TAT (Images)</button>
+                <button class="nav-tab" data-target="oir">OIR (Questions)</button>
+                <button class="nav-tab" data-target="wat">WAT (Words)</button>
+                <button class="nav-tab" data-target="srt">SRT (Situations)</button>
+            </div>
             
             <!-- PPDT UPLOADER (Default) -->
             <div class="admin-card active" id="card-ppdt">
@@ -50,6 +57,13 @@
                 <div class="form-group">
                     <label>Bulk Upload JSON</label>
                     <input type="file" id="ppdt-json" accept=".json">
+                    <div class="helper-text">
+                        Required JSON Format:
+                        <code>[
+  { "link": "https://drive.google.com/...", "description": "Group discussion" },
+  ...
+]</code>
+                    </div>
                     <button class="start-btn mt-2" onclick="handleBulk('ppdt')">Upload PPDT</button>
                     <div id="status-ppdt" class="status-msg"></div>
                 </div>
@@ -67,7 +81,13 @@
                 <div class="form-group">
                     <label>Bulk Upload JSON</label>
                     <input type="file" id="tat-json" accept=".json">
-                    <p class="text-sm text-gray-500">Format: <code>[{"link":"...", "description":"..."}, ...]</code></p>
+                    <div class="helper-text">
+                        Required JSON Format:
+                        <code>[
+  { "link": "https://drive.google.com/...", "description": "Person sitting alone" },
+  ...
+]</code>
+                    </div>
                     <button class="start-btn mt-2" onclick="handleBulk('tat')">Upload TAT</button>
                     <div id="status-tat" class="status-msg"></div>
                 </div>
@@ -80,6 +100,28 @@
                 <div class="form-group">
                     <label>Bulk Upload JSON</label>
                     <input type="file" id="oir-json" accept=".json">
+                    <div class="helper-text">
+                        Required JSON Format (Standard):
+                        <code>[
+  { 
+    "question": "Question text?", 
+    "options": ["A", "B", "C", "D"], 
+    "answer": "A", 
+    "type": "verbal" 
+  },
+  ...
+]</code>
+                        With Image (Optional):
+                        <code>[
+  { 
+    "question": "Identify figure", 
+    "image": "https://drive.google.com/...", 
+    "options": ["1", "2", "3", "4"], 
+    "answer": "1", 
+    "type": "spatial" 
+  }
+]</code>
+                    </div>
                     <button class="start-btn mt-2" onclick="handleBulk('oir')">Upload OIR</button>
                     <div id="status-oir" class="status-msg"></div>
                 </div>
@@ -92,7 +134,14 @@
                 <div class="form-group">
                     <label>Bulk Upload JSON</label>
                     <input type="file" id="wat-json" accept=".json">
-                    <p class="text-sm text-gray-500">Format: <code>[{"word":"Courage"}, {"word":"Fear"}, ...]</code></p>
+                    <div class="helper-text">
+                        Required JSON Format:
+                        <code>[
+  { "word": "Courage" },
+  { "word": "Fear" },
+  ...
+]</code>
+                    </div>
                     <button class="start-btn mt-2" onclick="handleBulk('wat')">Upload WAT</button>
                     <div id="status-wat" class="status-msg"></div>
                 </div>
@@ -105,7 +154,14 @@
                 <div class="form-group">
                     <label>Bulk Upload JSON</label>
                     <input type="file" id="srt-json" accept=".json">
-                    <p class="text-sm text-gray-500">Format: <code>[{"situation":"He saw a snake..."}, ...]</code></p>
+                    <div class="helper-text">
+                        Required JSON Format:
+                        <code>[
+  { "situation": "He was alone in the jungle..." },
+  { "situation": "His captain was injured..." },
+  ...
+]</code>
+                    </div>
                     <button class="start-btn mt-2" onclick="handleBulk('srt')">Upload SRT</button>
                     <div id="status-srt" class="status-msg"></div>
                 </div>
