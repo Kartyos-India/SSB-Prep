@@ -9,8 +9,9 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        .admin-container { max-width: 800px; margin: 0 auto; padding: 2rem; }
-        .admin-card { background: var(--medium-dark-bg); padding: 2rem; border-radius: 16px; border: 1px solid var(--border-color); margin-bottom: 2rem; }
+        .admin-container { max-width: 900px; margin: 0 auto; padding: 2rem; }
+        .admin-card { background: var(--medium-dark-bg); padding: 2rem; border-radius: 16px; border: 1px solid var(--border-color); margin-bottom: 2rem; display:none; }
+        .admin-card.active { display: block; }
         .form-group { margin-bottom: 1.5rem; }
         .form-group label { display: block; margin-bottom: 0.5rem; color: var(--text-secondary); }
         .form-group input, .form-group textarea { width: 100%; padding: 0.8rem; background: var(--dark-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 8px; }
@@ -19,8 +20,11 @@
         .status-error { color: var(--error-red); }
         .preview-img { max-width: 100%; margin-top: 1rem; border-radius: 8px; border: 1px solid var(--border-color); display: none; }
         code { background: #333; padding: 0.2rem 0.4rem; border-radius: 4px; font-family: monospace; }
-        .tab-btn { background: transparent; border: none; color: var(--text-secondary); padding: 1rem; cursor: pointer; border-bottom: 2px solid transparent; }
-        .tab-btn.active { color: var(--primary-blue); border-bottom-color: var(--primary-blue); font-weight: 600; }
+        
+        .nav-tabs { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        .nav-tab { background: var(--light-dark-bg); border: 1px solid var(--border-color); padding: 10px 20px; border-radius: 8px; cursor: pointer; color: var(--text-secondary); transition: all 0.2s; }
+        .nav-tab:hover { background: #333; }
+        .nav-tab.active { background: var(--primary-blue); color: white; border-color: var(--primary-blue); }
     </style>
 </head>
 <body>
@@ -29,69 +33,83 @@
 
     <main class="admin-container">
         <h1>Content Manager</h1>
-        <p style="color:var(--text-secondary); margin-bottom: 2rem;">Add new content to the SSB Prep Platform.</p>
-
-        <!-- Login Protection -->
-        <div id="login-warning" style="display:none; text-align:center; padding:2rem; background:var(--medium-dark-bg); border-radius:8px;">
-            <h3>Restricted Access</h3>
-            <p>Please log in with an authorized account.</p>
+        
+        <div class="nav-tabs" id="admin-tabs">
+            <button class="nav-tab active" data-target="ppdt">PPDT (Images)</button>
+            <button class="nav-tab" data-target="tat">TAT (Images)</button>
+            <button class="nav-tab" data-target="oir">OIR (Questions)</button>
+            <button class="nav-tab" data-target="wat">WAT (Words)</button>
+            <button class="nav-tab" data-target="srt">SRT (Situations)</button>
         </div>
 
-        <div id="admin-content" style="display:none;">
+        <div id="admin-content">
             
-            <!-- PPDT SECTION -->
-            <div class="admin-card" style="border-left: 4px solid var(--primary-blue);">
-                <h2>PPDT Management (Images)</h2>
-                
-                <!-- Bulk PPDT -->
-                <div class="form-group" style="margin-top:1.5rem; border-top:1px solid var(--border-color); padding-top:1.5rem;">
-                    <h3>Bulk Upload Images (JSON)</h3>
-                    <label>Upload JSON containing links</label>
-                    <input type="file" id="ppdt-json-file" accept=".json">
-                    <p class="format-info" style="margin-top:0.5rem; font-size:0.85rem; color:var(--text-secondary);">
-                        Format: <code>[ { "link": "https://...", "description": "..." }, ... ]</code>
-                    </p>
-                    <button id="ppdt-bulk-btn" class="start-btn" style="margin-top:10px;">Upload PPDT JSON</button>
-                    <div id="ppdt-bulk-status" class="status-msg"></div>
+            <!-- PPDT UPLOADER (Default) -->
+            <div class="admin-card active" id="card-ppdt">
+                <h2>PPDT Management</h2>
+                <div class="form-group">
+                    <label>Bulk Upload JSON</label>
+                    <input type="file" id="ppdt-json" accept=".json">
+                    <button class="start-btn mt-2" onclick="handleBulk('ppdt')">Upload PPDT</button>
+                    <div id="status-ppdt" class="status-msg"></div>
                 </div>
-
-                <!-- Single PPDT -->
-                <div class="form-group" style="border-top:1px solid var(--border-color); padding-top:1.5rem;">
-                    <h3>Add Single Image</h3>
-                    <label>Google Drive Link</label>
-                    <input type="text" id="drive-link" placeholder="https://drive.google.com/file/d/..." autocomplete="off">
-                    <input type="text" id="img-desc" placeholder="Description (Optional)" style="margin-top:10px;">
-                    <img id="img-preview" class="preview-img" alt="Preview">
-                    <button id="add-ppdt-btn" class="start-btn" style="margin-top:10px;">Add Single Image</button>
-                    <div id="ppdt-single-status" class="status-msg"></div>
+                <div class="form-group border-t pt-4">
+                    <label>Single Image Link</label>
+                    <input type="text" id="ppdt-single-link" placeholder="Drive Link">
+                    <button class="start-btn mt-2" onclick="handleSingle('ppdt')">Add Single</button>
                 </div>
+                <div id="list-ppdt">Loading...</div>
             </div>
 
-            <!-- OIR SECTION -->
-            <div class="admin-card" style="border-left: 4px solid var(--success-green);">
-                <h2>OIR Management (Questions)</h2>
-                
-                <div class="form-group" style="margin-top:1.5rem;">
-                    <h3>Bulk Upload Questions (JSON)</h3>
-                    <label>Upload JSON containing questions</label>
-                    <input type="file" id="oir-json-file" accept=".json">
-                    <p class="format-info" style="margin-top:0.5rem; font-size:0.85rem; color:var(--text-secondary);">
-                        Format: <code>[ { "question": "...", "options": ["A","B","C","D"], "answer": "A", "type": "verbal" }, ... ]</code>
-                    </p>
-                    <button id="oir-bulk-btn" class="start-btn" style="margin-top:10px; background-color: var(--success-green);">Upload OIR JSON</button>
-                    <div id="oir-bulk-status" class="status-msg"></div>
+            <!-- TAT UPLOADER -->
+            <div class="admin-card" id="card-tat">
+                <h2>TAT Management</h2>
+                <div class="form-group">
+                    <label>Bulk Upload JSON</label>
+                    <input type="file" id="tat-json" accept=".json">
+                    <p class="text-sm text-gray-500">Format: <code>[{"link":"...", "description":"..."}, ...]</code></p>
+                    <button class="start-btn mt-2" onclick="handleBulk('tat')">Upload TAT</button>
+                    <div id="status-tat" class="status-msg"></div>
                 </div>
+                <div id="list-tat">Loading...</div>
             </div>
 
-            <!-- Catalog Viewer -->
-            <div class="admin-card">
-                <div style="display:flex; gap:1rem; border-bottom:1px solid var(--border-color); margin-bottom:1rem;">
-                    <button class="tab-btn active" id="tab-ppdt">PPDT Catalog</button>
-                    <button class="tab-btn" id="tab-oir">OIR Catalog</button>
+            <!-- OIR UPLOADER -->
+            <div class="admin-card" id="card-oir">
+                <h2>OIR Management</h2>
+                <div class="form-group">
+                    <label>Bulk Upload JSON</label>
+                    <input type="file" id="oir-json" accept=".json">
+                    <button class="start-btn mt-2" onclick="handleBulk('oir')">Upload OIR</button>
+                    <div id="status-oir" class="status-msg"></div>
                 </div>
-                <div id="catalog-list">
-                    <p style="color:var(--text-secondary);">Loading...</p>
+                <div id="list-oir">Loading...</div>
+            </div>
+
+            <!-- WAT UPLOADER -->
+            <div class="admin-card" id="card-wat">
+                <h2>WAT Management</h2>
+                <div class="form-group">
+                    <label>Bulk Upload JSON</label>
+                    <input type="file" id="wat-json" accept=".json">
+                    <p class="text-sm text-gray-500">Format: <code>[{"word":"Courage"}, {"word":"Fear"}, ...]</code></p>
+                    <button class="start-btn mt-2" onclick="handleBulk('wat')">Upload WAT</button>
+                    <div id="status-wat" class="status-msg"></div>
                 </div>
+                <div id="list-wat">Loading...</div>
+            </div>
+
+            <!-- SRT UPLOADER -->
+            <div class="admin-card" id="card-srt">
+                <h2>SRT Management</h2>
+                <div class="form-group">
+                    <label>Bulk Upload JSON</label>
+                    <input type="file" id="srt-json" accept=".json">
+                    <p class="text-sm text-gray-500">Format: <code>[{"situation":"He saw a snake..."}, ...]</code></p>
+                    <button class="start-btn mt-2" onclick="handleBulk('srt')">Upload SRT</button>
+                    <div id="status-srt" class="status-msg"></div>
+                </div>
+                <div id="list-srt">Loading...</div>
             </div>
 
         </div>

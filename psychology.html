@@ -7,30 +7,29 @@
     <link rel="stylesheet" href="css/style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
 
-    <header id="header-bar">
-        <div id="header-left">
-            <a href="index.html" class="logo-link">
-                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><path fill="white" d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
-                <span>SSB Prep</span>
-            </a>
-        </div>
-        <nav id="header-center"></nav>
-        <div id="header-right">
-            <div id="auth-loader">Loading...</div>
-        </div>
-    </header>
+    <!-- Header will be injected by main.js -->
+    <header id="header-bar" class="app-header app-container"></header>
 
-    <main id="page-content" class="page-container hidden">
-        <!-- Psychology.js will populate this area -->
+    <main id="page-content" class="app-container">
+        <!-- Psychology.js will render the menu here -->
+        <div class="loader-container">
+            <div class="loader"></div>
+            <p>Loading Psychology Module...</p>
+        </div>
     </main>
 
-    <script type="module" src="js/firebase-init.js"></script>
+    <footer class="app-footer">
+        <div class="app-container">
+            <p>© 2025 SSB Prep Platform. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Main Application Logic -->
     <script type="module" src="js/main.js"></script>
     <script type="module" src="js/psychology.js"></script>
-
 </body>
 </html>
