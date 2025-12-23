@@ -1,9 +1,11 @@
 // js/admin.js
 import { auth, db, firebasePromise } from './firebase-app.js';
-import { onAuthStateChanged, collection, getDocs, deleteDoc, doc } from './firebase-init.js';
+import { onAuthStateChanged } from './firebase-init.js';
+import { collection, getDocs, deleteDoc, doc } from './firebase-init.js';
 import { postWithIdToken } from './screening-serverside.js';
 
 const APP_ID = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+let currentTab = 'ppdt'; // 'ppdt' or 'oir'
 
 // UTILS
 function convertDriveLink(url) {
@@ -21,7 +23,28 @@ document.addEventListener('DOMContentLoaded', async () => {
     try { await firebasePromise; } catch(e) { console.error(e); return; }
 
     onAuthStateChanged(auth, user => {
-        if (!user) { document.body.innerHTML = "<h2 style='text-align:center; padding:50px;'>Login Required</h2>"; return; }
+        const warningEl = document.getElementById('login-warning');
+        const contentEl = document.getElementById('admin-content');
+
+        if (!user) {
+             // User not logged in
+             if (warningEl) warningEl.style.display = 'block';
+             if (contentEl) contentEl.style.display = 'none';
+             if (warningEl) warningEl.innerHTML = "<h3>Restricted Access</h3><p>Please log in with an authorized account.</p>";
+             return;
+        }
+
+        // Email Check for Admin
+        if (user.email !== 'aman.kartyos@gmail.com') {
+            if (warningEl) warningEl.style.display = 'block';
+            if (contentEl) contentEl.style.display = 'none';
+            if (warningEl) warningEl.innerHTML = "<h3>Access Denied</h3><p>You are not authorized to view this page.</p>";
+            return;
+        }
+        
+        // Authorized
+        if (warningEl) warningEl.style.display = 'none';
+        if (contentEl) contentEl.style.display = 'block';
         
         // Initial Load
         loadCatalog('ppdt');
@@ -126,8 +149,28 @@ async function loadCatalog(type) {
         const snapshot = await getDocs(collection(db, 'artifacts', APP_ID, 'public', 'data', `${type}_catalog`));
         if (snapshot.empty) { listEl.innerHTML = "Empty Catalog"; return; }
         
-        listEl.innerHTML = `<p>${snapshot.size} items found.</p>`;
-        // In real app, render list here...
+        let html = '';
+        snapshot.forEach((doc) => {
+            const data = doc.data();
+            if (type === 'ppdt' || type === 'tat') {
+                html += `
+                    <div style="display:flex; gap:1rem; align-items:center; background:var(--dark-bg); padding:1rem; border-radius:8px; margin-bottom:1rem; border:1px solid var(--border-color);">
+                        <img src="${data.path}" style="width:50px; height:50px; object-fit:cover; border-radius:4px;" onerror="this.style.display='none'">
+                        <div style="flex:1;">
+                            <p style="font-weight:600; font-size:0.9rem;">${data.description}</p>
+                            <a href="${data.originalLink}" target="_blank" style="font-size:0.8rem; color:var(--primary-blue);">Link</a>
+                        </div>
+                    </div>`;
+            } else {
+                html += `
+                    <div style="background:var(--dark-bg); padding:1rem; border-radius:8px; margin-bottom:1rem; border:1px solid var(--border-color);">
+                        <p style="font-weight:600; font-size:0.95rem; margin-bottom:0.5rem;">${data.question || data.word || data.situation}</p>
+                        <p style="font-size:0.85rem; color:var(--text-secondary);">${data.answer ? 'Ans: ' + data.answer : ''}</p>
+                    </div>`;
+            }
+        });
+        listEl.innerHTML = html;
+
     } catch(e) {
         listEl.innerHTML = "Error loading list.";
     }
