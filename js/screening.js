@@ -186,11 +186,21 @@ function runPPDTObservationPhase(settings) {
 
     pageContent.innerHTML = `
         <div class="ppdt-phase-container">
-            <div class="ppdt-header"><h2>Observe the Picture</h2></div>
+            <div class="ppdt-header">
+                <h2>Observe the Picture</h2>
+                <button id="exit-test-btn" class="oir-nav-btn abort" style="padding: 0.4rem 1rem; font-size: 0.85rem;">Exit Test</button>
+            </div>
             <p class="timer-display" id="ppdt-timer" style="color:var(--primary-blue)">${timeLeft}s</p>
             <img src="${ppdtCurrentContent.path}" alt="PPDT Image" class="ppdt-image">
             <p style="margin-top:1rem; color:var(--text-secondary); font-size:0.9rem;">Observe the characters, their mood, age, and the situation.</p>
         </div>`;
+
+    document.getElementById('exit-test-btn').addEventListener('click', () => {
+        if(confirm("Exit test? Progress will not be saved.")) {
+            exitTestMode();
+            renderScreeningMenu();
+        }
+    });
 
     ppdtTimerInterval = setInterval(() => {
         timeLeft--;
@@ -222,7 +232,10 @@ function runPPDTWritingPhase(settings) {
 
     pageContent.innerHTML = `
         <div class="ppdt-phase-container">
-            <div class="ppdt-header"><h2>Write Your Story</h2><button id="abort-btn" class="oir-nav-btn abort">Abort</button></div>
+            <div class="ppdt-header">
+                <h2>Write Your Story</h2>
+                <button id="abort-btn" class="oir-nav-btn abort">Abort</button>
+            </div>
             ${timerHtml}
             <div style="text-align:left; margin-bottom:10px;">
                 <label style="font-size:0.9rem; color:var(--text-secondary);">Action / Theme:</label>
@@ -271,7 +284,10 @@ function runPPDTWritingPhase(settings) {
 async function runPPDTNarrationSetup(settings) {
     pageContent.innerHTML = `
         <div class="ppdt-phase-container">
-            <div class="ppdt-header"><h2>Narration Preparation</h2></div>
+            <div class="ppdt-header">
+                <h2>Narration Preparation</h2>
+                <button id="exit-test-btn" class="oir-nav-btn abort" style="padding: 0.4rem 1rem; font-size: 0.85rem;">Exit</button>
+            </div>
             <div class="oir-question-card" style="text-align:center;">
                 <p style="margin-bottom:1rem; color:var(--text-secondary);">You will now narrate your story. Please enable camera and microphone access.</p>
                 <div id="camera-preview-container" style="width:100%; max-width:480px; height:320px; background:#000; margin:0 auto; display:flex; align-items:center; justify-content:center; border-radius:8px; overflow:hidden;">
@@ -285,6 +301,11 @@ async function runPPDTNarrationSetup(settings) {
                 </div>
             </div>
         </div>`;
+
+    document.getElementById('exit-test-btn').addEventListener('click', () => {
+        exitTestMode();
+        renderScreeningMenu();
+    });
 
     document.getElementById('skip-narration-btn').addEventListener('click', runPPDTReview);
 
@@ -476,17 +497,25 @@ function renderOIRQuestion() {
     }
     paletteHtml += '</div>';
 
+    // Support Image based questions
+    let questionContentHtml = '';
+    if (q.image) {
+        questionContentHtml += `<img src="${q.image}" style="max-width:100%; max-height:300px; display:block; margin:0 auto 15px auto; border-radius:8px;">`;
+    }
+    questionContentHtml += `<p class="oir-question-text">${q.question}</p>`;
+
     pageContent.innerHTML = `
         <div class="oir-test-container">
             <div class="oir-header" style="flex-direction: column; align-items: normal;">
                  <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                    <button id="exit-test-btn" class="oir-nav-btn abort" style="padding: 0.4rem 1rem; font-size: 0.85rem;">Exit</button>
                     <span class="oir-progress">Question ${currentOIRIndex + 1} of ${oirQuestions.length}</span>
-                    <button id="finish-test-btn" class="oir-nav-btn finish" style="padding: 0.4rem 1rem; font-size: 0.85rem;">Finish Test</button>
+                    <button id="finish-test-btn" class="oir-nav-btn finish" style="padding: 0.4rem 1rem; font-size: 0.85rem;">Finish</button>
                  </div>
                  ${paletteHtml}
             </div>
             <div class="oir-question-card">
-                <p class="oir-question-text">${q.question}</p>
+                ${questionContentHtml}
                 <div class="oir-options">
                     ${(q.options||[]).map((o, idx) => `
                         <label class="oir-option-label">
@@ -499,6 +528,14 @@ function renderOIRQuestion() {
                 </div>
             </div>
         </div>`;
+
+    // Exit Button
+    document.getElementById('exit-test-btn').addEventListener('click', () => {
+        if(confirm("Exit test? Progress will not be saved.")) {
+            exitTestMode();
+            renderScreeningMenu();
+        }
+    });
 
     // Palette Click
     document.querySelectorAll('.palette-item').forEach(item => {
