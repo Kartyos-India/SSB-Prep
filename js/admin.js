@@ -5,7 +5,6 @@ import { collection, getDocs, deleteDoc, doc } from './firebase-init.js';
 import { postWithIdToken } from './screening-serverside.js';
 
 const APP_ID = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-let currentTab = 'ppdt'; // 'ppdt' or 'oir'
 
 // UTILS
 function convertDriveLink(url) {
@@ -67,6 +66,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Attach Global Handlers
     window.handleBulk = handleBulk;
     window.handleSingle = handleSingle;
+    window.handleSingleOIR = handleSingleOIR; // Added handler for OIR
 });
 
 async function handleBulk(type) {
@@ -146,12 +146,68 @@ async function handleSingle(type) {
     loadCatalog('ppdt');
 }
 
+// Handler for Single OIR Question
+async function handleSingleOIR() {
+    const qText = document.getElementById('oir-q-text').value;
+    const qImage = document.getElementById('oir-q-image').value;
+    const qOptionsRaw = document.getElementById('oir-q-options').value;
+    const qAnswer = document.getElementById('oir-q-answer').value;
+    const qType = document.getElementById('oir-q-type').value;
+    const statusEl = document.getElementById('oir-single-status');
+
+    if (!qText && !qImage) return alert("Please provide at least Question Text or Image Link.");
+    if (!qOptionsRaw || !qAnswer) return alert("Options and Answer are required.");
+
+    // Parse options: split by comma and trim whitespace
+    const options = qOptionsRaw.split(',').map(opt => opt.trim()).filter(opt => opt !== "");
+    
+    if (options.length < 2) return alert("Please provide at least 2 options.");
+
+    statusEl.textContent = "Adding...";
+    statusEl.className = "status-msg";
+
+    try {
+        const item = {
+            question: qText,
+            options: options,
+            answer: qAnswer,
+            type: qType
+        };
+
+        if (qImage) {
+            item.image = convertDriveLink(qImage);
+        }
+
+        await postWithIdToken('/api/add-catalog-item', {
+            appId: APP_ID,
+            collectionName: 'oir_catalog',
+            items: [item]
+        });
+
+        statusEl.textContent = "Success!";
+        statusEl.className = "status-msg status-success";
+        
+        // Reset fields
+        document.getElementById('oir-q-text').value = "";
+        document.getElementById('oir-q-image').value = "";
+        document.getElementById('oir-q-options').value = "";
+        document.getElementById('oir-q-answer').value = "";
+        
+        loadCatalog('oir');
+
+    } catch (e) {
+        statusEl.textContent = "Error: " + e.message;
+        statusEl.className = "status-msg status-error";
+    }
+}
+
 async function loadCatalog(type) {
     const listEl = document.getElementById(`list-${type}`);
     listEl.innerHTML = "Loading...";
+    const collectionName = type === 'ppdt' ? 'ppdt_catalog' : type === 'tat' ? 'tat_catalog' : type === 'wat' ? 'wat_catalog' : type === 'srt' ? 'srt_catalog' : 'oir_catalog';
     
     try {
-        const snapshot = await getDocs(collection(db, 'artifacts', APP_ID, 'public', 'data', `${type}_catalog`));
+        const snapshot = await getDocs(collection(db, 'artifacts', APP_ID, 'public', 'data', collectionName));
         if (snapshot.empty) { listEl.innerHTML = "Empty Catalog"; return; }
         
         let html = '';
