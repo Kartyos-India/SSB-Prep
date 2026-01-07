@@ -14,7 +14,7 @@
         .admin-card.active { display: block; }
         .form-group { margin-bottom: 1.5rem; }
         .form-group label { display: block; margin-bottom: 0.5rem; color: var(--text-secondary); }
-        .form-group input, .form-group textarea { width: 100%; padding: 0.8rem; background: var(--dark-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 8px; }
+        .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 0.8rem; background: var(--dark-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 8px; }
         .status-msg { margin-top: 1rem; font-weight: 500; }
         .status-success { color: var(--success-green); }
         .status-error { color: var(--error-red); }
@@ -97,6 +97,8 @@
             <!-- OIR UPLOADER -->
             <div class="admin-card" id="card-oir">
                 <h2>OIR Management</h2>
+                
+                <!-- Bulk Upload -->
                 <div class="form-group">
                     <label>Bulk Upload JSON</label>
                     <input type="file" id="oir-json" accept=".json">
@@ -125,6 +127,36 @@
                     <button class="start-btn mt-2" onclick="handleBulk('oir')">Upload OIR</button>
                     <div id="status-oir" class="status-msg"></div>
                 </div>
+
+                <!-- Single Question Upload -->
+                <div class="form-group border-t pt-4" style="margin-top: 2rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem;">
+                    <h3>Add Single Question</h3>
+                    
+                    <label style="margin-top:10px;">Question Text</label>
+                    <textarea id="oir-q-text" rows="2" placeholder="Enter question text..."></textarea>
+
+                    <label style="margin-top:10px;">Image Link (Optional)</label>
+                    <input type="text" id="oir-q-image" placeholder="https://drive.google.com/...">
+
+                    <label style="margin-top:10px;">Options (Comma separated)</label>
+                    <input type="text" id="oir-q-options" placeholder="Option A, Option B, Option C, Option D">
+
+                    <label style="margin-top:10px;">Correct Answer</label>
+                    <input type="text" id="oir-q-answer" placeholder="Must match one option exactly">
+
+                    <label style="margin-top:10px;">Type</label>
+                    <select id="oir-q-type">
+                        <option value="verbal">Verbal</option>
+                        <option value="non-verbal">Non-Verbal</option>
+                        <option value="spatial">Spatial</option>
+                        <option value="math">Math</option>
+                        <option value="logical">Logical</option>
+                    </select>
+
+                    <button class="start-btn mt-2" onclick="handleSingleOIR()" style="margin-top:15px;">Add Question</button>
+                    <div id="oir-single-status" class="status-msg"></div>
+                </div>
+
                 <div id="list-oir">Loading...</div>
             </div>
 
