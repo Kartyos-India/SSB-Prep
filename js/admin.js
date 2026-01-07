@@ -5,6 +5,7 @@ import { collection, getDocs, deleteDoc, doc } from './firebase-init.js';
 import { postWithIdToken } from './screening-serverside.js';
 
 const APP_ID = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+let currentTab = 'ppdt'; // 'ppdt' or 'oir'
 
 // UTILS
 function convertDriveLink(url) {
@@ -201,31 +202,67 @@ async function handleSingleOIR() {
     }
 }
 
+// --- NEW DELETE HANDLER ---
+async function deleteItem(collectionName, docId, btn) {
+    if(!confirm("Are you sure you want to delete this item? This action cannot be undone.")) return;
+
+    const originalText = btn.textContent;
+    btn.textContent = "Deleting...";
+    btn.disabled = true;
+
+    try {
+        const response = await postWithIdToken('/api/delete-catalog-item', {
+            appId: APP_ID,
+            collectionName: collectionName,
+            docId: docId
+        });
+
+        if (!response.ok) throw new Error(await response.text());
+
+        // Remove element from DOM immediately
+        const row = btn.closest('.catalog-item') || btn.closest('div[style*="border-radius:8px"]');
+        if (row) row.remove();
+
+    } catch (e) {
+        alert("Delete failed: " + e.message);
+        btn.textContent = originalText;
+        btn.disabled = false;
+    }
+}
+
 async function loadCatalog(type) {
+    currentTab = type; // Keep track globally
     const listEl = document.getElementById(`list-${type}`);
     listEl.innerHTML = "Loading...";
     const collectionName = type === 'ppdt' ? 'ppdt_catalog' : type === 'tat' ? 'tat_catalog' : type === 'wat' ? 'wat_catalog' : type === 'srt' ? 'srt_catalog' : 'oir_catalog';
     
     try {
         const snapshot = await getDocs(collection(db, 'artifacts', APP_ID, 'public', 'data', collectionName));
-        if (snapshot.empty) { listEl.innerHTML = "Empty Catalog"; return; }
+        if (snapshot.empty) { listEl.innerHTML = "<p style='color: #888;'>No items found.</p>"; return; }
         
         let html = '';
         snapshot.forEach((doc) => {
             const data = doc.data();
+            const id = doc.id;
+            
+            // Generate Delete Button
+            const deleteBtnHtml = `<button class="delete-btn" data-id="${id}" data-coll="${collectionName}" style="background:transparent; border:1px solid var(--error-red); color:var(--error-red); padding:4px 8px; border-radius:4px; cursor:pointer; font-size:0.8rem; float:right;">Delete</button>`;
+
             if (type === 'ppdt' || type === 'tat') {
                 html += `
-                    <div style="display:flex; gap:1rem; align-items:center; background:var(--dark-bg); padding:1rem; border-radius:8px; margin-bottom:1rem; border:1px solid var(--border-color);">
+                    <div class="catalog-item" style="display:flex; gap:1rem; align-items:center; background:var(--dark-bg); padding:1rem; border-radius:8px; margin-bottom:1rem; border:1px solid var(--border-color);">
                         <img src="${data.path}" style="width:50px; height:50px; object-fit:cover; border-radius:4px;" onerror="this.style.display='none'">
                         <div style="flex:1;">
                             <p style="font-weight:600; font-size:0.9rem;">${data.description}</p>
                             <a href="${data.originalLink}" target="_blank" style="font-size:0.8rem; color:var(--primary-blue);">Link</a>
                         </div>
+                        ${deleteBtnHtml}
                     </div>`;
             } else {
                 html += `
-                    <div style="background:var(--dark-bg); padding:1rem; border-radius:8px; margin-bottom:1rem; border:1px solid var(--border-color);">
-                        <p style="font-weight:600; font-size:0.95rem; margin-bottom:0.5rem;">${data.question || data.word || data.situation}</p>
+                    <div class="catalog-item" style="background:var(--dark-bg); padding:1rem; border-radius:8px; margin-bottom:1rem; border:1px solid var(--border-color);">
+                        ${deleteBtnHtml}
+                        <p style="font-weight:600; font-size:0.95rem; margin-bottom:0.5rem; padding-right: 60px;">${data.question || data.word || data.situation}</p>
                         ${data.image ? `<img src="${data.image}" style="max-width:100%; height:auto; margin-bottom:0.5rem; border-radius:4px;">` : ''}
                         <p style="font-size:0.85rem; color:var(--text-secondary);">${data.answer ? 'Ans: ' + data.answer : ''}</p>
                     </div>`;
@@ -233,7 +270,15 @@ async function loadCatalog(type) {
         });
         listEl.innerHTML = html;
 
+        // Attach event listeners to all delete buttons
+        listEl.querySelectorAll('.delete-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                deleteItem(btn.dataset.coll, btn.dataset.id, btn);
+            });
+        });
+
     } catch(e) {
+        console.error(e);
         listEl.innerHTML = "Error loading list.";
     }
 }
